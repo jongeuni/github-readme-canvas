@@ -4,9 +4,30 @@ import { LibraryPanel } from './components/library/LibraryPanel';
 import { Canvas } from './components/editor/Canvas';
 import { SettingsPanel } from './components/settings/SettingsPanel';
 import { useCanvasEditor } from './components/editor/useCanvasEditor';
+import { useSavedDocuments } from './hooks/useSavedDocuments';
+import { SaveMenu } from './components/save/SaveMenu';
+import { SaveAsModal } from './components/save/SaveAsModal';
+import type { SavedDocument } from './types/document';
+import { useCustomComponents } from './hooks/useCustomComponents';
+import { AddComponentModal } from './components/library/AddComponentModal';
+import { useGitHubAuth } from './hooks/useGitHubAuth';
+import { ConnectGitHubModal } from './components/github/ConnectGitHubModal';
+import { CommitToGithubModal } from './components/github/CommitToGithubModal';
+import { SubmitComponentPrModal } from './components/library/SubmitComponentPrModal';
+import type { LibraryEntry } from './types/library';
 
 function App() {
   const editor = useCanvasEditor();
+  const documents = useSavedDocuments();
+  const customComponents = useCustomComponents();
+  const github = useGitHubAuth();
+  const [activeDoc, setActiveDoc] = useState<{ id: string; name: string } | null>(null);
+  const [saveAsOpen, setSaveAsOpen] = useState(false);
+  const [addComponentOpen, setAddComponentOpen] = useState(false);
+  const [githubConnectOpen, setGithubConnectOpen] = useState(false);
+  const [commitOpen, setCommitOpen] = useState(false);
+  const [commitMarkdown, setCommitMarkdown] = useState('');
+  const [prEntry, setPrEntry] = useState<LibraryEntry | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [markdown, setMarkdown] = useState('');
   const [toast, setToast] = useState<string | null>(null);
@@ -17,6 +38,97 @@ function App() {
     if (toastTimer.current) clearTimeout(toastTimer.current);
     toastTimer.current = setTimeout(() => setToast(null), 1600);
   }, []);
+
+  const handleQuickSave = useCallback(() => {
+    if (!activeDoc) return;
+    documents.overwrite(activeDoc.id, editor.serializeCanvas());
+    showToast('저장했어요');
+  }, [activeDoc, documents, editor, showToast]);
+
+  const handleConfirmSaveAs = useCallback(
+    (name: string) => {
+      const doc = documents.saveAs(name, editor.serializeCanvas());
+      setActiveDoc({ id: doc.id, name: doc.name });
+      setSaveAsOpen(false);
+      showToast('저장했어요');
+    },
+    [documents, editor, showToast],
+  );
+
+  const handleLoad = useCallback(
+    (doc: SavedDocument) => {
+      editor.loadFromBlocks(doc.blocks);
+      setActiveDoc({ id: doc.id, name: doc.name });
+      showToast('불러왔어요');
+    },
+    [editor, showToast],
+  );
+
+  const handleRename = useCallback(
+    (id: string, name: string) => {
+      documents.rename(id, name);
+      setActiveDoc((prev) => (prev && prev.id === id ? { ...prev, name } : prev));
+    },
+    [documents],
+  );
+
+  const handleDelete = useCallback(
+    (id: string) => {
+      documents.remove(id);
+      setActiveDoc((prev) => (prev && prev.id === id ? null : prev));
+    },
+    [documents],
+  );
+
+  const handleUseComponent = useCallback(
+    (libId: string) => {
+      if (libId.startsWith('custom-')) {
+        const entry = customComponents.customComponents.find((c) => c.id === libId);
+        if (entry) editor.addCustomEntry(entry);
+        return;
+      }
+      editor.addFromLibrary(libId);
+    },
+    [customComponents.customComponents, editor],
+  );
+
+  const handleCreateComponent = useCallback(
+    (entry: Parameters<typeof customComponents.addCustomComponent>[0]) => {
+      const created = customComponents.addCustomComponent(entry);
+      editor.addCustomEntry(created);
+      setAddComponentOpen(false);
+      showToast('컴포넌트를 추가했어요');
+    },
+    [customComponents, editor, showToast],
+  );
+
+  const handleConnectGitHub = useCallback(
+    async (token: string) => {
+      const ok = await github.connect(token);
+      if (ok) {
+        setGithubConnectOpen(false);
+        showToast('GitHub에 연결했어요');
+      }
+    },
+    [github, showToast],
+  );
+
+  const handleRequestSubmitPr = useCallback(
+    (entry: LibraryEntry) => {
+      if (!github.user) {
+        showToast('먼저 GitHub에 연결해 주세요');
+        setGithubConnectOpen(true);
+        return;
+      }
+      setPrEntry(entry);
+    },
+    [github.user, showToast],
+  );
+
+  const openCommitModal = useCallback(() => {
+    setCommitMarkdown(editor.buildFullMarkdown());
+    setCommitOpen(true);
+  }, [editor]);
 
   const openMarkdownDrawer = useCallback(() => {
     setMarkdown(editor.buildFullMarkdown());
@@ -49,15 +161,43 @@ function App() {
           <div className="left">
             <div className="mark">R</div>
             GitHub Readme Canvas
+            {activeDoc && <span className="doc-name"> · {activeDoc.name}</span>}
           </div>
           <div className="right">
-            <button
-              type="button"
-              className="btn btn-ghost btn-sm"
-              onClick={() => showToast('Save isn’t wired up yet — use Copy Markdown or Export for now.')}
-            >
-              Save
-            </button>
+            {github.user ? (
+              <div
+                className="avatar-chip"
+                title="클릭하면 GitHub 연결을 해제해요"
+                onClick={() => {
+                  github.disconnect();
+                  showToast('GitHub 연결을 해제했어요');
+                }}
+              >
+                {github.user.avatarUrl ? <img src={github.user.avatarUrl} alt="" /> : <span className="dot">{github.user.login.charAt(0).toUpperCase()}</span>}
+                {github.user.login}
+              </div>
+            ) : null}
+            {github.user && (
+              <button type="button" className="btn btn-primary btn-sm" onClick={openCommitModal}>
+                <Icon name="github" />
+                GitHub에 커밋
+              </button>
+            )}
+            {!github.user && (
+              <button type="button" className="btn btn-secondary btn-sm" onClick={() => setGithubConnectOpen(true)}>
+                <Icon name="github" />
+                GitHub 연결
+              </button>
+            )}
+            <SaveMenu
+              documents={documents.documents}
+              activeDocId={activeDoc?.id ?? null}
+              onQuickSave={handleQuickSave}
+              onOpenSaveAs={() => setSaveAsOpen(true)}
+              onLoad={handleLoad}
+              onRename={handleRename}
+              onDelete={handleDelete}
+            />
             <button type="button" className="btn btn-secondary btn-sm" onClick={openMarkdownDrawer}>
               <Icon name="code" />
               Copy Markdown
@@ -68,7 +208,13 @@ function App() {
           </div>
         </div>
         <div className="editor-body">
-          <LibraryPanel onUse={editor.addFromLibrary} />
+          <LibraryPanel
+            onUse={handleUseComponent}
+            customComponents={customComponents.customComponents}
+            onRemoveCustomComponent={customComponents.removeCustomComponent}
+            onRequestAddComponent={() => setAddComponentOpen(true)}
+            onSubmitPr={handleRequestSubmitPr}
+          />
           <Canvas editor={editor} />
           <SettingsPanel editor={editor} />
         </div>
@@ -95,6 +241,23 @@ function App() {
           </div>
         </div>
       </div>
+
+      <SaveAsModal open={saveAsOpen} onCancel={() => setSaveAsOpen(false)} onConfirm={handleConfirmSaveAs} />
+
+      <AddComponentModal open={addComponentOpen} onCancel={() => setAddComponentOpen(false)} onCreate={handleCreateComponent} />
+
+      <ConnectGitHubModal
+        open={githubConnectOpen}
+        connecting={github.connecting}
+        error={github.error}
+        onCancel={() => setGithubConnectOpen(false)}
+        onConnect={handleConnectGitHub}
+        onDismissError={github.clearError}
+      />
+
+      <CommitToGithubModal open={commitOpen} token={github.token} markdown={commitMarkdown} onCancel={() => setCommitOpen(false)} />
+
+      <SubmitComponentPrModal open={!!prEntry} token={github.token} entry={prEntry} onCancel={() => setPrEntry(null)} />
 
       <div className={`toast ${toast ? 'show' : ''}`}>{toast}</div>
     </>

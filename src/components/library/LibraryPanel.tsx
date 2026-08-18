@@ -4,6 +4,7 @@ import { PER_LANGUAGE_BADGE_IDS } from '../widgets/badge/presets';
 import { useFavorites } from '../../hooks/useFavorites';
 import { Icon } from '../Icon';
 import { ComponentCard } from './ComponentCard';
+import type { LibraryEntry } from '../../types/library';
 
 type BadgeMode = 'per-language' | 'unified';
 
@@ -12,7 +13,19 @@ type BadgeMode = 'per-language' | 'unified';
  * unified badge experiment (kept from the original design spec — both modes
  * stay live), a favorites-only filter, and the scrollable card list.
  */
-export function LibraryPanel({ onUse }: { onUse: (libId: string) => void }) {
+export function LibraryPanel({
+  onUse,
+  customComponents,
+  onRemoveCustomComponent,
+  onRequestAddComponent,
+  onSubmitPr,
+}: {
+  onUse: (libId: string) => void;
+  customComponents: LibraryEntry[];
+  onRemoveCustomComponent: (id: string) => void;
+  onRequestAddComponent: () => void;
+  onSubmitPr: (entry: LibraryEntry) => void;
+}) {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState<(typeof CATEGORIES)[number]>('All');
   const [badgeMode, setBadgeMode] = useState<BadgeMode>('per-language');
@@ -21,7 +34,8 @@ export function LibraryPanel({ onUse }: { onUse: (libId: string) => void }) {
   const { favorites, toggleFavorite } = useFavorites();
 
   const visible = useMemo(() => {
-    const byMode = LIBRARY.filter((item) =>
+    const combined = [...LIBRARY, ...customComponents];
+    const byMode = combined.filter((item) =>
       badgeMode === 'unified' ? !PER_LANGUAGE_BADGE_IDS.includes(item.id) : item.id !== 'lang-badge-unified',
     );
     const q = search.trim().toLowerCase();
@@ -32,7 +46,7 @@ export function LibraryPanel({ onUse }: { onUse: (libId: string) => void }) {
       const hay = `${item.name} ${item.description} ${item.tags.join(' ')}`.toLowerCase();
       return hay.includes(q);
     });
-  }, [badgeMode, category, favorites, favoritesOnly, search]);
+  }, [badgeMode, category, customComponents, favorites, favoritesOnly, search]);
 
   return (
     <div className="lib-col">
@@ -68,9 +82,12 @@ export function LibraryPanel({ onUse }: { onUse: (libId: string) => void }) {
       </div>
       <div className="lib-list">
         {visible.length === 0 ? (
-          <div className="lib-empty">No components found.
+          <div className="lib-empty">
+            찾는 컴포넌트가 없나요?
             <br />
-            Try a different search or category.
+            <span className="add-link" onClick={onRequestAddComponent}>
+              + 컴포넌트 추가하기
+            </span>
           </div>
         ) : (
           visible.map((item) => (
@@ -82,9 +99,16 @@ export function LibraryPanel({ onUse }: { onUse: (libId: string) => void }) {
               onToggleExpand={() => setExpandedId((cur) => (cur === item.id ? null : item.id))}
               onToggleFavorite={() => toggleFavorite(item.id)}
               onUse={() => onUse(item.id)}
+              onRemove={item.id.startsWith('custom-') ? () => onRemoveCustomComponent(item.id) : undefined}
+              onSubmitPr={item.id.startsWith('custom-') ? () => onSubmitPr(item) : undefined}
             />
           ))
         )}
+      </div>
+      <div className="lib-footer">
+        <span className="add-link" onClick={onRequestAddComponent}>
+          + 컴포넌트 추가하기
+        </span>
       </div>
     </div>
   );

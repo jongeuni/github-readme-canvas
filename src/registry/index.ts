@@ -13,6 +13,8 @@ import { headingDefinition } from '../components/widgets/heading/definition';
 import { headingPresets } from '../components/widgets/heading/presets';
 import { dividerDefinition } from '../components/widgets/divider/definition';
 import { dividerPresets } from '../components/widgets/divider/presets';
+import { urlComponentDefinition } from '../components/widgets/urlComponent/definition';
+import communityComponents from '../data/community-components.json';
 
 /**
  * This is the ONE place that wires a new component type into the whole app.
@@ -30,8 +32,15 @@ export const COMPONENT_TYPES: ComponentTypeDefinition[] = [
   socialDefinition,
   headingDefinition,
   dividerDefinition,
+  urlComponentDefinition,
 ];
 
+/**
+ * community-components.json holds "url-component" entries contributed via
+ * the app's "GitHub에 PR로 올리기" flow — a PR appends to that file, and
+ * merging it is the ONLY step needed for the new component to go live here.
+ * See src/types/urlComponent.ts / src/components/widgets/urlComponent/.
+ */
 export const LIBRARY: LibraryEntry[] = [
   ...badgePresets,
   ...techIconPresets,
@@ -39,6 +48,7 @@ export const LIBRARY: LibraryEntry[] = [
   ...socialPresets,
   ...headingPresets,
   ...dividerPresets,
+  ...(communityComponents as LibraryEntry[]),
 ];
 
 export const COMPONENT_TYPE_MAP = new Map(COMPONENT_TYPES.map((d) => [d.type, d]));

@@ -47,6 +47,12 @@ export function IconSprite() {
         <line x1="10" y1="4" x2="10" y2="16" />
         <line x1="4" y1="10" x2="16" y2="10" />
       </symbol>
+      <symbol id="i-edit" viewBox="0 0 20 20">
+        <path d="M13.4 3.6l3 3L6.8 16.2l-4 1 1-4z" strokeLinejoin="round" />
+      </symbol>
+      <symbol id="i-chevron-down" viewBox="0 0 20 20">
+        <polyline points="5,8 10,13 15,8" />
+      </symbol>
     </svg>
   );
 }

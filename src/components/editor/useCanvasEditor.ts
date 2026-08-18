@@ -2,7 +2,8 @@ import { createElement, useCallback, useEffect, useReducer, useRef, useState, ty
 import { createRoot, type Root } from 'react-dom/client';
 import { COMPONENT_TYPES, LIBRARY, getComponentType, getLibraryEntry } from '../../registry';
 import type { HeadingLevel } from '../widgets/heading/types';
-import type { WidgetInstance } from '../../types/library';
+import type { LibraryEntry, WidgetInstance } from '../../types/library';
+import type { SerializedBlock, SerializedTextBlock } from '../../types/document';
 
 /**
  * ============================================================================
@@ -37,16 +38,19 @@ interface WidgetRecord {
 let uidCounter = 1;
 const nextUid = () => 'c' + uidCounter++;
 
-function mkInstance(libId: string, overrides?: Record<string, unknown>): WidgetInstance {
-  const lib = getLibraryEntry(libId);
+function mkInstanceFromEntry(lib: LibraryEntry, overrides?: Record<string, unknown>): WidgetInstance {
   return {
     uid: nextUid(),
-    libId,
+    libId: lib.id,
     type: lib.type,
     name: lib.name,
     settings: { ...(lib.defaultSettings as object), ...(overrides ?? {}) },
     meta: lib.meta,
   };
+}
+
+function mkInstance(libId: string, overrides?: Record<string, unknown>): WidgetInstance {
+  return mkInstanceFromEntry(getLibraryEntry(libId), overrides);
 }
 
 function isEmptyText(n: ChildNode | null): boolean {
@@ -90,6 +94,31 @@ export function useCanvasEditor() {
     if (def.layout === 'inline') div.style.display = 'inline-flex';
     return div;
   }, []);
+
+  // ---------- appending blocks — shared by the initial seed content and by
+  // loading a saved document (see loadFromBlocks below) ----------
+  const appendTextLine = useCallback((className: string, html: string) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const div = document.createElement('div');
+    div.className = className;
+    div.innerHTML = html;
+    canvas.appendChild(div);
+  }, []);
+
+  const appendWidgetInstance = useCallback(
+    (instance: WidgetInstance) => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const el = widgetHTMLContainer(instance);
+      canvas.appendChild(el);
+      const root = createRoot(el);
+      const record: WidgetRecord = { instance, el, root };
+      widgetsRef.current.set(instance.uid, record);
+      renderWidgetRoot(record);
+    },
+    [widgetHTMLContainer, renderWidgetRoot],
+  );
 
   // ---------- selection ----------
   const clearSelectionVisuals = useCallback(() => {
@@ -145,34 +174,18 @@ export function useCanvasEditor() {
     if (!canvas || canvas.dataset.mounted) return;
     canvas.dataset.mounted = '1';
 
-    const addText = (cls: string, text: string) => {
-      const div = document.createElement('div');
-      div.className = cls;
-      div.textContent = text;
-      canvas.appendChild(div);
-    };
-    const addWidget = (libId: string) => {
-      const instance = mkInstance(libId);
-      const el = widgetHTMLContainer(instance);
-      canvas.appendChild(el);
-      const root = createRoot(el);
-      const record: WidgetRecord = { instance, el, root };
-      widgetsRef.current.set(instance.uid, record);
-      renderWidgetRoot(record);
-    };
-
-    addText('md-h1', "Hi, I'm Alex 👋");
-    addText('md-text', 'Backend Developer');
-    addWidget('lang-cpp');
-    addWidget('lang-python');
-    addWidget('tool-docker');
-    addText('md-h2', 'About Me');
-    addText('md-text', 'I build backend systems that scale.');
-    addText('md-h2', 'GitHub Stats');
-    addWidget('stats-github');
-    addText('md-h2', 'Connect with me');
-    addWidget('social-github');
-    addWidget('social-linkedin');
+    appendTextLine('md-h1', "Hi, I'm Alex 👋");
+    appendTextLine('md-text', 'Backend Developer');
+    appendWidgetInstance(mkInstance('lang-cpp'));
+    appendWidgetInstance(mkInstance('lang-python'));
+    appendWidgetInstance(mkInstance('tool-docker'));
+    appendTextLine('md-h2', 'About Me');
+    appendTextLine('md-text', 'I build backend systems that scale.');
+    appendTextLine('md-h2', 'GitHub Stats');
+    appendWidgetInstance(mkInstance('stats-github'));
+    appendTextLine('md-h2', 'Connect with me');
+    appendWidgetInstance(mkInstance('social-github'));
+    appendWidgetInstance(mkInstance('social-linkedin'));
 
     ensureTrailingTextLine();
     const first = canvas.querySelector<HTMLElement>('[data-uid]');
@@ -388,12 +401,13 @@ export function useCanvasEditor() {
     dragUidRef.current = null;
   }, [ensureTrailingTextLine]);
 
-  // ---------- adding from the library ----------
-  const addFromLibrary = useCallback(
-    (libId: string) => {
+  // ---------- adding from the library — shared by static presets (looked up
+  // by id from the registry) and custom/community entries (passed in whole,
+  // since they never make it into the static registry) ----------
+  const placeLibraryEntry = useCallback(
+    (lib: LibraryEntry) => {
       const canvas = canvasRef.current;
       if (!canvas) return;
-      const lib = getLibraryEntry(libId);
 
       if (lib.type === 'heading') {
         // Inserted as plain free text, not a tracked widget — becomes exactly
@@ -411,7 +425,7 @@ export function useCanvasEditor() {
         return;
       }
 
-      const instance = mkInstance(libId);
+      const instance = mkInstanceFromEntry(lib);
       const el = widgetHTMLContainer(instance);
       canvas.appendChild(el);
       const root = createRoot(el);
@@ -426,6 +440,9 @@ export function useCanvasEditor() {
     },
     [ensureTrailingTextLine, renderWidgetRoot, selectTextBlock, selectWidget, widgetHTMLContainer],
   );
+
+  const addFromLibrary = useCallback((libId: string) => placeLibraryEntry(getLibraryEntry(libId)), [placeLibraryEntry]);
+  const addCustomEntry = useCallback((entry: LibraryEntry) => placeLibraryEntry(entry), [placeLibraryEntry]);
 
   // ---------- editing the selected widget ----------
   const getSelectedWidget = useCallback((): WidgetInstance | null => {
@@ -477,6 +494,54 @@ export function useCanvasEditor() {
 
   // ---------- markdown export ----------
   // Walks the live DOM (not a JS array) since free text only exists there.
+  // ---------- serialize / restore (Save feature) ----------
+  const serializeCanvas = useCallback((): SerializedBlock[] => {
+    const canvas = canvasRef.current;
+    if (!canvas) return [];
+    const blocks: SerializedBlock[] = [];
+    Array.from(canvas.children).forEach((child) => {
+      const el = child as HTMLElement;
+      const uid = el.dataset.uid;
+      if (uid) {
+        const record = widgetsRef.current.get(uid);
+        if (!record) return;
+        const { libId, type, name, settings, meta } = record.instance;
+        blocks.push({ kind: 'widget', libId, type, name, settings, meta });
+        return;
+      }
+      if (el.innerHTML.trim() === '') return; // skip the empty trailing line
+      blocks.push({ kind: 'text', className: el.className as SerializedTextBlock['className'], html: el.innerHTML });
+    });
+    return blocks;
+  }, []);
+
+  const loadFromBlocks = useCallback(
+    (blocks: SerializedBlock[]) => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      widgetsRef.current.forEach((record) => record.root.unmount());
+      widgetsRef.current.clear();
+      canvas.innerHTML = '';
+      blocks.forEach((block) => {
+        if (block.kind === 'text') {
+          appendTextLine(block.className, block.html);
+        } else {
+          appendWidgetInstance({
+            uid: nextUid(),
+            libId: block.libId,
+            type: block.type,
+            name: block.name,
+            settings: block.settings,
+            meta: block.meta,
+          });
+        }
+      });
+      ensureTrailingTextLine();
+      clearSelection();
+    },
+    [appendTextLine, appendWidgetInstance, ensureTrailingTextLine, clearSelection],
+  );
+
   const buildFullMarkdown = useCallback((): string => {
     const canvas = canvasRef.current;
     if (!canvas) return '';
@@ -530,12 +595,15 @@ export function useCanvasEditor() {
     selectedTextEl,
     getSelectedWidget,
     addFromLibrary,
+    addCustomEntry,
     updateSelectedWidgetSettings,
     removeSelectedWidget,
     setSelectedTextValue,
     setSelectedTextLevel,
     clearSelection,
     buildFullMarkdown,
+    serializeCanvas,
+    loadFromBlocks,
     canvasHandlers: {
       onClick: handleClick,
       onInput: handleInput,

@@ -12,6 +12,7 @@ const TYPE_LABELS: Record<string, string> = {
   social: 'Social Link',
   heading: 'Heading / Text',
   divider: 'Divider',
+  'url-component': 'Component',
 };
 
 const LEVEL_OPTIONS: { value: HeadingLevel; label: string }[] = [

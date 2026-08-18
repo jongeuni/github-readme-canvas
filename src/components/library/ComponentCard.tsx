@@ -16,6 +16,8 @@ export function ComponentCard({
   onToggleExpand,
   onToggleFavorite,
   onUse,
+  onRemove,
+  onSubmitPr,
 }: {
   entry: LibraryEntry;
   expanded: boolean;
@@ -23,6 +25,10 @@ export function ComponentCard({
   onToggleExpand: () => void;
   onToggleFavorite: () => void;
   onUse: () => void;
+  /** Present only for locally-added custom components — lets them be deleted from the library. */
+  onRemove?: () => void;
+  /** Present only for locally-added custom components — proposes it to the project via PR. */
+  onSubmitPr?: () => void;
 }) {
   const def = getComponentType(entry.type);
   const usage = useMemo(() => def.toMarkdown(entry.defaultSettings, entry.meta), [def, entry.defaultSettings, entry.meta]);
@@ -44,6 +50,19 @@ export function ComponentCard({
           >
             <Icon name="star" />
           </button>
+          {onRemove && (
+            <button
+              type="button"
+              className="fav-btn"
+              title="컴포넌트 삭제"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (window.confirm(`"${entry.name}"을(를) 라이브러리에서 삭제할까요?`)) onRemove();
+              }}
+            >
+              <Icon name="trash" />
+            </button>
+          )}
         </div>
         <div className="comp-card-desc">{entry.description}</div>
         <div className="comp-card-tags">
@@ -84,6 +103,20 @@ export function ComponentCard({
           >
             Use Component
           </button>
+          {onSubmitPr && (
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              style={{ width: '100%', marginTop: 6 }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onSubmitPr();
+              }}
+            >
+              <Icon name="github" />
+              GitHub에 PR로 올리기
+            </button>
+          )}
         </div>
       )}
     </div>
