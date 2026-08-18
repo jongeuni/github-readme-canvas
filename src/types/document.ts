@@ -1,0 +1,27 @@
+/** One free-text line (heading or paragraph) as it sits in the canvas DOM. */
+export interface SerializedTextBlock {
+  kind: 'text';
+  className: 'md-h1' | 'md-h2' | 'md-text';
+  /** innerHTML, not textContent — preserves Shift+Enter <br> soft breaks. */
+  html: string;
+}
+
+/** One placed widget instance (badge / tech-icon / stats / social / divider). */
+export interface SerializedWidgetBlock {
+  kind: 'widget';
+  libId: string;
+  type: string;
+  name: string;
+  settings: Record<string, unknown>;
+  meta?: Record<string, unknown>;
+}
+
+export type SerializedBlock = SerializedTextBlock | SerializedWidgetBlock;
+
+/** A named README draft saved to localStorage. */
+export interface SavedDocument {
+  id: string;
+  name: string;
+  savedAt: string;
+  blocks: SerializedBlock[];
+}
