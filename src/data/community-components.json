@@ -1,1 +1,373 @@
-[]
+[
+  {
+    "id": "stats-github-streak",
+    "type": "url-component",
+    "name": "GitHub Streak Stats",
+    "description": "Shows current and longest GitHub contribution streak. GitHub Only — reads commit history from the GitHub API, so it only works for GitHub accounts.",
+    "category": "Stats",
+    "tags": ["Stats", "Card", "GitHub Only"],
+    "defaultSettings": { "username": "octocat", "theme": "default" },
+    "meta": {
+      "urlTemplate": "https://streak-stats.demolab.com?user={username}&theme={theme}&hide_border=true",
+      "linkable": false,
+      "fields": [
+        { "key": "username", "label": "GitHub Username", "type": "text" },
+        {
+          "key": "theme",
+          "label": "Theme",
+          "type": "select",
+          "options": [
+            { "value": "default", "label": "Default" },
+            { "value": "dark", "label": "Dark" },
+            { "value": "radical", "label": "Radical" },
+            { "value": "merko", "label": "Merko" },
+            { "value": "gruvbox", "label": "Gruvbox" },
+            { "value": "tokyonight", "label": "Tokyo Night" }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "stats-github-trophy",
+    "type": "url-component",
+    "name": "GitHub Profile Trophy",
+    "description": "A row of trophies for stars, commits, PRs, and more. GitHub Only — computed from your GitHub activity via the GitHub API.",
+    "category": "Stats",
+    "tags": ["Stats", "Card", "GitHub Only"],
+    "defaultSettings": { "username": "octocat", "theme": "flat" },
+    "meta": {
+      "urlTemplate": "https://github-profile-trophy.vercel.app/?username={username}&theme={theme}&row=1&column=6",
+      "linkable": false,
+      "fields": [
+        { "key": "username", "label": "GitHub Username", "type": "text" },
+        {
+          "key": "theme",
+          "label": "Theme",
+          "type": "select",
+          "options": [
+            { "value": "flat", "label": "Flat" },
+            { "value": "onedark", "label": "One Dark" },
+            { "value": "dracula", "label": "Dracula" },
+            { "value": "monokai", "label": "Monokai" },
+            { "value": "radical", "label": "Radical" }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "stats-top-langs",
+    "type": "url-component",
+    "name": "Top Languages Card",
+    "description": "A compact card ranking your most-used languages. GitHub Only — computed from your GitHub repositories via the GitHub API.",
+    "category": "Stats",
+    "tags": ["Stats", "Card", "Languages", "GitHub Only"],
+    "defaultSettings": { "username": "octocat", "theme": "default" },
+    "meta": {
+      "urlTemplate": "https://github-readme-stats.vercel.app/api/top-langs/?username={username}&layout=compact&theme={theme}",
+      "linkable": false,
+      "fields": [
+        { "key": "username", "label": "GitHub Username", "type": "text" },
+        {
+          "key": "theme",
+          "label": "Theme",
+          "type": "select",
+          "options": [
+            { "value": "default", "label": "Default" },
+            { "value": "dark", "label": "Dark" },
+            { "value": "radical", "label": "Radical" },
+            { "value": "merko", "label": "Merko" }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "stats-profile-views",
+    "type": "url-component",
+    "name": "Profile Views Counter",
+    "description": "A badge that counts and displays how many times your README has been viewed. Works anywhere — it just counts image loads, not GitHub-specific.",
+    "category": "Stats",
+    "tags": ["Stats", "Badge"],
+    "defaultSettings": { "username": "alex123", "label": "Profile views", "color": "blue" },
+    "meta": {
+      "urlTemplate": "https://komarev.com/ghpvc/?username={username}&label={label}&color={color}&style=flat",
+      "linkable": false,
+      "fields": [
+        { "key": "username", "label": "Username / Key", "type": "text" },
+        { "key": "label", "label": "Label Text", "type": "text" },
+        {
+          "key": "color",
+          "label": "Color",
+          "type": "select",
+          "options": [
+            { "value": "blue", "label": "Blue", "swatch": "#2563eb" },
+            { "value": "green", "label": "Green", "swatch": "#22c55e" },
+            { "value": "red", "label": "Red", "swatch": "#ef4444" },
+            { "value": "orange", "label": "Orange", "swatch": "#f97316" },
+            { "value": "blueviolet", "label": "Blue Violet", "swatch": "#8a2be2" },
+            { "value": "grey", "label": "Grey", "swatch": "#6b7280" }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "stats-wakatime",
+    "type": "url-component",
+    "name": "WakaTime Weekly Stats",
+    "description": "A card of your weekly coding activity by language. Needs a public WakaTime profile — the data source is WakaTime, not GitHub.",
+    "category": "Stats",
+    "tags": ["Stats", "Card"],
+    "defaultSettings": { "wakatimeUsername": "alex123", "theme": "default" },
+    "meta": {
+      "urlTemplate": "https://github-readme-stats.vercel.app/api/wakatime?username={wakatimeUsername}&theme={theme}",
+      "linkable": false,
+      "fields": [
+        { "key": "wakatimeUsername", "label": "WakaTime Username", "type": "text" },
+        {
+          "key": "theme",
+          "label": "Theme",
+          "type": "select",
+          "options": [
+            { "value": "default", "label": "Default" },
+            { "value": "dark", "label": "Dark" },
+            { "value": "radical", "label": "Radical" },
+            { "value": "merko", "label": "Merko" }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "stats-github-stars",
+    "type": "url-component",
+    "name": "GitHub Repo Stars",
+    "description": "A live star-count badge for a repository. GitHub Only — the star count comes from the GitHub API, so it only works for GitHub repos.",
+    "category": "Stats",
+    "tags": ["Stats", "Badge", "GitHub Only"],
+    "defaultSettings": { "owner": "octocat", "repo": "Hello-World", "link": "" },
+    "meta": {
+      "urlTemplate": "https://img.shields.io/github/stars/{owner}/{repo}?style=social",
+      "linkable": true,
+      "fields": [
+        { "key": "owner", "label": "Repo Owner", "type": "text" },
+        { "key": "repo", "label": "Repo Name", "type": "text" }
+      ]
+    }
+  },
+  {
+    "id": "stats-github-forks",
+    "type": "url-component",
+    "name": "GitHub Repo Forks",
+    "description": "A live fork-count badge for a repository. GitHub Only — the fork count comes from the GitHub API, so it only works for GitHub repos.",
+    "category": "Stats",
+    "tags": ["Stats", "Badge", "GitHub Only"],
+    "defaultSettings": { "owner": "octocat", "repo": "Hello-World", "link": "" },
+    "meta": {
+      "urlTemplate": "https://img.shields.io/github/forks/{owner}/{repo}?style=social",
+      "linkable": true,
+      "fields": [
+        { "key": "owner", "label": "Repo Owner", "type": "text" },
+        { "key": "repo", "label": "Repo Name", "type": "text" }
+      ]
+    }
+  },
+  {
+    "id": "social-github-followers",
+    "type": "url-component",
+    "name": "GitHub Followers",
+    "description": "A live follower-count badge for a GitHub account. GitHub Only — the follower count comes from the GitHub API.",
+    "category": "Social",
+    "tags": ["Social", "Badge", "GitHub Only"],
+    "defaultSettings": { "username": "octocat", "link": "" },
+    "meta": {
+      "urlTemplate": "https://img.shields.io/github/followers/{username}?label=Follow&style=social",
+      "linkable": true,
+      "fields": [{ "key": "username", "label": "GitHub Username", "type": "text" }]
+    }
+  },
+  {
+    "id": "social-discord",
+    "type": "url-component",
+    "name": "Discord Server",
+    "description": "A live member-count badge linking to a Discord server invite. Not GitHub-specific — data comes from Discord's own API.",
+    "category": "Social",
+    "tags": ["Social", "Badge"],
+    "defaultSettings": { "serverId": "81384788765712384", "link": "" },
+    "meta": {
+      "urlTemplate": "https://img.shields.io/discord/{serverId}?label=Discord&logo=discord&logoColor=white&color=5865F2",
+      "linkable": true,
+      "fields": [{ "key": "serverId", "label": "Discord Server ID", "type": "text" }]
+    }
+  },
+  {
+    "id": "social-buymeacoffee",
+    "type": "url-component",
+    "name": "Buy Me a Coffee",
+    "description": "A support-me badge linking to your Buy Me a Coffee page. Not GitHub-specific.",
+    "category": "Social",
+    "tags": ["Social", "Badge"],
+    "defaultSettings": { "username": "alex123", "link": "" },
+    "meta": {
+      "urlTemplate": "https://img.shields.io/badge/Buy%20Me%20a%20Coffee-{username}-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black",
+      "linkable": true,
+      "fields": [{ "key": "username", "label": "Buy Me a Coffee Username", "type": "text" }]
+    }
+  },
+  {
+    "id": "social-devto",
+    "type": "url-component",
+    "name": "Dev.to",
+    "description": "Link to your dev.to blog profile. Not GitHub-specific.",
+    "category": "Social",
+    "tags": ["Social", "Badge"],
+    "defaultSettings": { "username": "alex123", "link": "" },
+    "meta": {
+      "urlTemplate": "https://img.shields.io/badge/dev.to-{username}-0A0A0A?style=flat&logo=devdotto&logoColor=white",
+      "linkable": true,
+      "fields": [{ "key": "username", "label": "Dev.to Username", "type": "text" }]
+    }
+  },
+  {
+    "id": "social-medium",
+    "type": "url-component",
+    "name": "Medium",
+    "description": "Link to your Medium blog profile. Not GitHub-specific.",
+    "category": "Social",
+    "tags": ["Social", "Badge"],
+    "defaultSettings": { "username": "alex123", "link": "" },
+    "meta": {
+      "urlTemplate": "https://img.shields.io/badge/Medium-{username}-12100E?style=flat&logo=medium&logoColor=white",
+      "linkable": true,
+      "fields": [{ "key": "username", "label": "Medium Username", "type": "text" }]
+    }
+  },
+  {
+    "id": "social-youtube-subs",
+    "type": "url-component",
+    "name": "YouTube Subscribers",
+    "description": "A live subscriber-count badge for a YouTube channel. Not GitHub-specific — data comes from the YouTube API.",
+    "category": "Social",
+    "tags": ["Social", "Badge"],
+    "defaultSettings": { "channelId": "UC_x5XG1OV2P6uZZ5FSM9Ttw", "link": "" },
+    "meta": {
+      "urlTemplate": "https://img.shields.io/youtube/channel/subscribers/{channelId}?style=flat&logo=youtube&logoColor=white&color=FF0000",
+      "linkable": true,
+      "fields": [{ "key": "channelId", "label": "YouTube Channel ID", "type": "text" }]
+    }
+  },
+  {
+    "id": "tool-github-last-commit",
+    "type": "url-component",
+    "name": "GitHub Last Commit",
+    "description": "Shows how long ago the last commit landed. GitHub Only — the commit timestamp comes from the GitHub API.",
+    "category": "Tools",
+    "tags": ["Tools", "Badge", "GitHub Only"],
+    "defaultSettings": { "owner": "octocat", "repo": "Hello-World" },
+    "meta": {
+      "urlTemplate": "https://img.shields.io/github/last-commit/{owner}/{repo}?style=flat",
+      "linkable": false,
+      "fields": [
+        { "key": "owner", "label": "Repo Owner", "type": "text" },
+        { "key": "repo", "label": "Repo Name", "type": "text" }
+      ]
+    }
+  },
+  {
+    "id": "tool-github-issues",
+    "type": "url-component",
+    "name": "GitHub Open Issues",
+    "description": "Shows the open-issue count for a repository. GitHub Only — the count comes from the GitHub API.",
+    "category": "Tools",
+    "tags": ["Tools", "Badge", "GitHub Only"],
+    "defaultSettings": { "owner": "octocat", "repo": "Hello-World" },
+    "meta": {
+      "urlTemplate": "https://img.shields.io/github/issues/{owner}/{repo}?style=flat",
+      "linkable": false,
+      "fields": [
+        { "key": "owner", "label": "Repo Owner", "type": "text" },
+        { "key": "repo", "label": "Repo Name", "type": "text" }
+      ]
+    }
+  },
+  {
+    "id": "tool-github-license",
+    "type": "url-component",
+    "name": "GitHub License",
+    "description": "Shows a repository's license. GitHub Only — read from the repo's metadata via the GitHub API.",
+    "category": "Tools",
+    "tags": ["Tools", "Badge", "GitHub Only"],
+    "defaultSettings": { "owner": "octocat", "repo": "Hello-World" },
+    "meta": {
+      "urlTemplate": "https://img.shields.io/github/license/{owner}/{repo}?style=flat",
+      "linkable": false,
+      "fields": [
+        { "key": "owner", "label": "Repo Owner", "type": "text" },
+        { "key": "repo", "label": "Repo Name", "type": "text" }
+      ]
+    }
+  },
+  {
+    "id": "tool-github-actions-status",
+    "type": "url-component",
+    "name": "GitHub Actions Status",
+    "description": "Shows the pass/fail status of a GitHub Actions workflow. GitHub Only — requires a workflow file already running in the repo's Actions tab.",
+    "category": "Tools",
+    "tags": ["Tools", "Badge", "GitHub Only"],
+    "defaultSettings": { "owner": "octocat", "repo": "Hello-World", "workflow": "ci.yml" },
+    "meta": {
+      "urlTemplate": "https://img.shields.io/github/actions/workflow/status/{owner}/{repo}/{workflow}?style=flat",
+      "linkable": false,
+      "fields": [
+        { "key": "owner", "label": "Repo Owner", "type": "text" },
+        { "key": "repo", "label": "Repo Name", "type": "text" },
+        { "key": "workflow", "label": "Workflow File (e.g. ci.yml)", "type": "text" }
+      ]
+    }
+  },
+  {
+    "id": "deco-typing-svg",
+    "type": "url-component",
+    "name": "Typing SVG Animation",
+    "description": "An animated typewriter-effect line of text. Works anywhere — it's a self-contained generated SVG, not tied to GitHub.",
+    "category": "Decorations",
+    "tags": ["Decorations", "Animation"],
+    "defaultSettings": { "lines": "Hi there, I'm Alex;Welcome to my GitHub profile!", "color": "36BCF7" },
+    "meta": {
+      "urlTemplate": "https://readme-typing-svg.demolab.com?font=Fira+Code&size=22&pause=1000&center=true&vCenter=true&width=440&color={color}&lines={lines}",
+      "linkable": false,
+      "altTemplate": "Typing animation",
+      "fields": [
+        { "key": "lines", "label": "Lines (separate with ;)", "type": "text" },
+        {
+          "key": "color",
+          "label": "Color",
+          "type": "select",
+          "options": [
+            { "value": "36BCF7", "label": "Blue", "swatch": "#36BCF7" },
+            { "value": "22C55E", "label": "Green", "swatch": "#22C55E" },
+            { "value": "EC4899", "label": "Pink", "swatch": "#EC4899" },
+            { "value": "F59E0B", "label": "Orange", "swatch": "#F59E0B" },
+            { "value": "FFFFFF", "label": "White", "swatch": "#FFFFFF" }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "deco-github-snake",
+    "type": "url-component",
+    "name": "GitHub Contribution Snake",
+    "description": "An animated snake eating your contribution graph. GitHub Only, and needs one-time setup — the Platane/snk GitHub Action must already be publishing this SVG to your profile repo's `output` branch.",
+    "category": "Decorations",
+    "tags": ["Decorations", "Animation", "GitHub Only"],
+    "defaultSettings": { "username": "platane" },
+    "meta": {
+      "urlTemplate": "https://raw.githubusercontent.com/{username}/{username}/output/github-contribution-grid-snake.svg",
+      "linkable": false,
+      "fields": [{ "key": "username", "label": "GitHub Username", "type": "text" }]
+    }
+  }
+]
