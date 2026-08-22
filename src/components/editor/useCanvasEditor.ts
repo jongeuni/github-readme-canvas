@@ -38,6 +38,13 @@ interface WidgetRecord {
 let uidCounter = 1;
 const nextUid = () => 'c' + uidCounter++;
 
+/** A whole line that is exactly `![alt](url)`, optionally link-wrapped as
+ *  `[![alt](url)](link)` — the two shapes toMarkdown produces for images.
+ *  Matched against a line's full trimmed text, same live-conversion idea as
+ *  the "# " -> heading rule below. */
+const IMAGE_LINE_RE = /^!\[([^\]]*)\]\((\S+)\)$/;
+const LINKED_IMAGE_LINE_RE = /^\[!\[([^\]]*)\]\((\S+)\)\]\((\S+)\)$/;
+
 function mkInstanceFromEntry(lib: LibraryEntry, overrides?: Record<string, unknown>): WidgetInstance {
   return {
     uid: nextUid(),
@@ -248,6 +255,41 @@ export function useCanvasEditor() {
     return el as HTMLElement;
   };
 
+  // ---------- typing/pasting a whole "![alt](url)" (optionally link-wrapped)
+  // line converts it live into a real image widget, same as any other README
+  // — so pasting a snippet straight from a README (or from this app's own
+  // "Copy" usage output) renders as a component instead of sitting there as
+  // inert text. Mirrors the "# " -> heading rule just below. ----------
+  const convertLineToImageWidget = (el: HTMLElement, alt: string, url: string, link?: string) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const linkable = link !== undefined;
+    const instance: WidgetInstance = {
+      uid: nextUid(),
+      libId: 'inline-image',
+      type: 'url-component',
+      name: alt || 'Image',
+      settings: linkable ? { link } : {},
+      // No {field} placeholders in the template, so fillUrlTemplate/toMarkdown
+      // hand the original url/alt straight back through unchanged.
+      meta: { urlTemplate: url, fields: [], linkable, altTemplate: alt || 'image' },
+    };
+    const widgetEl = widgetHTMLContainer(instance);
+    canvas.insertBefore(widgetEl, el);
+    el.remove();
+    const root = createRoot(widgetEl);
+    const record: WidgetRecord = { instance, el: widgetEl, root };
+    widgetsRef.current.set(instance.uid, record);
+    renderWidgetRoot(record);
+
+    const newLine = document.createElement('div');
+    newLine.className = 'md-text';
+    widgetEl.insertAdjacentElement('afterend', newLine);
+    ensureTrailingTextLine();
+    placeCaretAtStart(newLine);
+    selectTextBlock(newLine);
+  };
+
   // ---------- "# " / "## " live heading conversion + keep Settings in sync ----------
   const handleInput = useCallback((_e: FormEvent<HTMLDivElement>) => {
     const el = currentTextLine();
@@ -262,8 +304,24 @@ export function useCanvasEditor() {
       el.className = h2 ? 'md-h2' : 'md-h1';
       el.textContent = text.replace(/^#{1,2}\s/, '');
       placeCaretAtEnd(el);
+      if (selectedTextEl === el) bump();
+      return;
     }
+
+    const trimmed = text.trim();
+    const linkedImg = LINKED_IMAGE_LINE_RE.exec(trimmed);
+    const plainImg = !linkedImg && IMAGE_LINE_RE.exec(trimmed);
+    if (linkedImg) {
+      convertLineToImageWidget(el, linkedImg[1], linkedImg[2], linkedImg[3]);
+      return;
+    }
+    if (plainImg) {
+      convertLineToImageWidget(el, plainImg[1], plainImg[2]);
+      return;
+    }
+
     if (selectedTextEl === el) bump(); // let SettingsPanel re-read the live text/level
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedTextEl]);
 
   // ---------- Enter: always start a fresh paragraph below, splitting at the
