@@ -639,6 +639,15 @@ pre {
   color: var(--text-3);
   font-weight: 400;
 }
+/* A truly empty line (no placeholder text either) has no inline content at
+   all, so the browser collapses its line box to ~0 height — happens right
+   after pressing Enter, or after a line converts into a widget. A
+   zero-width space in ::after gives every empty line a real inline box at
+   that class's own font metrics, so it holds full line height like any
+   other line, without being visible or affecting :empty matching. */
+.canvas-paper[contenteditable] > div:empty:not([data-placeholder])::after {
+  content: '\200b';
+}
 .canvas-paper[contenteditable] > div.text-selected {
   background: var(--accent-bg);
   position: relative;
