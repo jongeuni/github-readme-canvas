@@ -357,8 +357,29 @@ export function useCanvasEditor() {
   // CONFIRMS a composition, so that one is left entirely to the browser's
   // own composition-safe handling. The MutationObserver above is the
   // safety net if that native split inherits a heading class.
+  const removeSelectedWidget = useCallback(() => {
+    if (!selectedUid) return;
+    const record = widgetsRef.current.get(selectedUid);
+    if (!record) return;
+    record.root.unmount();
+    record.el.remove();
+    widgetsRef.current.delete(selectedUid);
+    setSelectedUid(null);
+    ensureTrailingTextLine();
+  }, [selectedUid, ensureTrailingTextLine]);
+
   const handleKeyDown = useCallback(
     (e: KeyboardEvent<HTMLDivElement>) => {
+      // A selected widget is contentEditable=false, so clicking it never
+      // moves the browser's real caret — it just stays wherever it last
+      // was (often the trailing line). Without this, Backspace/Delete with
+      // a widget selected silently edits that stale caret spot instead of
+      // removing the widget the user is actually looking at.
+      if ((e.key === 'Backspace' || e.key === 'Delete') && selectedUid) {
+        e.preventDefault();
+        removeSelectedWidget();
+        return;
+      }
       if (e.key !== 'Enter' || e.shiftKey || e.nativeEvent.isComposing) return;
       const el = currentTextLine();
       if (!el) return;
@@ -366,7 +387,7 @@ export function useCanvasEditor() {
       splitLineAtCaret(el);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
+    [selectedUid, removeSelectedWidget],
   );
 
   // Force plain-text paste so pasted content always matches the design
@@ -462,10 +483,27 @@ export function useCanvasEditor() {
   // ---------- adding from the library — shared by static presets (looked up
   // by id from the registry) and custom/community entries (passed in whole,
   // since they never make it into the static registry) ----------
+  // Whatever the user last clicked in the canvas (a text line or a widget)
+  // stays selected even after they click into the Library panel to hit "Use
+  // Component" — clicking there doesn't touch the canvas at all. So it's a
+  // reliable stand-in for "where the cursor is" at insert time, without
+  // depending on the browser's actual (and easily lost) native selection.
+  const getInsertionAnchor = (): HTMLElement | null => {
+    const canvas = canvasRef.current;
+    if (selectedTextEl && selectedTextEl.isConnected && selectedTextEl.parentElement === canvas) return selectedTextEl;
+    if (selectedUid) {
+      const el = widgetsRef.current.get(selectedUid)?.el;
+      if (el?.isConnected) return el;
+    }
+    return null;
+  };
+
   const placeLibraryEntry = useCallback(
     (lib: LibraryEntry) => {
       const canvas = canvasRef.current;
       if (!canvas) return;
+      const anchor = getInsertionAnchor();
+      const insert = (node: HTMLElement) => (anchor ? anchor.insertAdjacentElement('afterend', node) : canvas.appendChild(node));
 
       if (lib.type === 'heading') {
         // Inserted as plain free text, not a tracked widget — becomes exactly
@@ -476,7 +514,7 @@ export function useCanvasEditor() {
         div.className = cls;
         div.textContent = (lib.defaultSettings as { text: string }).text;
         if (cls !== 'md-text') div.dataset.keepClass = '1'; // exempt from the observer's downgrade
-        canvas.appendChild(div);
+        insert(div);
         div.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         placeCaretAtEnd(div);
         selectTextBlock(div);
@@ -485,7 +523,7 @@ export function useCanvasEditor() {
 
       const instance = mkInstanceFromEntry(lib);
       const el = widgetHTMLContainer(instance);
-      canvas.appendChild(el);
+      insert(el);
       const root = createRoot(el);
       const record: WidgetRecord = { instance, el, root };
       widgetsRef.current.set(instance.uid, record);
@@ -496,7 +534,7 @@ export function useCanvasEditor() {
       el.classList.add('flash');
       setTimeout(() => el.classList.remove('flash'), 1000);
     },
-    [ensureTrailingTextLine, renderWidgetRoot, selectTextBlock, selectWidget, widgetHTMLContainer],
+    [ensureTrailingTextLine, renderWidgetRoot, selectTextBlock, selectWidget, selectedTextEl, selectedUid, widgetHTMLContainer],
   );
 
   const addFromLibrary = useCallback((libId: string) => placeLibraryEntry(getLibraryEntry(libId)), [placeLibraryEntry]);
@@ -540,17 +578,6 @@ export function useCanvasEditor() {
     },
     [selectedUid, renderWidgetRoot],
   );
-
-  const removeSelectedWidget = useCallback(() => {
-    if (!selectedUid) return;
-    const record = widgetsRef.current.get(selectedUid);
-    if (!record) return;
-    record.root.unmount();
-    record.el.remove();
-    widgetsRef.current.delete(selectedUid);
-    setSelectedUid(null);
-    ensureTrailingTextLine();
-  }, [selectedUid, ensureTrailingTextLine]);
 
   // ---------- editing the selected text line ----------
   const setSelectedTextValue = useCallback(

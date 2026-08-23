@@ -744,7 +744,8 @@ pre {
   font-size: 11px;
 }
 .url-component-img {
-  height: 20px;
+  max-width: 100%;
+  height: auto;
   vertical-align: middle;
 }
 .stats-card {
