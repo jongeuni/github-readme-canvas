@@ -149,3 +149,19 @@ export async function createPullRequest(
   });
   return { htmlUrl: data.html_url, number: data.number };
 }
+
+/** A pull request IS an issue under GitHub's API (same number, same
+ *  labels/assignees endpoint) — this is the standard way to label/assign
+ *  a freshly-opened PR. */
+export async function setIssueLabelsAndAssignees(
+  token: string,
+  owner: string,
+  repo: string,
+  issueNumber: number,
+  opts: { labels?: string[]; assignees?: string[] },
+): Promise<void> {
+  await ghFetch(token, `/repos/${owner}/${repo}/issues/${issueNumber}`, {
+    method: 'PATCH',
+    body: JSON.stringify(opts),
+  });
+}
