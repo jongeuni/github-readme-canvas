@@ -3,7 +3,7 @@ import { CATEGORIES } from '../../registry';
 import type { ComponentCategory } from '../../types/component';
 import type { LibraryEntry } from '../../types/library';
 import type { UrlFieldDef, UrlFieldOption, UrlFieldType } from '../../types/urlComponent';
-import { detectTemplateFields, fillUrlTemplate } from '../../types/urlComponent';
+import { fillUrlTemplate, parseUrlInput } from '../../types/urlComponent';
 
 interface FieldDraft {
   key: string;
@@ -15,8 +15,8 @@ interface FieldDraft {
 
 const CATEGORY_OPTIONS = CATEGORIES.filter((c) => c !== 'All') as ComponentCategory[];
 
-function defaultFieldDraft(key: string): FieldDraft {
-  return { key, label: key.charAt(0).toUpperCase() + key.slice(1), type: 'text', defaultValue: '', options: [] };
+function defaultFieldDraft(key: string, defaultValue = ''): FieldDraft {
+  return { key, label: key.charAt(0).toUpperCase() + key.slice(1), type: 'text', defaultValue, options: [] };
 }
 
 function fieldPreviewValue(f: FieldDraft): string {
@@ -42,7 +42,10 @@ export function AddComponentModal({
   const [linkDefault, setLinkDefault] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  const detected = useMemo(() => detectTemplateFields(urlTemplate), [urlTemplate]);
+  // Lets people paste a plain, already-working URL (no {} needed) — query
+  // params like ?style=flat&color=blue are auto-detected as fields. Typing
+  // {key} manually still works too, for path segments (.../badge/{owner}).
+  const parsed = useMemo(() => parseUrlInput(urlTemplate), [urlTemplate]);
 
   const reset = () => {
     setStep(1);
@@ -66,11 +69,11 @@ export function AddComponentModal({
       setError('이름을 입력해 주세요.');
       return;
     }
-    if (detected.length === 0) {
-      setError('URL 템플릿에 {필드}가 최소 1개 있어야 해요.');
+    if (parsed.fields.length === 0) {
+      setError('바뀌는 값이 없어요. URL 뒤에 ?style=flat 처럼 값이 있다면 자동으로 필드가 되고, 경로 중간이 바뀐다면 직접 {필드명}으로 감싸주세요.');
       return;
     }
-    setFields(detected.map(defaultFieldDraft));
+    setFields(parsed.fields.map((f) => defaultFieldDraft(f.key, f.defaultValue)));
     setError(null);
     setStep(2);
   };
@@ -95,13 +98,13 @@ export function AddComponentModal({
   };
 
   const previewUrl = useMemo(() => {
-    if (!urlTemplate || fields.length === 0) return '';
+    if (!parsed.template || fields.length === 0) return '';
     const values: Record<string, string> = {};
     fields.forEach((f) => {
       values[f.key] = fieldPreviewValue(f);
     });
-    return fillUrlTemplate(urlTemplate, values);
-  }, [urlTemplate, fields]);
+    return fillUrlTemplate(parsed.template, values);
+  }, [parsed.template, fields]);
 
   const submit = () => {
     for (const f of fields) {
@@ -134,7 +137,7 @@ export function AddComponentModal({
       category,
       tags: [category],
       defaultSettings,
-      meta: { urlTemplate, linkable, fields: fieldDefs },
+      meta: { urlTemplate: parsed.template, linkable, fields: fieldDefs },
     });
     reset();
   };
@@ -173,22 +176,25 @@ export function AddComponentModal({
               />
             </div>
             <div className="field">
-              <label>URL 템플릿</label>
+              <label>URL</label>
               <input
                 type="text"
                 className="mono"
                 value={urlTemplate}
-                placeholder="https://img.shields.io/badge/{label}-{color}?style={style}"
+                placeholder="https://img.shields.io/badge/mylabel-blue?style=flat"
                 onChange={(e) => setUrlTemplate(e.target.value)}
               />
-              <p className="field-hint">{'{중괄호}로 감싼 부분이 그대로 설정 화면의 필드가 돼요'}</p>
+              <p className="field-hint">
+                실제로 열리는 예시 URL을 그대로 붙여넣으세요 — <code>?style=flat</code>처럼 물음표 뒤의 값들은 자동으로 필드가 돼요. 경로 중간의 값(예: 저장소
+                이름)이 바뀌어야 한다면 그 부분만 직접 <code>{'{필드명}'}</code>으로 감싸주세요.
+              </p>
             </div>
-            {detected.length > 0 && (
+            {parsed.fields.length > 0 && (
               <div className="detect-row">
                 <span className="detect-label">감지된 필드</span>
-                {detected.map((k) => (
-                  <span className="field-chip" key={k}>
-                    {k}
+                {parsed.fields.map((f) => (
+                  <span className="field-chip" key={f.key}>
+                    {f.key}
                   </span>
                 ))}
               </div>
