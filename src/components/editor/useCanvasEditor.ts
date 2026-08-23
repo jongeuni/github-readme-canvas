@@ -336,6 +336,135 @@ export function useCanvasEditor() {
     canvas.appendChild(div);
   }, []);
 
+  // ---------- serialize / restore (Save feature, and undo/redo below) ----------
+  const serializeCanvas = useCallback((): SerializedBlock[] => {
+    const canvas = canvasRef.current;
+    if (!canvas) return [];
+    const blocks: SerializedBlock[] = [];
+    Array.from(canvas.children).forEach((child) => {
+      const el = child as HTMLElement;
+      const uid = el.dataset.uid;
+      if (uid) {
+        const record = widgetsRef.current.get(uid);
+        if (!record) return;
+        const { libId, type, name, settings, meta } = record.instance;
+        blocks.push({ kind: 'widget', libId, type, name, settings, meta });
+        return;
+      }
+      if (el.innerHTML.trim() === '') return; // skip the empty trailing line
+      blocks.push({ kind: 'text', className: el.className as SerializedTextBlock['className'], html: el.innerHTML });
+    });
+    return blocks;
+  }, []);
+
+  // Shared by loadFromBlocks (a saved document replacing the canvas outright)
+  // and undo/redo (restoring one of this document's own history snapshots)
+  // below — same DOM rebuild either way, they differ only in what happens to
+  // the undo history itself (reset vs. navigated).
+  const rebuildCanvasFromBlocks = useCallback(
+    (blocks: SerializedBlock[]) => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      widgetsRef.current.forEach((record) => record.root.unmount());
+      widgetsRef.current.clear();
+      canvas.innerHTML = '';
+      blocks.forEach((block) => {
+        if (block.kind === 'text') {
+          appendTextLine(block.className, block.html);
+        } else {
+          appendWidgetInstance({
+            uid: nextUid(),
+            libId: block.libId,
+            type: block.type,
+            name: block.name,
+            settings: block.settings,
+            meta: block.meta,
+          });
+        }
+      });
+      ensureTrailingTextLine();
+      clearSelection();
+    },
+    [appendTextLine, appendWidgetInstance, ensureTrailingTextLine, clearSelection],
+  );
+
+  // ---------- undo/redo ----------
+  // Snapshot-based rather than a from-scratch command/diff stack: this reuses
+  // serializeCanvas/rebuildCanvasFromBlocks (already exercised by Save/Load,
+  // and the only code that already knows how to correctly capture AND
+  // restore widgets — each one its own React root, not just DOM/text). Kept
+  // in refs, not state: history changes on nearly every keystroke, and none
+  // of it needs to trigger a re-render on its own.
+  const HISTORY_LIMIT = 100;
+  const historyRef = useRef<SerializedBlock[][]>([]);
+  const historyIndexRef = useRef(-1);
+  const debouncedPushTimerRef = useRef<number | null>(null);
+
+  const pushHistorySnapshot = useCallback(() => {
+    if (debouncedPushTimerRef.current !== null) {
+      window.clearTimeout(debouncedPushTimerRef.current);
+      debouncedPushTimerRef.current = null;
+    }
+    const snapshot = serializeCanvas();
+    // Dropping anything past the current pointer means an edit made after
+    // undoing discards the "redo" branch — same as every other undo stack.
+    const next = historyRef.current.slice(0, historyIndexRef.current + 1);
+    next.push(snapshot);
+    if (next.length > HISTORY_LIMIT) next.shift();
+    historyRef.current = next;
+    historyIndexRef.current = next.length - 1;
+  }, [serializeCanvas]);
+
+  // For continuous input (typing a line, editing a settings field) — one
+  // snapshot per pause, not one per keystroke.
+  const pushHistorySnapshotDebounced = useCallback(() => {
+    if (debouncedPushTimerRef.current !== null) window.clearTimeout(debouncedPushTimerRef.current);
+    debouncedPushTimerRef.current = window.setTimeout(() => {
+      debouncedPushTimerRef.current = null;
+      pushHistorySnapshot();
+    }, 600);
+  }, [pushHistorySnapshot]);
+
+  const resetHistory = useCallback((blocks: SerializedBlock[]) => {
+    if (debouncedPushTimerRef.current !== null) {
+      window.clearTimeout(debouncedPushTimerRef.current);
+      debouncedPushTimerRef.current = null;
+    }
+    historyRef.current = [blocks];
+    historyIndexRef.current = 0;
+  }, []);
+
+  const undo = useCallback(() => {
+    // A pending debounced snapshot hasn't landed yet — cancel it rather than
+    // let it fire after we've already moved the pointer, which would
+    // silently re-capture the state we're undoing away from.
+    if (debouncedPushTimerRef.current !== null) {
+      window.clearTimeout(debouncedPushTimerRef.current);
+      debouncedPushTimerRef.current = null;
+    }
+    if (historyIndexRef.current <= 0) return;
+    historyIndexRef.current -= 1;
+    rebuildCanvasFromBlocks(historyRef.current[historyIndexRef.current]);
+  }, [rebuildCanvasFromBlocks]);
+
+  const redo = useCallback(() => {
+    if (historyIndexRef.current >= historyRef.current.length - 1) return;
+    historyIndexRef.current += 1;
+    rebuildCanvasFromBlocks(historyRef.current[historyIndexRef.current]);
+  }, [rebuildCanvasFromBlocks]);
+
+  const loadFromBlocks = useCallback(
+    (blocks: SerializedBlock[]) => {
+      rebuildCanvasFromBlocks(blocks);
+      // Loading a different saved document is a fresh editing session, not
+      // one more step in the document that was on the canvas before it —
+      // undoing back into an unrelated document would be more confusing
+      // than useful, so it gets its own history instead of inheriting one.
+      resetHistory(blocks);
+    },
+    [rebuildCanvasFromBlocks, resetHistory],
+  );
+
   // ---------- initial mount ----------
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -358,6 +487,7 @@ export function useCanvasEditor() {
     ensureTrailingTextLine();
     const first = canvas.querySelector<HTMLElement>('[data-uid]');
     if (first?.dataset.uid) selectWidget(first.dataset.uid);
+    resetHistory(serializeCanvas()); // seed the undo stack with the starting doc
 
     // Safety net: any brand-new top-level line should default to plain
     // paragraph style, never inherit a heading/quote/list line's style.
@@ -384,6 +514,21 @@ export function useCanvasEditor() {
     return () => observer.disconnect();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Global (not just on the canvas) so Cmd/Ctrl+Z undoes a widget delete or
+  // a Settings-panel edit the same way it undoes typed text — one history,
+  // regardless of which element currently has focus. Takes over from
+  // whatever native per-field undo the browser would otherwise do.
+  useEffect(() => {
+    const onKeyDown = (e: globalThis.KeyboardEvent) => {
+      if (!(e.metaKey || e.ctrlKey) || e.key.toLowerCase() !== 'z') return;
+      e.preventDefault();
+      if (e.shiftKey) redo();
+      else undo();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [undo, redo]);
 
   // ---------- caret helpers ----------
   const placeCaretAtEnd = (el: HTMLElement) => {
@@ -623,13 +768,23 @@ export function useCanvasEditor() {
       setSelectionToolbar(null);
       const line = currentTextLine();
       if (line && selectedTextEl === line) bump();
+      pushHistorySnapshot();
     },
-    [selectedTextEl],
+    [selectedTextEl, pushHistorySnapshot],
   );
 
   // ---------- "# " / "## " live heading conversion + keep Settings in sync ----------
-  const handleInput = useCallback((_e: FormEvent<HTMLDivElement>) => {
+  const handleInput = useCallback((e: FormEvent<HTMLDivElement>) => {
+    // A task checkbox's native 'input' event (fired when it's toggled)
+    // bubbles up into this handler same as a real text edit would — it
+    // isn't one, and handleClick's checkbox branch already pushes its own
+    // history snapshot, so this would otherwise double up on that entry.
+    if ((e.target as HTMLElement).tagName === 'INPUT') return;
     setSelectionToolbar(null); // typing collapses whatever selection the toolbar was anchored to
+    // Debounced: fires 600ms after typing settles, not once per keystroke.
+    // Placed early so every branch below (heading/list/task/image/hr/code-
+    // fence/table conversions, plain typing) is covered by one call.
+    pushHistorySnapshotDebounced();
     const el = currentTextLine();
     if (!el) return;
     if (!CUSTOM_LINE_CLASSES.concat('md-text').some((cls) => el.classList.contains(cls))) {
@@ -745,7 +900,8 @@ export function useCanvasEditor() {
     widgetsRef.current.delete(selectedUid);
     setSelectedUid(null);
     ensureTrailingTextLine();
-  }, [selectedUid, ensureTrailingTextLine]);
+    pushHistorySnapshot();
+  }, [selectedUid, ensureTrailingTextLine, pushHistorySnapshot]);
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent<HTMLDivElement>) => {
@@ -790,6 +946,7 @@ export function useCanvasEditor() {
       if (checkbox?.parentElement?.classList.contains('md-task')) {
         if (checkbox.checked) checkbox.setAttribute('checked', '');
         else checkbox.removeAttribute('checked');
+        pushHistorySnapshot();
         return;
       }
       const widgetEl = (e.target as HTMLElement).closest<HTMLElement>('[data-uid]');
@@ -802,7 +959,7 @@ export function useCanvasEditor() {
       while (el && el.parentElement !== canvas) el = el.parentElement;
       if (el && el.parentElement === canvas && !el.dataset.uid) selectTextBlock(el);
     },
-    [selectWidget, selectTextBlock],
+    [selectWidget, selectTextBlock, pushHistorySnapshot],
   );
 
   // ---------- drag-and-drop widget reordering ----------
@@ -864,10 +1021,11 @@ export function useCanvasEditor() {
         canvas.appendChild(draggedEl); // dropped below/beyond all content — move to the end
       }
       ensureTrailingTextLine();
+      pushHistorySnapshot();
     }
     clearDropIndicators();
     dragUidRef.current = null;
-  }, [ensureTrailingTextLine]);
+  }, [ensureTrailingTextLine, pushHistorySnapshot]);
 
   // ---------- adding from the library — shared by static presets (looked up
   // by id from the registry) and custom/community entries (passed in whole,
@@ -907,6 +1065,7 @@ export function useCanvasEditor() {
         div.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         placeCaretAtEnd(div);
         selectTextBlock(div);
+        pushHistorySnapshot();
         return;
       }
 
@@ -922,8 +1081,9 @@ export function useCanvasEditor() {
       el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       el.classList.add('flash');
       setTimeout(() => el.classList.remove('flash'), 1000);
+      pushHistorySnapshot();
     },
-    [ensureTrailingTextLine, renderWidgetRoot, selectTextBlock, selectWidget, selectedTextEl, selectedUid, widgetHTMLContainer],
+    [ensureTrailingTextLine, renderWidgetRoot, selectTextBlock, selectWidget, selectedTextEl, selectedUid, widgetHTMLContainer, pushHistorySnapshot],
   );
 
   const addFromLibrary = useCallback((libId: string) => placeLibraryEntry(getLibraryEntry(libId)), [placeLibraryEntry]);
@@ -943,8 +1103,9 @@ export function useCanvasEditor() {
       record.instance.settings = { ...record.instance.settings, ...patch };
       renderWidgetRoot(record);
       bump();
+      pushHistorySnapshotDebounced(); // settings-form fields fire onChange per keystroke
     },
-    [selectedUid, renderWidgetRoot],
+    [selectedUid, renderWidgetRoot, pushHistorySnapshotDebounced],
   );
 
   // Swaps the placed widget to a sibling Preset (see SettingsPanel's generic
@@ -964,8 +1125,9 @@ export function useCanvasEditor() {
       if (preset.meta) record.instance.meta = { ...record.instance.meta, ...preset.meta };
       renderWidgetRoot(record);
       bump();
+      pushHistorySnapshot();
     },
-    [selectedUid, renderWidgetRoot],
+    [selectedUid, renderWidgetRoot, pushHistorySnapshot],
   );
 
   // ---------- editing the selected text line ----------
@@ -982,8 +1144,9 @@ export function useCanvasEditor() {
         selectedTextEl.textContent = text;
       }
       bump();
+      pushHistorySnapshotDebounced(); // the Text field fires onChange per keystroke
     },
-    [selectedTextEl],
+    [selectedTextEl, pushHistorySnapshotDebounced],
   );
 
   const setSelectedTextLevel = useCallback(
@@ -999,60 +1162,13 @@ export function useCanvasEditor() {
         selectedTextEl.className = STYLE_CLASS[style];
       }
       bump();
+      pushHistorySnapshot();
     },
-    [selectedTextEl],
+    [selectedTextEl, pushHistorySnapshot],
   );
 
   // ---------- markdown export ----------
   // Walks the live DOM (not a JS array) since free text only exists there.
-  // ---------- serialize / restore (Save feature) ----------
-  const serializeCanvas = useCallback((): SerializedBlock[] => {
-    const canvas = canvasRef.current;
-    if (!canvas) return [];
-    const blocks: SerializedBlock[] = [];
-    Array.from(canvas.children).forEach((child) => {
-      const el = child as HTMLElement;
-      const uid = el.dataset.uid;
-      if (uid) {
-        const record = widgetsRef.current.get(uid);
-        if (!record) return;
-        const { libId, type, name, settings, meta } = record.instance;
-        blocks.push({ kind: 'widget', libId, type, name, settings, meta });
-        return;
-      }
-      if (el.innerHTML.trim() === '') return; // skip the empty trailing line
-      blocks.push({ kind: 'text', className: el.className as SerializedTextBlock['className'], html: el.innerHTML });
-    });
-    return blocks;
-  }, []);
-
-  const loadFromBlocks = useCallback(
-    (blocks: SerializedBlock[]) => {
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-      widgetsRef.current.forEach((record) => record.root.unmount());
-      widgetsRef.current.clear();
-      canvas.innerHTML = '';
-      blocks.forEach((block) => {
-        if (block.kind === 'text') {
-          appendTextLine(block.className, block.html);
-        } else {
-          appendWidgetInstance({
-            uid: nextUid(),
-            libId: block.libId,
-            type: block.type,
-            name: block.name,
-            settings: block.settings,
-            meta: block.meta,
-          });
-        }
-      });
-      ensureTrailingTextLine();
-      clearSelection();
-    },
-    [appendTextLine, appendWidgetInstance, ensureTrailingTextLine, clearSelection],
-  );
-
   const buildFullMarkdown = useCallback((): string => {
     const canvas = canvasRef.current;
     if (!canvas) return '';
@@ -1124,6 +1240,8 @@ export function useCanvasEditor() {
     buildFullMarkdown,
     serializeCanvas,
     loadFromBlocks,
+    undo,
+    redo,
     canvasHandlers: {
       onClick: handleClick,
       onInput: handleInput,
