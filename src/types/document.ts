@@ -25,3 +25,14 @@ export interface SavedDocument {
   savedAt: string;
   blocks: SerializedBlock[];
 }
+
+/** A whole-document starting point offered from the Templates picker — same
+ *  shape a saved document's content takes (SerializedBlock[]), just static
+ *  data instead of something the user saved. Replaces the canvas outright
+ *  via editor.loadFromBlocks, same call the "Load" picker already makes. */
+export interface Template {
+  id: string;
+  name: string;
+  description: string;
+  blocks: SerializedBlock[];
+}

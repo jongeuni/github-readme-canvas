@@ -7,7 +7,8 @@ import { useCanvasEditor } from './components/editor/useCanvasEditor';
 import { useSavedDocuments } from './hooks/useSavedDocuments';
 import { SaveMenu } from './components/save/SaveMenu';
 import { SaveAsModal } from './components/save/SaveAsModal';
-import type { SavedDocument } from './types/document';
+import { TemplatesMenu } from './components/templates/TemplatesMenu';
+import type { SavedDocument, Template } from './types/document';
 import { useCustomComponents } from './hooks/useCustomComponents';
 import { AddComponentModal } from './components/library/AddComponentModal';
 import { useGitHubAuth } from './hooks/useGitHubAuth';
@@ -60,6 +61,17 @@ function App() {
       editor.loadFromBlocks(doc.blocks);
       setActiveDoc({ id: doc.id, name: doc.name });
       showToast('Loaded');
+    },
+    [editor, showToast],
+  );
+
+  const handleUseTemplate = useCallback(
+    (template: Template) => {
+      editor.loadFromBlocks(template.blocks);
+      // The canvas no longer matches whatever saved doc was active (if any)
+      // — same reasoning as starting a brand-new unsaved document.
+      setActiveDoc(null);
+      showToast(`Loaded "${template.name}" template`);
     },
     [editor, showToast],
   );
@@ -205,6 +217,7 @@ function App() {
                 Connect GitHub
               </button>
             )}
+            <TemplatesMenu onUse={handleUseTemplate} />
             <SaveMenu
               documents={documents.documents}
               activeDocId={activeDoc?.id ?? null}

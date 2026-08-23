@@ -53,6 +53,11 @@ export function IconSprite() {
       <symbol id="i-chevron-down" viewBox="0 0 20 20">
         <polyline points="5,8 10,13 15,8" />
       </symbol>
+      <symbol id="i-layout" viewBox="0 0 20 20">
+        <rect x="3" y="3" width="14" height="14" rx="1.5" />
+        <line x1="3" y1="7.5" x2="17" y2="7.5" />
+        <line x1="8" y1="7.5" x2="8" y2="17" />
+      </symbol>
     </svg>
   );
 }

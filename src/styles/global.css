@@ -1402,6 +1402,34 @@ a.icon-btn {
   width: 13px;
   height: 13px;
 }
+.templates-menu {
+  position: relative;
+}
+.templates-popover {
+  width: 320px;
+}
+.template-row {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+}
+.template-row:last-child {
+  border-bottom: none;
+}
+.template-row:hover {
+  background: var(--accent-bg);
+}
+.template-row-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-1);
+}
+.template-row-desc {
+  font-size: 11.5px;
+  color: var(--text-2);
+  margin-top: 2px;
+  line-height: 1.4;
+}
 
 /* ================= MODAL (Save As) ================= */
 .modal-overlay {
