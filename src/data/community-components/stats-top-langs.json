@@ -1,0 +1,51 @@
+{
+  "id": "stats-top-langs",
+  "type": "url-component",
+  "name": "Top Languages Card",
+  "description": "A compact card ranking your most-used languages. GitHub Only — computed from your GitHub repositories via the GitHub API.",
+  "category": "Stats",
+  "tags": [
+    "Stats",
+    "Card",
+    "Languages",
+    "GitHub Only"
+  ],
+  "defaultSettings": {
+    "username": "octocat",
+    "theme": "default"
+  },
+  "meta": {
+    "urlTemplate": "https://github-readme-stats.vercel.app/api/top-langs/?username={username}&layout=compact&theme={theme}",
+    "linkable": false,
+    "fields": [
+      {
+        "key": "username",
+        "label": "GitHub Username",
+        "type": "text"
+      },
+      {
+        "key": "theme",
+        "label": "Theme",
+        "type": "select",
+        "options": [
+          {
+            "value": "default",
+            "label": "Default"
+          },
+          {
+            "value": "dark",
+            "label": "Dark"
+          },
+          {
+            "value": "radical",
+            "label": "Radical"
+          },
+          {
+            "value": "merko",
+            "label": "Merko"
+          }
+        ]
+      }
+    ]
+  }
+}

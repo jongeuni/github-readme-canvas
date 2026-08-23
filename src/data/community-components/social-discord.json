@@ -1,0 +1,26 @@
+{
+  "id": "social-discord",
+  "type": "url-component",
+  "name": "Discord Server",
+  "description": "A live member-count badge linking to a Discord server invite. Not GitHub-specific — data comes from Discord's own API.",
+  "category": "Social",
+  "tags": [
+    "Social",
+    "Badge"
+  ],
+  "defaultSettings": {
+    "serverId": "81384788765712384",
+    "link": ""
+  },
+  "meta": {
+    "urlTemplate": "https://img.shields.io/discord/{serverId}?label=Discord&logo=discord&logoColor=white&color=5865F2",
+    "linkable": true,
+    "fields": [
+      {
+        "key": "serverId",
+        "label": "Discord Server ID",
+        "type": "text"
+      }
+    ]
+  }
+}

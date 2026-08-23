@@ -1,0 +1,33 @@
+{
+  "id": "stats-github-stars",
+  "type": "url-component",
+  "name": "GitHub Repo Stars",
+  "description": "A live star-count badge for a repository. GitHub Only — the star count comes from the GitHub API, so it only works for GitHub repos.",
+  "category": "Stats",
+  "tags": [
+    "Stats",
+    "Badge",
+    "GitHub Only"
+  ],
+  "defaultSettings": {
+    "owner": "octocat",
+    "repo": "Hello-World",
+    "link": ""
+  },
+  "meta": {
+    "urlTemplate": "https://img.shields.io/github/stars/{owner}/{repo}?style=social",
+    "linkable": true,
+    "fields": [
+      {
+        "key": "owner",
+        "label": "Repo Owner",
+        "type": "text"
+      },
+      {
+        "key": "repo",
+        "label": "Repo Name",
+        "type": "text"
+      }
+    ]
+  }
+}

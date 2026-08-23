@@ -1,0 +1,38 @@
+{
+  "id": "tool-github-actions-status",
+  "type": "url-component",
+  "name": "GitHub Actions Status",
+  "description": "Shows the pass/fail status of a GitHub Actions workflow. GitHub Only — requires a workflow file already running in the repo's Actions tab.",
+  "category": "Tools",
+  "tags": [
+    "Tools",
+    "Badge",
+    "GitHub Only"
+  ],
+  "defaultSettings": {
+    "owner": "octocat",
+    "repo": "Hello-World",
+    "workflow": "ci.yml"
+  },
+  "meta": {
+    "urlTemplate": "https://img.shields.io/github/actions/workflow/status/{owner}/{repo}/{workflow}?style=flat",
+    "linkable": false,
+    "fields": [
+      {
+        "key": "owner",
+        "label": "Repo Owner",
+        "type": "text"
+      },
+      {
+        "key": "repo",
+        "label": "Repo Name",
+        "type": "text"
+      },
+      {
+        "key": "workflow",
+        "label": "Workflow File (e.g. ci.yml)",
+        "type": "text"
+      }
+    ]
+  }
+}

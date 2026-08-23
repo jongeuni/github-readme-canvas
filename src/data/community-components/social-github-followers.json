@@ -1,0 +1,27 @@
+{
+  "id": "social-github-followers",
+  "type": "url-component",
+  "name": "GitHub Followers",
+  "description": "A live follower-count badge for a GitHub account. GitHub Only — the follower count comes from the GitHub API.",
+  "category": "Social",
+  "tags": [
+    "Social",
+    "Badge",
+    "GitHub Only"
+  ],
+  "defaultSettings": {
+    "username": "octocat",
+    "link": ""
+  },
+  "meta": {
+    "urlTemplate": "https://img.shields.io/github/followers/{username}?label=Follow&style=social",
+    "linkable": true,
+    "fields": [
+      {
+        "key": "username",
+        "label": "GitHub Username",
+        "type": "text"
+      }
+    ]
+  }
+}

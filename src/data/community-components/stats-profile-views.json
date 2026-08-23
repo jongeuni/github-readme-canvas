@@ -1,0 +1,69 @@
+{
+  "id": "stats-profile-views",
+  "type": "url-component",
+  "name": "Profile Views Counter",
+  "description": "A badge that counts and displays how many times your README has been viewed. Works anywhere — it just counts image loads, not GitHub-specific.",
+  "category": "Stats",
+  "tags": [
+    "Stats",
+    "Badge"
+  ],
+  "defaultSettings": {
+    "username": "alex123",
+    "label": "Profile views",
+    "color": "blue"
+  },
+  "meta": {
+    "urlTemplate": "https://komarev.com/ghpvc/?username={username}&label={label}&color={color}&style=flat",
+    "linkable": false,
+    "fields": [
+      {
+        "key": "username",
+        "label": "Username / Key",
+        "type": "text"
+      },
+      {
+        "key": "label",
+        "label": "Label Text",
+        "type": "text"
+      },
+      {
+        "key": "color",
+        "label": "Color",
+        "type": "select",
+        "options": [
+          {
+            "value": "blue",
+            "label": "Blue",
+            "swatch": "#2563eb"
+          },
+          {
+            "value": "green",
+            "label": "Green",
+            "swatch": "#22c55e"
+          },
+          {
+            "value": "red",
+            "label": "Red",
+            "swatch": "#ef4444"
+          },
+          {
+            "value": "orange",
+            "label": "Orange",
+            "swatch": "#f97316"
+          },
+          {
+            "value": "blueviolet",
+            "label": "Blue Violet",
+            "swatch": "#8a2be2"
+          },
+          {
+            "value": "grey",
+            "label": "Grey",
+            "swatch": "#6b7280"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "id": "social-medium",
+  "type": "url-component",
+  "name": "Medium",
+  "description": "Link to your Medium blog profile. Not GitHub-specific.",
+  "category": "Social",
+  "tags": [
+    "Social",
+    "Badge"
+  ],
+  "defaultSettings": {
+    "username": "alex123",
+    "link": ""
+  },
+  "meta": {
+    "urlTemplate": "https://img.shields.io/badge/Medium-{username}-12100E?style=flat&logo=medium&logoColor=white",
+    "linkable": true,
+    "fields": [
+      {
+        "key": "username",
+        "label": "Medium Username",
+        "type": "text"
+      }
+    ]
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "id": "tool-github-license",
+  "type": "url-component",
+  "name": "GitHub License",
+  "description": "Shows a repository's license. GitHub Only — read from the repo's metadata via the GitHub API.",
+  "category": "Tools",
+  "tags": [
+    "Tools",
+    "Badge",
+    "GitHub Only"
+  ],
+  "defaultSettings": {
+    "owner": "octocat",
+    "repo": "Hello-World"
+  },
+  "meta": {
+    "urlTemplate": "https://img.shields.io/github/license/{owner}/{repo}?style=flat",
+    "linkable": false,
+    "fields": [
+      {
+        "key": "owner",
+        "label": "Repo Owner",
+        "type": "text"
+      },
+      {
+        "key": "repo",
+        "label": "Repo Name",
+        "type": "text"
+      }
+    ]
+  }
+}

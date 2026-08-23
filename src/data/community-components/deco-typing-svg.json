@@ -1,0 +1,59 @@
+{
+  "id": "deco-typing-svg",
+  "type": "url-component",
+  "name": "Typing SVG Animation",
+  "description": "An animated typewriter-effect line of text. Works anywhere — it's a self-contained generated SVG, not tied to GitHub.",
+  "category": "Decorations",
+  "tags": [
+    "Decorations",
+    "Animation"
+  ],
+  "defaultSettings": {
+    "lines": "Hi there, I'm Alex;Welcome to my GitHub profile!",
+    "color": "36BCF7"
+  },
+  "meta": {
+    "urlTemplate": "https://readme-typing-svg.demolab.com?font=Fira+Code&size=22&pause=1000&center=true&vCenter=true&width=440&color={color}&lines={lines}",
+    "linkable": false,
+    "altTemplate": "Typing animation",
+    "fields": [
+      {
+        "key": "lines",
+        "label": "Lines (separate with ;)",
+        "type": "text"
+      },
+      {
+        "key": "color",
+        "label": "Color",
+        "type": "select",
+        "options": [
+          {
+            "value": "36BCF7",
+            "label": "Blue",
+            "swatch": "#36BCF7"
+          },
+          {
+            "value": "22C55E",
+            "label": "Green",
+            "swatch": "#22C55E"
+          },
+          {
+            "value": "EC4899",
+            "label": "Pink",
+            "swatch": "#EC4899"
+          },
+          {
+            "value": "F59E0B",
+            "label": "Orange",
+            "swatch": "#F59E0B"
+          },
+          {
+            "value": "FFFFFF",
+            "label": "White",
+            "swatch": "#FFFFFF"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -2,7 +2,7 @@ import type { ComponentType } from 'react';
 
 /**
  * Data-driven, not a closed union — a Component's category is just whatever
- * string its presets.ts / community-components.json entry uses. The 7 seed
+ * string its presets.ts / community-components/*.json entry uses. The 7 seed
  * values in src/data/categories.ts only control chip ORDER in the Library;
  * a brand-new category value works immediately, no file needs editing.
  */

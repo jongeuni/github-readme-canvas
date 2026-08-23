@@ -1,0 +1,54 @@
+{
+  "id": "stats-github-trophy",
+  "type": "url-component",
+  "name": "GitHub Profile Trophy",
+  "description": "A row of trophies for stars, commits, PRs, and more. GitHub Only — computed from your GitHub activity via the GitHub API.",
+  "category": "Stats",
+  "tags": [
+    "Stats",
+    "Card",
+    "GitHub Only"
+  ],
+  "defaultSettings": {
+    "username": "octocat",
+    "theme": "flat"
+  },
+  "meta": {
+    "urlTemplate": "https://github-profile-trophy.vercel.app/?username={username}&theme={theme}&row=1&column=6",
+    "linkable": false,
+    "fields": [
+      {
+        "key": "username",
+        "label": "GitHub Username",
+        "type": "text"
+      },
+      {
+        "key": "theme",
+        "label": "Theme",
+        "type": "select",
+        "options": [
+          {
+            "value": "flat",
+            "label": "Flat"
+          },
+          {
+            "value": "onedark",
+            "label": "One Dark"
+          },
+          {
+            "value": "dracula",
+            "label": "Dracula"
+          },
+          {
+            "value": "monokai",
+            "label": "Monokai"
+          },
+          {
+            "value": "radical",
+            "label": "Radical"
+          }
+        ]
+      }
+    ]
+  }
+}

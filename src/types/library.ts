@@ -48,7 +48,7 @@ export interface LibraryEntry<TSettings = any> {
    *  before adding to this. Present = Library shows ONE card + a preset
    *  picker; absent/empty = today's single-card behavior, unchanged. Only
    *  ever set on the pre-flatten entries in a widget's presets.ts / on
-   *  community-components.json entries — never present on a flattened
+   *  community-components/*.json entries — never present on a flattened
    *  LIBRARY entry (see registry/presets.ts). */
   presets?: PresetDefinition<TSettings>[];
   /** Noun used in the Library card's auto-generated summary line when this

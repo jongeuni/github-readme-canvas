@@ -14,9 +14,20 @@ import { headingPresets } from '../components/widgets/heading/presets';
 import { dividerDefinition } from '../components/widgets/divider/definition';
 import { dividerPresets } from '../components/widgets/divider/presets';
 import { urlComponentDefinition } from '../components/widgets/urlComponent/definition';
-import communityComponents from '../data/community-components.json';
 import { CATEGORIES_SEED } from '../data/categories';
 import { flattenLibrary } from './presets';
+
+/**
+ * One JSON file per community component under src/data/community-components/
+ * (filename = the component's own id, e.g. "social-discord.json") — each PR
+ * that adds a component only ever touches its own new file, instead of
+ * every contributor racing to edit the same shared array (which is exactly
+ * how this used to work, as a single community-components.json, before it
+ * got split up). `eager: true` inlines every file at build time, same as a
+ * normal static import — no runtime fetching.
+ */
+const communityComponentModules = import.meta.glob<{ default: LibraryEntry }>('../data/community-components/*.json', { eager: true });
+const communityComponents: LibraryEntry[] = Object.values(communityComponentModules).map((m) => m.default);
 
 /**
  * This is the ONE place that wires a new component type into the whole app.
@@ -38,10 +49,10 @@ export const COMPONENT_TYPES: ComponentTypeDefinition[] = [
 ];
 
 /**
- * community-components.json holds "url-component" entries contributed via
- * the app's "GitHub에 PR로 올리기" flow — a PR appends to that file, and
- * merging it is the ONLY step needed for the new component to go live here.
- * See src/types/urlComponent.ts / src/components/widgets/urlComponent/.
+ * src/data/community-components/ holds "url-component" entries contributed
+ * via the app's "GitHub에 PR로 올리기" flow — a PR adds one new file there,
+ * and merging it is the ONLY step needed for the new component to go live
+ * here. See src/types/urlComponent.ts / src/components/widgets/urlComponent/.
  *
  * This is the "authoring" list — entries here may carry `.presets` (see
  * types/library.ts's PresetDefinition doc comment for when to use one
@@ -57,7 +68,7 @@ export const LIBRARY_COMPONENTS: LibraryEntry[] = [
   ...socialPresets,
   ...headingPresets,
   ...dividerPresets,
-  ...(communityComponents as LibraryEntry[]),
+  ...communityComponents,
 ];
 
 /** Fully flat — one addable LibraryEntry per id, never a `.presets` field.

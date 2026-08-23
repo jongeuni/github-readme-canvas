@@ -1,0 +1,32 @@
+{
+  "id": "tool-github-last-commit",
+  "type": "url-component",
+  "name": "GitHub Last Commit",
+  "description": "Shows how long ago the last commit landed. GitHub Only — the commit timestamp comes from the GitHub API.",
+  "category": "Tools",
+  "tags": [
+    "Tools",
+    "Badge",
+    "GitHub Only"
+  ],
+  "defaultSettings": {
+    "owner": "octocat",
+    "repo": "Hello-World"
+  },
+  "meta": {
+    "urlTemplate": "https://img.shields.io/github/last-commit/{owner}/{repo}?style=flat",
+    "linkable": false,
+    "fields": [
+      {
+        "key": "owner",
+        "label": "Repo Owner",
+        "type": "text"
+      },
+      {
+        "key": "repo",
+        "label": "Repo Name",
+        "type": "text"
+      }
+    ]
+  }
+}

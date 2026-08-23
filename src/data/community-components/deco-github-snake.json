@@ -1,0 +1,26 @@
+{
+  "id": "deco-github-snake",
+  "type": "url-component",
+  "name": "GitHub Contribution Snake",
+  "description": "An animated snake eating your contribution graph. GitHub Only, and needs one-time setup — the Platane/snk GitHub Action must already be publishing this SVG to your profile repo's `output` branch.",
+  "category": "Decorations",
+  "tags": [
+    "Decorations",
+    "Animation",
+    "GitHub Only"
+  ],
+  "defaultSettings": {
+    "username": "platane"
+  },
+  "meta": {
+    "urlTemplate": "https://raw.githubusercontent.com/{username}/{username}/output/github-contribution-grid-snake.svg",
+    "linkable": false,
+    "fields": [
+      {
+        "key": "username",
+        "label": "GitHub Username",
+        "type": "text"
+      }
+    ]
+  }
+}

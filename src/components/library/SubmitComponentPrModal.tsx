@@ -4,7 +4,7 @@ import type { LibraryEntry } from '../../types/library';
 
 const OWNER = 'jongeuni';
 const REPO = 'github-readme-canvas';
-const DATA_PATH = 'src/data/community-components.json';
+const DATA_DIR = 'src/data/community-components';
 
 function slugify(name: string): string {
   return (
@@ -41,32 +41,20 @@ export function SubmitComponentPrModal({
       const branch = `add-component-${slugify(entry.name)}-${Date.now()}`;
       await createBranch(token, OWNER, REPO, branch, baseSha);
 
-      const existing = await getFileContent(token, OWNER, REPO, DATA_PATH, branch);
-      let list: LibraryEntry[] = [];
-      if (existing) {
-        try {
-          const parsed = JSON.parse(existing.content);
-          if (Array.isArray(parsed)) list = parsed;
-        } catch {
-          list = [];
-        }
-      }
-
+      // One file per component (filename = its id) — find a free id/path
+      // instead of every contributor's PR racing to edit one shared array.
       let id = entry.id;
-      const taken = new Set(list.map((e) => e.id));
       let n = 2;
-      while (taken.has(id)) {
+      while (await getFileContent(token, OWNER, REPO, `${DATA_DIR}/${id}.json`, branch)) {
         id = `${entry.id}-${n}`;
         n += 1;
       }
 
-      list.push({ ...entry, id });
-      const content = JSON.stringify(list, null, 2) + '\n';
-      await putFileContent(token, OWNER, REPO, DATA_PATH, {
+      const content = JSON.stringify({ ...entry, id }, null, 2) + '\n';
+      await putFileContent(token, OWNER, REPO, `${DATA_DIR}/${id}.json`, {
         message: `Add component: ${entry.name}`,
         content,
         branch,
-        sha: existing?.sha,
       });
 
       const pr = await createPullRequest(token, OWNER, REPO, {
@@ -93,8 +81,8 @@ export function SubmitComponentPrModal({
           {'"'}
           {entry.name}
           {'"을(를) github-readme-canvas 프로젝트에 새 컴포넌트로 제안해요. 새 브랜치를 만들어 '}
-          <code>community-components.json</code>
-          {'에 추가하고, 자동으로 PR을 엽니다.'}
+          <code>src/data/community-components/</code>
+          {'에 새 파일로 추가하고, 자동으로 PR을 엽니다.'}
         </p>
         {result?.kind === 'success' && (
           <div className="banner success" style={{ borderRadius: 8, marginBottom: 12 }}>

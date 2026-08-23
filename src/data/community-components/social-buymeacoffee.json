@@ -1,0 +1,26 @@
+{
+  "id": "social-buymeacoffee",
+  "type": "url-component",
+  "name": "Buy Me a Coffee",
+  "description": "A support-me badge linking to your Buy Me a Coffee page. Not GitHub-specific.",
+  "category": "Social",
+  "tags": [
+    "Social",
+    "Badge"
+  ],
+  "defaultSettings": {
+    "username": "alex123",
+    "link": ""
+  },
+  "meta": {
+    "urlTemplate": "https://img.shields.io/badge/Buy%20Me%20a%20Coffee-{username}-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black",
+    "linkable": true,
+    "fields": [
+      {
+        "key": "username",
+        "label": "Buy Me a Coffee Username",
+        "type": "text"
+      }
+    ]
+  }
+}

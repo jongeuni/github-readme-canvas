@@ -1,0 +1,26 @@
+{
+  "id": "social-youtube-subs",
+  "type": "url-component",
+  "name": "YouTube Subscribers",
+  "description": "A live subscriber-count badge for a YouTube channel. Not GitHub-specific — data comes from the YouTube API.",
+  "category": "Social",
+  "tags": [
+    "Social",
+    "Badge"
+  ],
+  "defaultSettings": {
+    "channelId": "UC_x5XG1OV2P6uZZ5FSM9Ttw",
+    "link": ""
+  },
+  "meta": {
+    "urlTemplate": "https://img.shields.io/youtube/channel/subscribers/{channelId}?style=flat&logo=youtube&logoColor=white&color=FF0000",
+    "linkable": true,
+    "fields": [
+      {
+        "key": "channelId",
+        "label": "YouTube Channel ID",
+        "type": "text"
+      }
+    ]
+  }
+}
