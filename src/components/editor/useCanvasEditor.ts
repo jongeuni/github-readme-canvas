@@ -38,12 +38,32 @@ interface WidgetRecord {
 let uidCounter = 1;
 const nextUid = () => 'c' + uidCounter++;
 
+/** Caret anchor used right after auto-closing a bold/italic run — see
+ *  convertInlineEmphasis. Invisible on screen; textWithSoftBreaks strips it
+ *  before it can leak into the exported Markdown. */
+const ZERO_WIDTH_SPACE = '\u200B';
+const ZERO_WIDTH_SPACE_RE = /\u200B/g;
+
 /** A whole line that is exactly `![alt](url)`, optionally link-wrapped as
  *  `[![alt](url)](link)` — the two shapes toMarkdown produces for images.
  *  Matched against a line's full trimmed text, same live-conversion idea as
  *  the "# " -> heading rule below. */
 const IMAGE_LINE_RE = /^!\[([^\]]*)\]\((\S+)\)$/;
 const LINKED_IMAGE_LINE_RE = /^\[!\[([^\]]*)\]\((\S+)\)\]\((\S+)\)$/;
+
+/** Matched against the text run right before the caret, so typing the
+ *  closing marker converts immediately — same live-conversion idea as the
+ *  line-level rules above, just mid-paragraph instead of whole-line.
+ *  Bold checked first: by the time italic is tried, the text is already
+ *  known not to end in `**`, so a bare closing `*` is unambiguous. Only
+ *  `*`/`**` are handled (not `_`/`__`) — underscores show up too often
+ *  inside normal words/identifiers to safely auto-convert. */
+const BOLD_INLINE_RE = /\*\*([^*\n]+)\*\*$/;
+// (?<!\*) on the opening marker matters mid-keystroke: right after typing
+// the FIRST of two closing `*`s for a **bold** still in progress (text so
+// far ends "...**bold*"), a lookbehind-less version reads the second `*` of
+// that leading "**" as a fresh italic opener and fires one keystroke early.
+const ITALIC_INLINE_RE = /(?<!\*)\*([^*\n]+)\*$/;
 
 function mkInstanceFromEntry(lib: LibraryEntry, overrides?: Record<string, unknown>): WidgetInstance {
   return {
@@ -64,13 +84,26 @@ function isEmptyText(n: ChildNode | null): boolean {
   return !!n && n.nodeType === Node.TEXT_NODE && n.textContent === '';
 }
 
-/** Shift+Enter inserts a soft <br> that .textContent silently drops — walk
- *  child nodes so a <br> becomes a real line boundary in the markdown output. */
-function textWithSoftBreaks(el: Element): string {
+/** Walks a text line's DOM to rebuild its markdown source: Shift+Enter's
+ *  soft <br> becomes a real line break (.textContent silently drops it),
+ *  and <strong>/<b> or <em>/<i> — from the floating toolbar or live
+ *  `**`/`*` conversion — become `**bold**`/`*italic*` so they round-trip
+ *  into the exported Markdown instead of just vanishing into plain text. */
+function textWithSoftBreaks(node: Node): string {
   let out = '';
-  el.childNodes.forEach((node) => {
-    if (node.nodeName === 'BR') out += '\n';
-    else out += node.textContent ?? '';
+  node.childNodes.forEach((child) => {
+    if (child.nodeType === Node.TEXT_NODE) {
+      out += (child.textContent ?? '').replace(ZERO_WIDTH_SPACE_RE, '');
+      return;
+    }
+    if (child.nodeName === 'BR') {
+      out += '\n';
+      return;
+    }
+    const inner = textWithSoftBreaks(child);
+    if (child.nodeName === 'STRONG' || child.nodeName === 'B') out += `**${inner}**`;
+    else if (child.nodeName === 'EM' || child.nodeName === 'I') out += `*${inner}*`;
+    else out += inner;
   });
   return out;
 }
@@ -80,6 +113,10 @@ export function useCanvasEditor() {
   const widgetsRef = useRef<Map<string, WidgetRecord>>(new Map());
   const [selectedUid, setSelectedUid] = useState<string | null>(null);
   const [selectedTextEl, setSelectedTextEl] = useState<HTMLElement | null>(null);
+  // Position (relative to .canvas-col) of the floating Bold/Italic toolbar —
+  // null hides it. Rendered outside the contentEditable region (see Canvas.tsx)
+  // so it's plain React, not another thing fighting the canvas for control.
+  const [selectionToolbar, setSelectionToolbar] = useState<{ top: number; left: number } | null>(null);
   // Widget settings live outside React state (in widgetsRef) for the reasons
   // above; this counter is bumped whenever they change so components that
   // *read* the current selection (SettingsPanel) re-render with fresh data.
@@ -290,8 +327,110 @@ export function useCanvasEditor() {
     selectTextBlock(newLine);
   };
 
+  // ---------- typing `**bold**` or `*italic*` converts that run into a real
+  // <strong>/<em> the moment the closing marker is typed, so the canvas
+  // shows actual bold/italic instead of literal asterisks. Only touches the
+  // text node the caret is in — safe to call on every keystroke. ----------
+  const convertInlineEmphasis = (el: HTMLElement): boolean => {
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0 || !sel.isCollapsed) return false;
+    const node = sel.anchorNode;
+    if (!node || node.nodeType !== Node.TEXT_NODE || !el.contains(node)) return false;
+    const text = node.textContent ?? '';
+    const caretOffset = sel.anchorOffset;
+    const prefix = text.slice(0, caretOffset);
+
+    const boldMatch = BOLD_INLINE_RE.exec(prefix);
+    const match = boldMatch ?? ITALIC_INLINE_RE.exec(prefix);
+    if (!match) return false;
+
+    const parent = node.parentNode;
+    if (!parent) return false;
+
+    const matchStart = caretOffset - match[0].length;
+    const before = text.slice(0, matchStart);
+    const after = text.slice(caretOffset);
+
+    const wrapper = document.createElement(boldMatch ? 'strong' : 'em');
+    wrapper.textContent = match[1];
+
+    node.textContent = before;
+    parent.insertBefore(wrapper, node.nextSibling);
+
+    // A genuinely empty text node — or no text node at all, just the
+    // wrapper's element boundary — is an unstable caret anchor: browsers
+    // keep typing inside the adjacent <strong>/<em> instead of past it once
+    // there's no neutral character to land on. ZERO_WIDTH_SPACE gives the
+    // caret real (if invisible) content to sit in; textWithSoftBreaks strips
+    // it back out on export.
+    const afterNode = document.createTextNode(after || ZERO_WIDTH_SPACE);
+    parent.insertBefore(afterNode, wrapper.nextSibling);
+    const range = document.createRange();
+    range.setStart(afterNode, after ? 0 : 1);
+    range.collapse(true);
+    sel.removeAllRanges();
+    sel.addRange(range);
+    return true;
+  };
+
+  // ---------- floating Bold/Italic toolbar on drag-selecting text ----------
+  const handleCanvasMouseUp = useCallback(() => {
+    const canvas = canvasRef.current;
+    const sel = window.getSelection();
+    if (!canvas || !sel || sel.isCollapsed || sel.rangeCount === 0) {
+      setSelectionToolbar(null);
+      return;
+    }
+    const asEl = (n: Node | null) => (n && (n.nodeType === Node.TEXT_NODE ? n.parentElement : (n as HTMLElement)));
+    const anchorEl = asEl(sel.anchorNode);
+    const focusEl = asEl(sel.focusNode);
+    // Only for a plain-text selection fully inside the canvas — not a
+    // selection that starts/ends inside a widget (those aren't editable text).
+    if (!anchorEl || !focusEl || !canvas.contains(anchorEl) || !canvas.contains(focusEl) || anchorEl.closest('[data-uid]') || focusEl.closest('[data-uid]')) {
+      setSelectionToolbar(null);
+      return;
+    }
+    const rect = sel.getRangeAt(0).getBoundingClientRect();
+    if (rect.width === 0 && rect.height === 0) {
+      setSelectionToolbar(null);
+      return;
+    }
+    // Viewport-relative on purpose — the toolbar is `position: fixed` (see
+    // Canvas.tsx), so this can be used as-is with no ancestor-offset math.
+    setSelectionToolbar({ top: rect.top - 42, left: rect.left + rect.width / 2 });
+  }, []);
+
+  // Wraps the current selection in <strong>/<em> via Range.surroundContents
+  // (not document.execCommand — its output tag/markup varies across
+  // browsers, and textWithSoftBreaks needs to know exactly which tag to
+  // expect to round-trip it back into **bold**/*italic* on export).
+  const applyInlineFormat = useCallback(
+    (tag: 'strong' | 'em') => {
+      const sel = window.getSelection();
+      if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return;
+      const range = sel.getRangeAt(0);
+      try {
+        const wrapper = document.createElement(tag);
+        range.surroundContents(wrapper);
+        const newRange = document.createRange();
+        newRange.selectNodeContents(wrapper);
+        sel.removeAllRanges();
+        sel.addRange(newRange);
+      } catch {
+        // The range straddles a partial element boundary (e.g. half-overlaps
+        // an existing <strong>/<em>) — surroundContents refuses rather than
+        // produce broken markup. Just skip; nothing was corrupted.
+      }
+      setSelectionToolbar(null);
+      const line = currentTextLine();
+      if (line && selectedTextEl === line) bump();
+    },
+    [selectedTextEl],
+  );
+
   // ---------- "# " / "## " live heading conversion + keep Settings in sync ----------
   const handleInput = useCallback((_e: FormEvent<HTMLDivElement>) => {
+    setSelectionToolbar(null); // typing collapses whatever selection the toolbar was anchored to
     const el = currentTextLine();
     if (!el) return;
     if (!el.classList.contains('md-h1') && !el.classList.contains('md-h2') && !el.classList.contains('md-text')) {
@@ -320,6 +459,7 @@ export function useCanvasEditor() {
       return;
     }
 
+    convertInlineEmphasis(el);
     if (selectedTextEl === el) bump(); // let SettingsPanel re-read the live text/level
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedTextEl]);
@@ -699,6 +839,8 @@ export function useCanvasEditor() {
     canvasRef,
     selectedUid,
     selectedTextEl,
+    selectionToolbar,
+    applyInlineFormat,
     getSelectedWidget,
     addFromLibrary,
     addCustomEntry,
@@ -720,6 +862,7 @@ export function useCanvasEditor() {
       onDragEnd: handleDragEnd,
       onDragOver: handleDragOver,
       onDrop: handleDrop,
+      onMouseUp: handleCanvasMouseUp,
     },
   };
 }

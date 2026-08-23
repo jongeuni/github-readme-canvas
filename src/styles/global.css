@@ -588,6 +588,33 @@ pre {
   min-height: 100%;
   height: fit-content;
 }
+.selection-toolbar {
+  position: fixed;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 2px;
+  background: #18181b;
+  border-radius: 8px;
+  padding: 4px;
+  box-shadow: var(--shadow-sm);
+  z-index: 60;
+}
+.selection-toolbar button {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  color: #fff;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.selection-toolbar button:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
 
 .block {
   position: relative;
@@ -744,6 +771,10 @@ pre {
   font-size: 11px;
 }
 .url-component-img {
+  /* Renders at its own natural size — a shields.io badge is ~20-28px tall
+     on its own, so it still looks like a compact badge without forcing it.
+     Forcing a fixed height here used to crush every url-component image
+     (badges AND full-size cards/boxes alike) down to 20px tall. */
   max-width: 100%;
   height: auto;
   vertical-align: middle;

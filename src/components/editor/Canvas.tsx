@@ -7,6 +7,7 @@ import type { UseCanvasEditor } from './useCanvasEditor';
  * ref and the event handlers onto the DOM node.
  */
 export function Canvas({ editor }: { editor: UseCanvasEditor }) {
+  const toolbar = editor.selectionToolbar;
   return (
     <div className="canvas-col">
       <div
@@ -18,6 +19,21 @@ export function Canvas({ editor }: { editor: UseCanvasEditor }) {
         spellCheck={false}
         {...editor.canvasHandlers}
       />
+      {/* Lives outside the contentEditable div on purpose — same reason as
+          everything else in useCanvasEditor's file-top comment: React must
+          never hand the canvas div itself JSX children. `position: fixed`
+          means it can sit anywhere in the tree and still land in the right
+          spot using the viewport-relative coordinates the hook computed. */}
+      {toolbar && (
+        <div className="selection-toolbar" style={{ top: toolbar.top, left: toolbar.left }}>
+          <button type="button" onMouseDown={(e) => { e.preventDefault(); editor.applyInlineFormat('strong'); }} title="Bold">
+            <strong>B</strong>
+          </button>
+          <button type="button" onMouseDown={(e) => { e.preventDefault(); editor.applyInlineFormat('em'); }} title="Italic">
+            <em>I</em>
+          </button>
+        </div>
+      )}
     </div>
   );
 }
