@@ -1,7 +1,7 @@
 /** One free-text line (heading or paragraph) as it sits in the canvas DOM. */
 export interface SerializedTextBlock {
   kind: 'text';
-  className: 'md-h1' | 'md-h2' | 'md-h3' | 'md-h4' | 'md-h5' | 'md-h6' | 'md-quote' | 'md-ul-item' | 'md-ol-item' | 'md-text';
+  className: 'md-h1' | 'md-h2' | 'md-h3' | 'md-h4' | 'md-h5' | 'md-h6' | 'md-quote' | 'md-ul-item' | 'md-ol-item' | 'md-task' | 'md-text';
   /** innerHTML, not textContent — preserves Shift+Enter <br> soft breaks. */
   html: string;
 }

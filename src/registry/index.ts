@@ -13,6 +13,10 @@ import { headingDefinition } from '../components/widgets/heading/definition';
 import { headingPresets } from '../components/widgets/heading/presets';
 import { dividerDefinition } from '../components/widgets/divider/definition';
 import { dividerPresets } from '../components/widgets/divider/presets';
+import { codeBlockDefinition } from '../components/widgets/codeBlock/definition';
+import { codeBlockPresets } from '../components/widgets/codeBlock/presets';
+import { tableDefinition } from '../components/widgets/table/definition';
+import { tablePresets } from '../components/widgets/table/presets';
 import { urlComponentDefinition } from '../components/widgets/urlComponent/definition';
 import { CATEGORIES_SEED } from '../data/categories';
 import { flattenLibrary } from './presets';
@@ -45,6 +49,8 @@ export const COMPONENT_TYPES: ComponentTypeDefinition[] = [
   socialDefinition,
   headingDefinition,
   dividerDefinition,
+  codeBlockDefinition,
+  tableDefinition,
   urlComponentDefinition,
 ];
 
@@ -68,6 +74,8 @@ export const LIBRARY_COMPONENTS: LibraryEntry[] = [
   ...socialPresets,
   ...headingPresets,
   ...dividerPresets,
+  ...codeBlockPresets,
+  ...tablePresets,
   ...communityComponents,
 ];
 

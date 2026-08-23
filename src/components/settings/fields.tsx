@@ -1,5 +1,35 @@
 import type { ChangeEvent } from 'react';
 
+export function TextAreaField({
+  label,
+  value,
+  onChange,
+  placeholder,
+  rows = 6,
+  hint,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  rows?: number;
+  hint?: string;
+}) {
+  return (
+    <div className="field">
+      <label>{label}</label>
+      <textarea
+        className="field-textarea"
+        value={value}
+        placeholder={placeholder}
+        rows={rows}
+        onChange={(e: ChangeEvent<HTMLTextAreaElement>) => onChange(e.target.value)}
+      />
+      {hint && <div className="hint">{hint}</div>}
+    </div>
+  );
+}
+
 /**
  * Shared form-field building blocks used by every widget's SettingsForm.
  * Keeping these in one place is what lets each widget's own settings form

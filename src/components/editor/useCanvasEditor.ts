@@ -77,6 +77,11 @@ const LINK_INLINE_RE = /(?<!!)\[([^\]\n]+)\]\((\S+)\)$/;
  *  text line since there's nothing else useful a `<hr>`-only line could hold. */
 const HR_LINE_RE = /^(-{3,}|\*{3,}|_{3,})$/;
 
+/** `- [ ] text` / `- [x] text` — a GFM task list item. Checked before the
+ *  plain `-`/`*` bullet rule below (it's a strict superset of that prefix),
+ *  so a task marker never gets caught as a plain bullet first. */
+const TASK_LINE_RE = /^[-*]\s\[([ xX])\]\s/;
+
 /** Whole-line prefixes that switch a line's block style the moment the
  *  trailing space is typed — same live-conversion idea as the heading rule,
  *  just for GFM blockquote/list markers instead of `#`. Checked in order;
@@ -87,7 +92,24 @@ const LINE_PREFIX_PATTERNS: { re: RegExp; className: string }[] = [
   { re: /^\d+\.\s/, className: 'md-ol-item' },
 ];
 
-export type TextLineStyle = 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'quote' | 'ul' | 'ol' | 'text';
+/** A lone "```" or "```lang" line converts into a Code Block component —
+ *  same idea as the HR rule above, just for GFM fenced code. Multi-line code
+ *  content is typed into that component's own Settings-panel textarea
+ *  instead of live in the canvas: the canvas is one div per line, and a
+ *  code block's whole point is that Enter inside it must NOT start a new
+ *  paragraph, which doesn't fit that model without a second, parallel
+ *  editing mode. Reusing the Settings panel keeps one editing model. */
+const CODE_FENCE_RE = /^```(\S*)$/;
+
+/** A GFM table's second (separator) row, e.g. "| --- | --- |" or "---|---".
+ *  Typing this right after a "| header | header |"-shaped line converts
+ *  both into a Table component, seeded with those two rows plus one blank
+ *  data row — further rows are added in that component's own textarea, same
+ *  reasoning as the code-fence rule above (a table is a multi-row unit that
+ *  doesn't fit the one-div-per-line canvas model once past its first row). */
+const TABLE_SEP_RE = /^\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)+\|?$/;
+
+export type TextLineStyle = 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'quote' | 'ul' | 'ol' | 'task' | 'text';
 
 const STYLE_CLASS: Record<TextLineStyle, string> = {
   h1: 'md-h1',
@@ -99,8 +121,14 @@ const STYLE_CLASS: Record<TextLineStyle, string> = {
   quote: 'md-quote',
   ul: 'md-ul-item',
   ol: 'md-ol-item',
+  task: 'md-task',
   text: 'md-text',
 };
+
+/** Every class handleInput's live-conversion can assign to a top-level line
+ *  (used by the MutationObserver's reset-on-native-split safety net, and by
+ *  handleInput's own "still needs a default md-text class" check). */
+const CUSTOM_LINE_CLASSES = Object.values(STYLE_CLASS).filter((c) => c !== 'md-text');
 
 export const TEXT_LINE_STYLE_OPTIONS: { value: TextLineStyle; label: string }[] = [
   { value: 'h1', label: 'Heading 1' },
@@ -112,6 +140,7 @@ export const TEXT_LINE_STYLE_OPTIONS: { value: TextLineStyle; label: string }[] 
   { value: 'quote', label: 'Quote' },
   { value: 'ul', label: 'Bulleted List' },
   { value: 'ol', label: 'Numbered List' },
+  { value: 'task', label: 'To-do List' },
   { value: 'text', label: 'Paragraph' },
 ];
 
@@ -155,6 +184,24 @@ function mkInstance(libId: string, overrides?: Record<string, unknown>): WidgetI
 
 function isEmptyText(n: ChildNode | null): boolean {
   return !!n && n.nodeType === Node.TEXT_NODE && n.textContent === '';
+}
+
+/** Turns a line into a GFM task-list item: a real, clickable checkbox
+ *  (contentEditable=false, so clicking it toggles instead of placing a text
+ *  caret) followed by the item's text. Used by both the live "- [ ] "
+ *  conversion and the Settings panel's Style dropdown. The checkbox's
+ *  `checked` ATTRIBUTE (not just the .checked property) is what gets
+ *  serialized — see the click handler and buildFullMarkdown for the two
+ *  other places that same attribute is read/written. */
+function applyTaskStyle(el: HTMLElement, checked: boolean, text: string) {
+  el.className = 'md-task';
+  el.innerHTML = '';
+  const checkbox = document.createElement('input');
+  checkbox.type = 'checkbox';
+  checkbox.contentEditable = 'false';
+  if (checked) checkbox.setAttribute('checked', '');
+  el.appendChild(checkbox);
+  el.appendChild(document.createTextNode(text));
 }
 
 /** Walks a text line's DOM to rebuild its markdown source: Shift+Enter's
@@ -327,7 +374,7 @@ export function useCanvasEditor() {
             delete el.dataset.keepClass;
             return;
           }
-          if (Object.keys(LINE_PREFIX).some((cls) => el.classList.contains(cls))) {
+          if (CUSTOM_LINE_CLASSES.some((cls) => el.classList.contains(cls))) {
             el.className = 'md-text';
           }
         });
@@ -426,6 +473,51 @@ export function useCanvasEditor() {
     selectTextBlock(newLine);
   };
 
+  // ---------- typing a lone "```" or "```lang" line converts it live into a
+  // Code Block component, selected right away so its Settings-panel textarea
+  // is the very next place the user types — see CODE_FENCE_RE's doc comment
+  // for why the code itself is typed there, not live in the canvas. ----------
+  const convertLineToCodeBlockWidget = (el: HTMLElement, lang: string) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const instance = mkInstance('dec-codeblock', lang ? { lang } : undefined);
+    const widgetEl = widgetHTMLContainer(instance);
+    canvas.insertBefore(widgetEl, el);
+    el.remove();
+    const root = createRoot(widgetEl);
+    const record: WidgetRecord = { instance, el: widgetEl, root };
+    widgetsRef.current.set(instance.uid, record);
+    renderWidgetRoot(record);
+    ensureTrailingTextLine();
+    selectWidget(instance.uid);
+    widgetEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  };
+
+  // ---------- typing a table's "| --- | --- |" separator row right after a
+  // "| header | header |" row converts both into a Table component, seeded
+  // with those two rows — see TABLE_SEP_RE's doc comment for why further
+  // rows are added in that component's own Settings-panel textarea. ----------
+  const convertLinesToTableWidget = (headerEl: HTMLElement, sepEl: HTMLElement) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const headerText = (headerEl.textContent ?? '').trim();
+    const sepText = (sepEl.textContent ?? '').trim();
+    const cellCount = headerText.split('|').map((s) => s.trim()).filter(Boolean).length || 2;
+    const dataRow = '| ' + Array(cellCount).fill(' ').join(' | ') + ' |';
+    const instance = mkInstance('dec-table', { source: `${headerText}\n${sepText}\n${dataRow}` });
+    const widgetEl = widgetHTMLContainer(instance);
+    canvas.insertBefore(widgetEl, headerEl);
+    headerEl.remove();
+    sepEl.remove();
+    const root = createRoot(widgetEl);
+    const record: WidgetRecord = { instance, el: widgetEl, root };
+    widgetsRef.current.set(instance.uid, record);
+    renderWidgetRoot(record);
+    ensureTrailingTextLine();
+    selectWidget(instance.uid);
+    widgetEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  };
+
   // ---------- typing `**bold**`, `*italic*`, `~~strike~~`, `` `code` `` or
   // `[text](url)` converts that run into real inline markup the moment the
   // closing marker is typed, so the canvas shows the real formatting instead
@@ -506,12 +598,13 @@ export function useCanvasEditor() {
     setSelectionToolbar({ top: rect.top - 42, left: rect.left + rect.width / 2 });
   }, []);
 
-  // Wraps the current selection in <strong>/<em> via Range.surroundContents
-  // (not document.execCommand — its output tag/markup varies across
-  // browsers, and textWithSoftBreaks needs to know exactly which tag to
-  // expect to round-trip it back into **bold**/*italic* on export).
+  // Wraps the current selection in <strong>/<em>/<del> via
+  // Range.surroundContents (not document.execCommand — its output tag/markup
+  // varies across browsers, and textWithSoftBreaks needs to know exactly
+  // which tag to expect to round-trip it back into **bold**/*italic*/
+  // ~~strike~~ on export).
   const applyInlineFormat = useCallback(
-    (tag: 'strong' | 'em') => {
+    (tag: 'strong' | 'em' | 'del') => {
       const sel = window.getSelection();
       if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return;
       const range = sel.getRangeAt(0);
@@ -539,8 +632,7 @@ export function useCanvasEditor() {
     setSelectionToolbar(null); // typing collapses whatever selection the toolbar was anchored to
     const el = currentTextLine();
     if (!el) return;
-    const recognized = Object.keys(LINE_PREFIX).concat('md-text');
-    if (!recognized.some((cls) => el.classList.contains(cls))) {
+    if (!CUSTOM_LINE_CLASSES.concat('md-text').some((cls) => el.classList.contains(cls))) {
       el.classList.add('md-text');
     }
     const text = el.textContent ?? '';
@@ -552,6 +644,16 @@ export function useCanvasEditor() {
     if (headingMatch) {
       el.className = `md-h${headingMatch[1].length}`;
       el.textContent = text.slice(headingMatch[0].length);
+      placeCaretAtEnd(el);
+      if (selectedTextEl === el) bump();
+      return;
+    }
+
+    // "- [ ] " / "- [x] " -> task item. Checked before the plain bullet rule
+    // below, which would otherwise also match its "- " prefix.
+    const taskMatch = TASK_LINE_RE.exec(text);
+    if (taskMatch) {
+      applyTaskStyle(el, taskMatch[1].toLowerCase() === 'x', text.slice(taskMatch[0].length));
       placeCaretAtEnd(el);
       if (selectedTextEl === el) bump();
       return;
@@ -582,6 +684,18 @@ export function useCanvasEditor() {
     if (HR_LINE_RE.test(trimmed)) {
       convertLineToDividerWidget(el);
       return;
+    }
+    const codeFence = CODE_FENCE_RE.exec(trimmed);
+    if (codeFence) {
+      convertLineToCodeBlockWidget(el, codeFence[1]);
+      return;
+    }
+    if (TABLE_SEP_RE.test(trimmed)) {
+      const prev = el.previousElementSibling as HTMLElement | null;
+      if (prev && !prev.dataset.uid && (prev.textContent ?? '').includes('|')) {
+        convertLinesToTableWidget(prev, el);
+        return;
+      }
     }
 
     convertInlineEmphasis(el);
@@ -668,6 +782,16 @@ export function useCanvasEditor() {
     (e: MouseEvent<HTMLDivElement>) => {
       const canvas = canvasRef.current;
       if (!canvas) return;
+      // The browser already toggled checkbox.checked by the time a click
+      // listener runs — mirror that onto the `checked` ATTRIBUTE, since
+      // that's what ends up in .innerHTML (and so in what gets saved/
+      // exported; see applyTaskStyle's doc comment and buildFullMarkdown).
+      const checkbox = (e.target as HTMLElement).closest<HTMLInputElement>('input[type="checkbox"]');
+      if (checkbox?.parentElement?.classList.contains('md-task')) {
+        if (checkbox.checked) checkbox.setAttribute('checked', '');
+        else checkbox.removeAttribute('checked');
+        return;
+      }
       const widgetEl = (e.target as HTMLElement).closest<HTMLElement>('[data-uid]');
       if (widgetEl?.dataset.uid) {
         selectWidget(widgetEl.dataset.uid);
@@ -848,7 +972,15 @@ export function useCanvasEditor() {
   const setSelectedTextValue = useCallback(
     (text: string) => {
       if (!selectedTextEl) return;
-      selectedTextEl.textContent = text;
+      // Plain `.textContent = text` would wipe out a task item's checkbox
+      // child along with the old text — re-apply it instead, carrying the
+      // checked state over.
+      if (selectedTextEl.classList.contains('md-task')) {
+        const checked = selectedTextEl.querySelector('input[type="checkbox"]')?.hasAttribute('checked') ?? false;
+        applyTaskStyle(selectedTextEl, checked, text);
+      } else {
+        selectedTextEl.textContent = text;
+      }
       bump();
     },
     [selectedTextEl],
@@ -857,7 +989,15 @@ export function useCanvasEditor() {
   const setSelectedTextLevel = useCallback(
     (style: TextLineStyle) => {
       if (!selectedTextEl) return;
-      selectedTextEl.className = STYLE_CLASS[style];
+      const wasTask = selectedTextEl.classList.contains('md-task');
+      if (style === 'task' && !wasTask) {
+        applyTaskStyle(selectedTextEl, false, selectedTextEl.textContent ?? '');
+      } else if (style !== 'task' && wasTask) {
+        selectedTextEl.querySelector('input[type="checkbox"]')?.remove();
+        selectedTextEl.className = STYLE_CLASS[style];
+      } else {
+        selectedTextEl.className = STYLE_CLASS[style];
+      }
       bump();
     },
     [selectedTextEl],
@@ -941,6 +1081,12 @@ export function useCanvasEditor() {
         return;
       }
       flushInline();
+      if (el.classList.contains('md-task')) {
+        const checked = el.querySelector('input[type="checkbox"]')?.hasAttribute('checked') ?? false;
+        const raw = textWithSoftBreaks(el).trim();
+        lines.push(`- [${checked ? 'x' : ' '}] ${raw}`);
+        return;
+      }
       const raw = textWithSoftBreaks(el).trim();
       if (!raw) return;
       const prefix = Object.keys(LINE_PREFIX).find((cls) => el.classList.contains(cls));

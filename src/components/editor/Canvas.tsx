@@ -32,6 +32,9 @@ export function Canvas({ editor }: { editor: UseCanvasEditor }) {
           <button type="button" onMouseDown={(e) => { e.preventDefault(); editor.applyInlineFormat('em'); }} title="Italic">
             <em>I</em>
           </button>
+          <button type="button" onMouseDown={(e) => { e.preventDefault(); editor.applyInlineFormat('del'); }} title="Strikethrough">
+            <del>S</del>
+          </button>
         </div>
       )}
     </div>

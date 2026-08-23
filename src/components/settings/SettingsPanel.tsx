@@ -12,6 +12,8 @@ const TYPE_LABELS: Record<string, string> = {
   social: 'Social Link',
   heading: 'Heading / Text',
   divider: 'Divider',
+  'code-block': 'Code Block',
+  table: 'Table',
   'url-component': 'Component',
 };
 
@@ -47,8 +49,9 @@ export function SettingsPanel({ editor }: { editor: UseCanvasEditor }) {
           <TextField label="Text" value={selectedTextEl.textContent ?? ''} onChange={setSelectedTextValue} />
           <SelectField label="Style" value={style} onChange={setSelectedTextLevel} options={TEXT_LINE_STYLE_OPTIONS} />
           <div className="hint">
-            You can type directly on the canvas, or change it here. Starting a line with #…###### / &gt; / - / 1. also converts it live, and
-            **bold**, *italic*, ~~strike~~, `code`, and [link](url) work mid-paragraph.
+            You can type directly on the canvas, or change it here. Starting a line with #…###### / &gt; / - / 1. / - [ ] also converts it
+            live, and **bold**, *italic*, ~~strike~~, `code`, and [link](url) work mid-paragraph. A lone ``` line becomes a Code Block, and a
+            table header followed by a --- separator row becomes a Table.
           </div>
         </form>
       </div>
