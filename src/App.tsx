@@ -167,6 +167,16 @@ function App() {
           <div className="left">
             <div className="mark">R</div>
             GitHub Readme Canvas
+            <a
+              className="icon-btn repo-link"
+              href="https://github.com/jongeuni/github-readme-canvas"
+              target="_blank"
+              rel="noreferrer"
+              title="View source on GitHub"
+              aria-label="View source on GitHub"
+            >
+              <Icon name="github" />
+            </a>
             {activeDoc && <span className="doc-name"> · {activeDoc.name}</span>}
           </div>
           <div className="right">

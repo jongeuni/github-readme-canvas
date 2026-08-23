@@ -988,6 +988,24 @@ pre {
   background: #f2f2f4;
   color: var(--text-1);
 }
+a.icon-btn {
+  text-decoration: none;
+}
+.editor-topbar .left .repo-link {
+  width: 22px;
+  height: 22px;
+  border: none;
+  background: transparent;
+  color: var(--text-2);
+}
+.editor-topbar .left .repo-link:hover {
+  color: var(--text-1);
+  background: #f2f2f4;
+}
+.editor-topbar .left .repo-link .icon {
+  width: 15px;
+  height: 15px;
+}
 
 .toast {
   position: fixed;
