@@ -2,7 +2,7 @@ import { createElement, useCallback, useEffect, useReducer, useRef, useState, ty
 import { createRoot, type Root } from 'react-dom/client';
 import { COMPONENT_TYPES, LIBRARY, getComponentType, getLibraryEntry } from '../../registry';
 import type { HeadingLevel } from '../widgets/heading/types';
-import type { LibraryEntry, WidgetInstance } from '../../types/library';
+import type { LibraryEntry, PresetDefinition, WidgetInstance } from '../../types/library';
 import type { SerializedBlock, SerializedTextBlock } from '../../types/document';
 
 /**
@@ -520,6 +520,27 @@ export function useCanvasEditor() {
     [selectedUid, renderWidgetRoot],
   );
 
+  // Swaps the placed widget to a sibling Preset (see SettingsPanel's generic
+  // "Preset" dropdown) — unlike updateSelectedWidgetSettings this also
+  // updates `meta` (some Components, e.g. Tech Icon, vary glyph/tileColor
+  // per preset, not just settings) and `libId`/`name`, since libId doubles
+  // as "which preset is this" for the dropdown's own current-value lookup
+  // and for PRESET_PARENT_MAP resolution after a save/reload round-trip.
+  const updateSelectedWidgetPreset = useCallback(
+    (preset: PresetDefinition) => {
+      if (!selectedUid) return;
+      const record = widgetsRef.current.get(selectedUid);
+      if (!record) return;
+      record.instance.libId = preset.id;
+      record.instance.name = preset.name;
+      record.instance.settings = { ...record.instance.settings, ...preset.settings };
+      if (preset.meta) record.instance.meta = { ...record.instance.meta, ...preset.meta };
+      renderWidgetRoot(record);
+      bump();
+    },
+    [selectedUid, renderWidgetRoot],
+  );
+
   const removeSelectedWidget = useCallback(() => {
     if (!selectedUid) return;
     const record = widgetsRef.current.get(selectedUid);
@@ -655,6 +676,7 @@ export function useCanvasEditor() {
     addFromLibrary,
     addCustomEntry,
     updateSelectedWidgetSettings,
+    updateSelectedWidgetPreset,
     removeSelectedWidget,
     setSelectedTextValue,
     setSelectedTextLevel,

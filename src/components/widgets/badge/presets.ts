@@ -7,52 +7,30 @@ import type { BadgeSettings } from './types';
  * other file needs to change.
  */
 export const badgePresets: LibraryEntry<BadgeSettings>[] = [
+  // A single Component with per-language Presets (see PresetDefinition's doc
+  // comment in types/library.ts for the Component-vs-Preset rule) — every
+  // language here shares identical badge rendering/settings, only
+  // label/color/link differ, so this is exactly the "preset" case.
+  // Preset ids are the original standalone card ids (lang-cpp, ...) so
+  // existing favorites / saved-document / canvas widgets keep resolving to
+  // the exact same entries after flattening.
   {
-    id: 'lang-cpp',
+    id: 'lang-badge',
     type: 'badge',
-    name: 'C++',
-    description: 'A badge for the C++ programming language.',
+    name: 'Language Badge',
+    description: 'A badge for your programming language.',
     category: 'Languages',
     tags: ['Languages', 'Badge'],
     defaultSettings: { label: 'C++', link: 'https://isocpp.org', style: 'flat', color: 'blue' },
-  },
-  {
-    id: 'lang-python',
-    type: 'badge',
-    name: 'Python',
-    description: 'A badge for the Python programming language.',
-    category: 'Languages',
-    tags: ['Languages', 'Badge'],
-    defaultSettings: { label: 'Python', link: 'https://python.org', style: 'flat', color: 'green' },
-  },
-  {
-    id: 'lang-ts',
-    type: 'badge',
-    name: 'TypeScript',
-    description: 'A badge for the TypeScript language.',
-    category: 'Languages',
-    tags: ['Languages', 'Badge'],
-    defaultSettings: { label: 'TypeScript', link: 'https://typescriptlang.org', style: 'flat', color: 'blue' },
-  },
-  {
-    id: 'lang-java',
-    type: 'badge',
-    name: 'Java',
-    description: 'A badge for the Java programming language.',
-    category: 'Languages',
-    tags: ['Languages', 'Badge'],
-    defaultSettings: { label: 'Java', link: 'https://java.com', style: 'flat', color: 'orange' },
-  },
-  // Alternate "unified" library item — one card for all languages, picked via
-  // a Settings dropdown. Only shown when the badge-mode toggle is 'unified'.
-  {
-    id: 'lang-badge-unified',
-    type: 'badge',
-    name: 'Language Badge',
-    description: 'Pick any language from the dropdown in Settings.',
-    category: 'Languages',
-    tags: ['Languages', 'Badge'],
-    defaultSettings: { language: 'cpp', label: 'C++', link: 'https://isocpp.org', style: 'flat', color: 'blue' },
+    presetsLabel: 'languages',
+    presets: [
+      { id: 'lang-cpp', name: 'C++', settings: { label: 'C++', color: 'blue', link: 'https://isocpp.org' } },
+      { id: 'lang-python', name: 'Python', settings: { label: 'Python', color: 'green', link: 'https://python.org' } },
+      { id: 'lang-ts', name: 'TypeScript', settings: { label: 'TypeScript', color: 'blue', link: 'https://typescriptlang.org' } },
+      { id: 'lang-java', name: 'Java', settings: { label: 'Java', color: 'orange', link: 'https://java.com' } },
+      { id: 'lang-go', name: 'Go', settings: { label: 'Go', color: 'blue', link: 'https://go.dev' } },
+      { id: 'lang-rust', name: 'Rust', settings: { label: 'Rust', color: 'orange', link: 'https://rust-lang.org' } },
+    ],
   },
   {
     id: 'db-postgres',
@@ -91,6 +69,3 @@ export const badgePresets: LibraryEntry<BadgeSettings>[] = [
     defaultSettings: { label: 'Git', link: 'https://git-scm.com', style: 'flat', color: 'gray' },
   },
 ];
-
-/** IDs hidden when the badge-mode toggle is set to 'unified' (replaced by lang-badge-unified). */
-export const PER_LANGUAGE_BADGE_IDS = ['lang-cpp', 'lang-python', 'lang-ts', 'lang-java'];

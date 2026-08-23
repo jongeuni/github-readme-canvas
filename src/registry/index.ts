@@ -1,5 +1,5 @@
 import type { ComponentTypeDefinition } from '../types/component';
-import type { LibraryEntry } from '../types/library';
+import type { LibraryEntry, PresetDefinition } from '../types/library';
 
 import { badgeDefinition } from '../components/widgets/badge/definition';
 import { badgePresets } from '../components/widgets/badge/presets';
@@ -15,6 +15,8 @@ import { dividerDefinition } from '../components/widgets/divider/definition';
 import { dividerPresets } from '../components/widgets/divider/presets';
 import { urlComponentDefinition } from '../components/widgets/urlComponent/definition';
 import communityComponents from '../data/community-components.json';
+import { CATEGORIES_SEED } from '../data/categories';
+import { flattenLibrary } from './presets';
 
 /**
  * This is the ONE place that wires a new component type into the whole app.
@@ -40,8 +42,15 @@ export const COMPONENT_TYPES: ComponentTypeDefinition[] = [
  * the app's "GitHub에 PR로 올리기" flow — a PR appends to that file, and
  * merging it is the ONLY step needed for the new component to go live here.
  * See src/types/urlComponent.ts / src/components/widgets/urlComponent/.
+ *
+ * This is the "authoring" list — entries here may carry `.presets` (see
+ * types/library.ts's PresetDefinition doc comment for when to use one
+ * Component-with-presets vs. several separate Components). The Library
+ * panel reads THIS list so it can show one card per Component with a
+ * preset picker inside. Nothing downstream of `LIBRARY` (below) ever sees
+ * `.presets` — it's flattened away first.
  */
-export const LIBRARY: LibraryEntry[] = [
+export const LIBRARY_COMPONENTS: LibraryEntry[] = [
   ...badgePresets,
   ...techIconPresets,
   ...statsPresets,
@@ -51,8 +60,30 @@ export const LIBRARY: LibraryEntry[] = [
   ...(communityComponents as LibraryEntry[]),
 ];
 
+/** Fully flat — one addable LibraryEntry per id, never a `.presets` field.
+ *  Everything that resolves/places/persists a component by id reads this. */
+export const LIBRARY: LibraryEntry[] = flattenLibrary(LIBRARY_COMPONENTS);
+
 export const COMPONENT_TYPE_MAP = new Map(COMPONENT_TYPES.map((d) => [d.type, d]));
 export const LIBRARY_MAP = new Map(LIBRARY.map((e) => [e.id, e]));
+
+/** A flattened preset id (e.g. "lang-cpp") -> the Component it belongs to
+ *  and its full sibling preset list. Used only by SettingsPanel to offer a
+ *  generic "Preset" selector for an already-placed widget — components
+ *  without presets simply have no entry here. */
+export interface PresetParent {
+  componentId: string;
+  componentName: string;
+  presets: PresetDefinition[];
+}
+export const PRESET_PARENT_MAP = new Map<string, PresetParent>();
+for (const c of LIBRARY_COMPONENTS) {
+  if (c.presets?.length) {
+    for (const p of c.presets) {
+      PRESET_PARENT_MAP.set(p.id, { componentId: c.id, componentName: c.name, presets: c.presets });
+    }
+  }
+}
 
 export function getComponentType(type: string): ComponentTypeDefinition {
   const def = COMPONENT_TYPE_MAP.get(type);
@@ -66,4 +97,10 @@ export function getLibraryEntry(id: string): LibraryEntry {
   return entry;
 }
 
-export const CATEGORIES = ['All', 'Languages', 'Frameworks', 'Databases', 'Tools', 'Stats', 'Social', 'Decorations'] as const;
+/** "All" + every category actually used by LIBRARY_COMPONENTS, with the 7
+ *  seed categories ordered first (new categories just sort after them —
+ *  adding one needs zero edits here). */
+const seedOrder = new Map(CATEGORIES_SEED.map((c, i) => [c, i]));
+const usedCategories = Array.from(new Set(LIBRARY_COMPONENTS.map((c) => c.category)));
+usedCategories.sort((a, b) => (seedOrder.get(a) ?? 999) - (seedOrder.get(b) ?? 999));
+export const CATEGORIES = ['All', ...usedCategories] as const;

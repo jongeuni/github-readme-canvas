@@ -1,13 +1,12 @@
 import type { ComponentType } from 'react';
 
-export type ComponentCategory =
-  | 'Languages'
-  | 'Frameworks'
-  | 'Databases'
-  | 'Tools'
-  | 'Stats'
-  | 'Social'
-  | 'Decorations';
+/**
+ * Data-driven, not a closed union — a Component's category is just whatever
+ * string its presets.ts / community-components.json entry uses. The 7 seed
+ * values in src/data/categories.ts only control chip ORDER in the Library;
+ * a brand-new category value works immediately, no file needs editing.
+ */
+export type ComponentCategory = string;
 
 /** 'inline' widgets (badges, icons, social pills) flow next to each other on one line;
  *  'block' widgets (stats cards, dividers) always occupy their own line. */

@@ -1,6 +1,6 @@
 import { createElement } from 'react';
 import type { UseCanvasEditor } from '../editor/useCanvasEditor';
-import { getComponentType } from '../../registry';
+import { getComponentType, PRESET_PARENT_MAP } from '../../registry';
 import type { HeadingLevel } from '../widgets/heading/types';
 import { Icon } from '../Icon';
 import { SelectField, TextField } from './fields';
@@ -40,8 +40,16 @@ function textLineTitle(level: HeadingLevel): string {
  * the registry, so adding a new widget kind needs zero changes to this file.
  */
 export function SettingsPanel({ editor }: { editor: UseCanvasEditor }) {
-  const { selectedTextEl, selectedUid, getSelectedWidget, updateSelectedWidgetSettings, removeSelectedWidget, setSelectedTextValue, setSelectedTextLevel } =
-    editor;
+  const {
+    selectedTextEl,
+    selectedUid,
+    getSelectedWidget,
+    updateSelectedWidgetSettings,
+    updateSelectedWidgetPreset,
+    removeSelectedWidget,
+    setSelectedTextValue,
+    setSelectedTextLevel,
+  } = editor;
 
   if (selectedTextEl && selectedTextEl.isConnected) {
     const level = textLineLevel(selectedTextEl);
@@ -77,6 +85,10 @@ export function SettingsPanel({ editor }: { editor: UseCanvasEditor }) {
   }
 
   const def = getComponentType(widget.type);
+  // Generic across every component type — undefined for anything without
+  // presets, so this renders nothing extra for them. A new preset-bearing
+  // Component gets this dropdown automatically, no change needed here.
+  const presetGroup = PRESET_PARENT_MAP.get(widget.libId);
   return (
     <div className="settings-col">
       <div className="settings-head">
@@ -84,6 +96,17 @@ export function SettingsPanel({ editor }: { editor: UseCanvasEditor }) {
         <div className="settings-title">{widget.name}</div>
       </div>
       <form onSubmit={(e) => e.preventDefault()}>
+        {presetGroup && (
+          <SelectField
+            label="Preset"
+            value={widget.libId}
+            onChange={(id) => {
+              const preset = presetGroup.presets.find((p) => p.id === id);
+              if (preset) updateSelectedWidgetPreset(preset);
+            }}
+            options={presetGroup.presets.map((p) => ({ value: p.id, label: p.name }))}
+          />
+        )}
         {createElement(def.SettingsForm, { settings: widget.settings, meta: widget.meta, onChange: updateSelectedWidgetSettings })}
       </form>
       <div className="remove-row">

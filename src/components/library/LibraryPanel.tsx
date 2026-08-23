@@ -1,17 +1,15 @@
 import { useMemo, useState } from 'react';
-import { CATEGORIES, LIBRARY } from '../../registry';
-import { PER_LANGUAGE_BADGE_IDS } from '../widgets/badge/presets';
+import { CATEGORIES, LIBRARY_COMPONENTS } from '../../registry';
 import { useFavorites } from '../../hooks/useFavorites';
 import { Icon } from '../Icon';
 import { ComponentCard } from './ComponentCard';
 import type { LibraryEntry } from '../../types/library';
 
-type BadgeMode = 'per-language' | 'unified';
-
 /**
- * Left-hand library column: search, category chips, the per-language vs.
- * unified badge experiment (kept from the original design spec — both modes
- * stay live), a favorites-only filter, and the scrollable card list.
+ * Left-hand library column: search, category chips, a favorites-only
+ * filter, and the scrollable card list. One card per Component — a
+ * Component with `.presets` shows a preset picker inside its own card (see
+ * ComponentCard) instead of getting one card per preset.
  */
 export function LibraryPanel({
   onUse,
@@ -28,25 +26,22 @@ export function LibraryPanel({
 }) {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState<(typeof CATEGORIES)[number]>('All');
-  const [badgeMode, setBadgeMode] = useState<BadgeMode>('per-language');
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const { favorites, toggleFavorite } = useFavorites();
 
   const visible = useMemo(() => {
-    const combined = [...LIBRARY, ...customComponents];
-    const byMode = combined.filter((item) =>
-      badgeMode === 'unified' ? !PER_LANGUAGE_BADGE_IDS.includes(item.id) : item.id !== 'lang-badge-unified',
-    );
+    const combined = [...LIBRARY_COMPONENTS, ...customComponents];
     const q = search.trim().toLowerCase();
-    return byMode.filter((item) => {
+    return combined.filter((item) => {
       if (category !== 'All' && item.category !== category) return false;
       if (favoritesOnly && !favorites.has(item.id)) return false;
       if (!q) return true;
-      const hay = `${item.name} ${item.description} ${item.tags.join(' ')}`.toLowerCase();
+      const presetNames = (item.presets ?? []).map((p) => p.name).join(' ');
+      const hay = `${item.name} ${item.description} ${item.tags.join(' ')} ${presetNames}`.toLowerCase();
       return hay.includes(q);
     });
-  }, [badgeMode, category, customComponents, favorites, favoritesOnly, search]);
+  }, [category, customComponents, favorites, favoritesOnly, search]);
 
   return (
     <div className="lib-col">
@@ -55,17 +50,6 @@ export function LibraryPanel({
         <div className="search-box">
           <Icon name="search" />
           <input type="text" placeholder="Search components..." value={search} onChange={(e) => setSearch(e.target.value)} />
-        </div>
-        <div className="mode-toggle-wrap">
-          <span className="mode-toggle-label">Language badges</span>
-          <div className="mode-toggle">
-            <button type="button" className={badgeMode === 'per-language' ? 'active' : ''} onClick={() => setBadgeMode('per-language')}>
-              Separate cards
-            </button>
-            <button type="button" className={badgeMode === 'unified' ? 'active' : ''} onClick={() => setBadgeMode('unified')}>
-              Unified + picker
-            </button>
-          </div>
         </div>
       </div>
       <div className="cat-row">
@@ -98,7 +82,7 @@ export function LibraryPanel({
               favorite={favorites.has(item.id)}
               onToggleExpand={() => setExpandedId((cur) => (cur === item.id ? null : item.id))}
               onToggleFavorite={() => toggleFavorite(item.id)}
-              onUse={() => onUse(item.id)}
+              onUse={onUse}
               onRemove={item.id.startsWith('custom-') ? () => onRemoveCustomComponent(item.id) : undefined}
               onSubmitPr={item.id.startsWith('custom-') ? () => onSubmitPr(item) : undefined}
             />

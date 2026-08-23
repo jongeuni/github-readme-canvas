@@ -31,26 +31,30 @@ check('seed badges present', (await page.locator('.canvas-paper .md-badge').coun
 check('seed stats card present', (await page.locator('.canvas-paper .stats-card').count()) === 1);
 check('seed social pills present', (await page.locator('.canvas-paper .social-pill').count()) === 2);
 
-// 2. library search + add a component
+// 2. library search + add a component (Tech Icon is a preset-bearing
+// Component — one card, React/Node.js/Spring presets inside; searching
+// "React" still finds it via its preset-summary line)
 await page.fill('.search-box input', 'React');
 await page.waitForTimeout(150);
-const reactCard = page.locator('.comp-card', { hasText: 'React' }).first();
-check('search finds React tech-icon card', await reactCard.count() === 1);
-await reactCard.locator('.comp-card-head').click();
-await reactCard.locator('button:has-text("Use Component")').click();
+const techIconCard = page.locator('.comp-card', { hasText: 'Tech Icon' }).first();
+check('search finds Tech Icon component card', await techIconCard.count() === 1);
+await techIconCard.locator('.comp-card-head').click();
+await techIconCard.locator('button:has-text("Use Component")').click();
 await page.waitForTimeout(150);
-check('React tech-icon added to canvas', (await page.locator('.canvas-paper .tech-tile').count()) === 1);
+check('first tech-icon preset (React) added to canvas', (await page.locator('.canvas-paper .tech-tile').count()) === 1);
 
 // clear search
 await page.fill('.search-box input', '');
 
-// 3. favorite toggle persists to localStorage
-const cppCard = page.locator('.comp-card', { hasText: 'C++' }).first();
-await cppCard.locator('.fav-btn').click();
-const favActive = await cppCard.locator('.fav-btn.active').count();
+// 3. favorite toggle persists to localStorage (favoriting a preset-bearing
+// Component favorites the Component id, e.g. "lang-badge" — not any one
+// preset's flat id)
+const langBadgeCard = page.locator('.comp-card', { hasText: 'Language Badge' }).first();
+await langBadgeCard.locator('.fav-btn').click();
+const favActive = await langBadgeCard.locator('.fav-btn.active').count();
 check('favorite toggled active', favActive === 1);
 const stored = await page.evaluate(() => localStorage.getItem('readmeComponents:favorites'));
-check('favorite persisted to localStorage', !!stored && stored.includes('lang-cpp'));
+check('favorite persisted to localStorage', !!stored && stored.includes('lang-badge'));
 
 // 4. select a widget, edit settings, see canvas update
 await page.locator('.canvas-paper .md-badge').first().click();

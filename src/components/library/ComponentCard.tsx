@@ -1,13 +1,41 @@
-import { createElement, useMemo } from 'react';
+import { createElement, useEffect, useMemo, useState } from 'react';
 import { getComponentType } from '../../registry';
-import type { LibraryEntry } from '../../types/library';
+import type { LibraryEntry, PresetDefinition } from '../../types/library';
 import { Icon } from '../Icon';
+
+/** "6 languages · C++ · Python · TypeScript + 3 more" — never lists every
+ *  preset, just enough to signal "there's a picker in here". */
+function presetSummary(entry: LibraryEntry): string {
+  const presets = entry.presets ?? [];
+  const noun = entry.presetsLabel ?? 'presets';
+  const names = presets.map((p) => p.name);
+  const shown = names.slice(0, 3).join(' · ');
+  return names.length > 3 ? `${names.length} ${noun} · ${shown} + ${names.length - 3} more` : `${names.length} ${noun} · ${shown}`;
+}
+
+/** Only render a filter box once a preset list is long enough to need one —
+ *  keeps small groups (today: 6 languages, 3 icons) exactly as simple as a
+ *  preset-less card. */
+const PRESET_SEARCH_THRESHOLD = 8;
+
+/** "languages" -> "a language", "icons" -> "an icon" — good enough for the
+ *  simple English plurals presetsLabel actually uses. */
+function presetPickerLabel(presetsLabel?: string): string {
+  const noun = (presetsLabel ?? 'presets').replace(/s$/, '');
+  const article = /^[aeiou]/i.test(noun) ? 'an' : 'a';
+  return `Choose ${article} ${noun}`;
+}
 
 /**
  * One catalog card in the left-hand library. Rendering the preview via the
  * component type's own <Preview/> (rather than a hand-rolled switch) means a
  * brand-new widget folder shows up correctly here with zero changes to this
  * file — the whole point of the registry.
+ *
+ * A Component with `.presets` still gets exactly one card, same as any
+ * other — it just grows a preset picker in its expanded state. See
+ * PresetDefinition's doc comment (types/library.ts) for what belongs here
+ * vs. what should be its own Component instead.
  */
 export function ComponentCard({
   entry,
@@ -24,19 +52,45 @@ export function ComponentCard({
   favorite: boolean;
   onToggleExpand: () => void;
   onToggleFavorite: () => void;
-  onUse: () => void;
+  onUse: (id: string) => void;
   /** Present only for locally-added custom components — lets them be deleted from the library. */
   onRemove?: () => void;
   /** Present only for locally-added custom components — proposes it to the project via PR. */
   onSubmitPr?: () => void;
 }) {
   const def = getComponentType(entry.type);
-  const usage = useMemo(() => def.toMarkdown(entry.defaultSettings, entry.meta), [def, entry.defaultSettings, entry.meta]);
+  const hasPresets = !!entry.presets?.length;
+
+  const [selectedPresetId, setSelectedPresetId] = useState<string | undefined>(entry.presets?.[0]?.id);
+  const [presetFilter, setPresetFilter] = useState('');
+  // Every time the card is (re-)expanded, start from the first preset again
+  // — simplest behavior, no "remember my last pick" state to carry around.
+  useEffect(() => {
+    if (expanded) {
+      setSelectedPresetId(entry.presets?.[0]?.id);
+      setPresetFilter('');
+    }
+  }, [expanded, entry.presets]);
+
+  const selectedPreset = entry.presets?.find((p) => p.id === selectedPresetId);
+  const resolvedSettings = selectedPreset ? { ...entry.defaultSettings, ...selectedPreset.settings } : entry.defaultSettings;
+  const resolvedMeta = selectedPreset?.meta ? { ...entry.meta, ...selectedPreset.meta } : entry.meta;
+  const resolvedDescription = selectedPreset?.description ?? entry.description;
+
+  const usage = useMemo(() => def.toMarkdown(resolvedSettings, resolvedMeta), [def, resolvedSettings, resolvedMeta]);
+
+  const filteredPresets = useMemo(() => {
+    const presets = entry.presets ?? [];
+    const q = presetFilter.trim().toLowerCase();
+    return q ? presets.filter((p) => p.name.toLowerCase().includes(q)) : presets;
+  }, [entry.presets, presetFilter]);
+
+  const handleUse = () => onUse(selectedPreset?.id ?? entry.id);
 
   return (
     <div className={`comp-card ${expanded ? 'expanded' : ''}`}>
       <div className="comp-card-head" onClick={onToggleExpand}>
-        <div className="comp-card-preview">{createElement(def.Preview, { settings: entry.defaultSettings, meta: entry.meta })}</div>
+        <div className="comp-card-preview">{createElement(def.Preview, { settings: resolvedSettings, meta: resolvedMeta })}</div>
         <div className="comp-card-name-row">
           <div className="comp-card-name">{entry.name}</div>
           <button
@@ -64,7 +118,11 @@ export function ComponentCard({
             </button>
           )}
         </div>
-        <div className="comp-card-desc">{entry.description}</div>
+        {hasPresets ? (
+          <div className="comp-card-desc preset-summary">{presetSummary(entry)}</div>
+        ) : (
+          <div className="comp-card-desc">{entry.description}</div>
+        )}
         <div className="comp-card-tags">
           {entry.tags.map((t) => (
             <span key={t} className="tag">
@@ -75,8 +133,39 @@ export function ComponentCard({
       </div>
       {expanded && (
         <div className="comp-detail">
-          <div className="comp-detail-preview">{createElement(def.Preview, { settings: entry.defaultSettings, meta: entry.meta })}</div>
-          <div className="comp-detail-desc">{entry.description}</div>
+          <div className="comp-detail-preview">{createElement(def.Preview, { settings: resolvedSettings, meta: resolvedMeta })}</div>
+          <div className="comp-detail-desc">{resolvedDescription}</div>
+          {hasPresets && (
+            <>
+              <div className="comp-detail-label">{presetPickerLabel(entry.presetsLabel)}</div>
+              {(entry.presets?.length ?? 0) > PRESET_SEARCH_THRESHOLD && (
+                <div className="search-box">
+                  <Icon name="search" />
+                  <input
+                    type="text"
+                    placeholder={`Search ${entry.presetsLabel ?? 'presets'}...`}
+                    value={presetFilter}
+                    onChange={(e) => setPresetFilter(e.target.value)}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </div>
+              )}
+              <div className="preset-list">
+                {filteredPresets.map((p: PresetDefinition) => (
+                  <span
+                    key={p.id}
+                    className={`preset-row ${p.id === selectedPresetId ? 'selected' : ''}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedPresetId(p.id);
+                    }}
+                  >
+                    {p.name}
+                  </span>
+                ))}
+              </div>
+            </>
+          )}
           <div className="comp-detail-label">Usage</div>
           <div className="usage-block">
             <code>{usage}</code>
@@ -98,7 +187,7 @@ export function ComponentCard({
             style={{ width: '100%' }}
             onClick={(e) => {
               e.stopPropagation();
-              onUse();
+              handleUse();
             }}
           >
             Use Component

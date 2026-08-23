@@ -450,6 +450,10 @@ pre {
   gap: 5px;
   flex-wrap: wrap;
 }
+.preset-summary {
+  font-weight: 500;
+  color: var(--text-1);
+}
 .fav-btn {
   border: none;
   background: transparent;
@@ -501,6 +505,33 @@ pre {
   text-transform: uppercase;
   letter-spacing: 0.04em;
   margin-bottom: 6px;
+}
+.preset-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.preset-row {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 11px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid var(--border-strong);
+  color: var(--text-2);
+  background: #fff;
+  cursor: pointer;
+}
+.preset-row:hover {
+  border-color: #b8b8bf;
+  color: var(--text-1);
+}
+.preset-row.selected {
+  background: var(--text-1);
+  color: #fff;
+  border-color: var(--text-1);
 }
 .usage-block {
   position: relative;
