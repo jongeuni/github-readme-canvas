@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { CATEGORIES, LIBRARY_COMPONENTS } from '../../registry';
+import { CATEGORIES, LIBRARY, LIBRARY_COMPONENTS } from '../../registry';
 import { useFavorites } from '../../hooks/useFavorites';
 import { Icon } from '../Icon';
 import { ComponentCard } from './ComponentCard';
@@ -9,13 +9,16 @@ type ViewMode = 'all' | 'components';
 
 /**
  * Left-hand library column: search, category chips, a favorites-only
- * filter, an All/Components view toggle, and the scrollable card list. One
- * card per Component — a Component with `.presets` shows a preset picker
- * inside its own card (see ComponentCard) instead of getting one card per
- * preset. "Components" view narrows that down further to only the entries
- * that actually bundle presets (e.g. Language Badge, Tech Icon) — single-
- * purpose entries like "PostgreSQL" or "Docker" don't have presets, so they
- * only ever show up in "All".
+ * filter, an All/Components view toggle, and the scrollable card list.
+ * "Components" is the grouped view — one card per Component, a `.presets`
+ * bundle shows a picker inside its own card (see ComponentCard) instead of
+ * one card per preset; single-purpose entries like "PostgreSQL" or "Docker"
+ * show up here too, exactly as themselves, since there's nothing to group.
+ * "All" is the fully flattened view — every individual preset (every
+ * language, every tech icon, ...) gets its own standalone card, for
+ * browsing/searching one specific variant directly instead of through a
+ * picker. Same underlying catalog either way, just LIBRARY (flattened) vs.
+ * LIBRARY_COMPONENTS (grouped) as the source.
  */
 export function LibraryPanel({
   onUse,
@@ -38,10 +41,9 @@ export function LibraryPanel({
   const { favorites, toggleFavorite } = useFavorites();
 
   const visible = useMemo(() => {
-    const combined = [...LIBRARY_COMPONENTS, ...customComponents];
+    const combined = [...(viewMode === 'all' ? LIBRARY : LIBRARY_COMPONENTS), ...customComponents];
     const q = search.trim().toLowerCase();
     return combined.filter((item) => {
-      if (viewMode === 'components' && !item.presets?.length) return false;
       if (category !== 'All' && item.category !== category) return false;
       if (favoritesOnly && !favorites.has(item.id)) return false;
       if (!q) return true;
