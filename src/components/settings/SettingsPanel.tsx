@@ -1,7 +1,7 @@
 import { createElement } from 'react';
 import type { UseCanvasEditor } from '../editor/useCanvasEditor';
+import { TEXT_LINE_STYLE_OPTIONS, textLineStyle, textLineStyleLabel } from '../editor/useCanvasEditor';
 import { getComponentType, PRESET_PARENT_MAP } from '../../registry';
-import type { HeadingLevel } from '../widgets/heading/types';
 import { Icon } from '../Icon';
 import { SelectField, TextField } from './fields';
 
@@ -14,22 +14,6 @@ const TYPE_LABELS: Record<string, string> = {
   divider: 'Divider',
   'url-component': 'Component',
 };
-
-const LEVEL_OPTIONS: { value: HeadingLevel; label: string }[] = [
-  { value: 'h1', label: 'Heading 1' },
-  { value: 'h2', label: 'Heading 2' },
-  { value: 'text', label: 'Paragraph' },
-];
-
-function textLineLevel(el: HTMLElement): HeadingLevel {
-  if (el.classList.contains('md-h1')) return 'h1';
-  if (el.classList.contains('md-h2')) return 'h2';
-  return 'text';
-}
-
-function textLineTitle(level: HeadingLevel): string {
-  return level === 'h1' ? 'Heading (H1)' : level === 'h2' ? 'Heading (H2)' : 'Paragraph Text';
-}
 
 /**
  * Right-hand settings column. Two mutually-exclusive selection kinds from
@@ -52,17 +36,20 @@ export function SettingsPanel({ editor }: { editor: UseCanvasEditor }) {
   } = editor;
 
   if (selectedTextEl && selectedTextEl.isConnected) {
-    const level = textLineLevel(selectedTextEl);
+    const style = textLineStyle(selectedTextEl);
     return (
       <div className="settings-col">
         <div className="settings-head">
           <div className="settings-eyebrow">Text</div>
-          <div className="settings-title">{textLineTitle(level)}</div>
+          <div className="settings-title">{textLineStyleLabel(style)}</div>
         </div>
         <form onSubmit={(e) => e.preventDefault()}>
           <TextField label="Text" value={selectedTextEl.textContent ?? ''} onChange={setSelectedTextValue} />
-          <SelectField label="Style" value={level} onChange={setSelectedTextLevel} options={LEVEL_OPTIONS} />
-          <div className="hint">You can type directly on the canvas, or change it here. Starting a line with # / ## also converts it live.</div>
+          <SelectField label="Style" value={style} onChange={setSelectedTextLevel} options={TEXT_LINE_STYLE_OPTIONS} />
+          <div className="hint">
+            You can type directly on the canvas, or change it here. Starting a line with #…###### / &gt; / - / 1. also converts it live, and
+            **bold**, *italic*, ~~strike~~, `code`, and [link](url) work mid-paragraph.
+          </div>
         </form>
       </div>
     );

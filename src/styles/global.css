@@ -672,6 +672,69 @@ pre {
   line-height: 1.6;
   margin: 0;
 }
+.md-h3 {
+  font-size: 14px;
+  font-weight: 700;
+  margin: 14px 0 6px;
+}
+.md-h4 {
+  font-size: 13px;
+  font-weight: 700;
+  margin: 12px 0 6px;
+}
+.md-h5 {
+  font-size: 12px;
+  font-weight: 700;
+  margin: 10px 0 4px;
+}
+.md-h6 {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-2);
+  margin: 10px 0 4px;
+}
+.md-quote {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-2);
+  border-left: 3px solid var(--border-strong);
+  margin: 4px 0;
+}
+.md-ul-item,
+.md-ol-item {
+  font-size: 13px;
+  color: #3a3a3f;
+  line-height: 1.6;
+  margin: 0;
+  position: relative;
+}
+.md-ul-item::before {
+  content: '•';
+  position: absolute;
+  left: 6px;
+}
+.canvas-paper .md-ol-item {
+  counter-increment: md-ol;
+}
+.canvas-paper .md-ol-item:not(.md-ol-item + .md-ol-item) {
+  counter-reset: md-ol;
+}
+.md-ol-item::before {
+  content: counter(md-ol) '.';
+  position: absolute;
+  left: 0;
+}
+.canvas-paper code {
+  background: var(--page-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 12px;
+}
+.canvas-paper a {
+  color: var(--accent);
+  text-decoration: underline;
+}
 /* The whole canvas is one contenteditable surface. Any plain text line gets a
    subtle hover tint so it reads as "click here to type" without a heavy outline. */
 .canvas-paper[contenteditable] {
@@ -689,8 +752,21 @@ pre {
   background: #fafafa;
 }
 .canvas-paper[contenteditable] > .md-h1,
-.canvas-paper[contenteditable] > .md-h2 {
+.canvas-paper[contenteditable] > .md-h2,
+.canvas-paper[contenteditable] > .md-h3,
+.canvas-paper[contenteditable] > .md-h4,
+.canvas-paper[contenteditable] > .md-h5,
+.canvas-paper[contenteditable] > .md-h6 {
   padding-left: 4px;
+}
+/* Overrides the base `> div` rule's 4px padding-left — these need real room
+   for the bullet/number/quote-bar drawn in ::before / border-left below. */
+.canvas-paper[contenteditable] > .md-quote {
+  padding-left: 12px;
+}
+.canvas-paper[contenteditable] > .md-ul-item,
+.canvas-paper[contenteditable] > .md-ol-item {
+  padding-left: 20px;
 }
 .canvas-paper[contenteditable] > div:empty:before {
   content: attr(data-placeholder);

@@ -64,6 +64,79 @@ const BOLD_INLINE_RE = /\*\*([^*\n]+)\*\*$/;
 // far ends "...**bold*"), a lookbehind-less version reads the second `*` of
 // that leading "**" as a fresh italic opener and fires one keystroke early.
 const ITALIC_INLINE_RE = /(?<!\*)\*([^*\n]+)\*$/;
+const STRIKE_INLINE_RE = /~~([^~\n]+)~~$/;
+const CODE_INLINE_RE = /`([^`\n]+)`$/;
+// (?<!!) excludes `![alt](url)` — that's the image syntax handled as a whole
+// line above; without the lookbehind this would misfire on the "[alt](url)"
+// tail of an inline image and turn it into a link instead.
+const LINK_INLINE_RE = /(?<!!)\[([^\]\n]+)\]\((\S+)\)$/;
+
+/** A line consisting of just `---`, `***`, or `___` (3+) is a thematic break
+ *  (GFM horizontal rule) — same live-conversion idea as the image-line rule
+ *  above, converted into the existing Divider component instead of a plain
+ *  text line since there's nothing else useful a `<hr>`-only line could hold. */
+const HR_LINE_RE = /^(-{3,}|\*{3,}|_{3,})$/;
+
+/** Whole-line prefixes that switch a line's block style the moment the
+ *  trailing space is typed — same live-conversion idea as the heading rule,
+ *  just for GFM blockquote/list markers instead of `#`. Checked in order;
+ *  first match wins (their leading characters never overlap). */
+const LINE_PREFIX_PATTERNS: { re: RegExp; className: string }[] = [
+  { re: /^>\s/, className: 'md-quote' },
+  { re: /^[-*]\s/, className: 'md-ul-item' },
+  { re: /^\d+\.\s/, className: 'md-ol-item' },
+];
+
+export type TextLineStyle = 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'quote' | 'ul' | 'ol' | 'text';
+
+const STYLE_CLASS: Record<TextLineStyle, string> = {
+  h1: 'md-h1',
+  h2: 'md-h2',
+  h3: 'md-h3',
+  h4: 'md-h4',
+  h5: 'md-h5',
+  h6: 'md-h6',
+  quote: 'md-quote',
+  ul: 'md-ul-item',
+  ol: 'md-ol-item',
+  text: 'md-text',
+};
+
+export const TEXT_LINE_STYLE_OPTIONS: { value: TextLineStyle; label: string }[] = [
+  { value: 'h1', label: 'Heading 1' },
+  { value: 'h2', label: 'Heading 2' },
+  { value: 'h3', label: 'Heading 3' },
+  { value: 'h4', label: 'Heading 4' },
+  { value: 'h5', label: 'Heading 5' },
+  { value: 'h6', label: 'Heading 6' },
+  { value: 'quote', label: 'Quote' },
+  { value: 'ul', label: 'Bulleted List' },
+  { value: 'ol', label: 'Numbered List' },
+  { value: 'text', label: 'Paragraph' },
+];
+
+export function textLineStyle(el: HTMLElement): TextLineStyle {
+  const entry = (Object.entries(STYLE_CLASS) as [TextLineStyle, string][]).find(([style, cls]) => style !== 'text' && el.classList.contains(cls));
+  return entry?.[0] ?? 'text';
+}
+
+export function textLineStyleLabel(style: TextLineStyle): string {
+  return TEXT_LINE_STYLE_OPTIONS.find((o) => o.value === style)?.label ?? 'Paragraph';
+}
+
+/** Markdown line-prefix for each block style — shared by buildFullMarkdown's
+ *  export and (inverted) by handleInput's live-conversion above. */
+const LINE_PREFIX: Partial<Record<string, string>> = {
+  'md-h1': '# ',
+  'md-h2': '## ',
+  'md-h3': '### ',
+  'md-h4': '#### ',
+  'md-h5': '##### ',
+  'md-h6': '###### ',
+  'md-quote': '> ',
+  'md-ul-item': '- ',
+  'md-ol-item': '1. ',
+};
 
 function mkInstanceFromEntry(lib: LibraryEntry, overrides?: Record<string, unknown>): WidgetInstance {
   return {
@@ -85,10 +158,11 @@ function isEmptyText(n: ChildNode | null): boolean {
 }
 
 /** Walks a text line's DOM to rebuild its markdown source: Shift+Enter's
- *  soft <br> becomes a real line break (.textContent silently drops it),
- *  and <strong>/<b> or <em>/<i> — from the floating toolbar or live
- *  `**`/`*` conversion — become `**bold**`/`*italic*` so they round-trip
- *  into the exported Markdown instead of just vanishing into plain text. */
+ *  soft <br> becomes a real line break (.textContent silently drops it), and
+ *  the inline tags produced by the floating toolbar or live `**`/`*`/`~~`/
+ *  `` ` ``/`[]()` conversion become their markdown source again so they
+ *  round-trip into the exported Markdown instead of just vanishing into
+ *  plain text. */
 function textWithSoftBreaks(node: Node): string {
   let out = '';
   node.childNodes.forEach((child) => {
@@ -103,6 +177,9 @@ function textWithSoftBreaks(node: Node): string {
     const inner = textWithSoftBreaks(child);
     if (child.nodeName === 'STRONG' || child.nodeName === 'B') out += `**${inner}**`;
     else if (child.nodeName === 'EM' || child.nodeName === 'I') out += `*${inner}*`;
+    else if (child.nodeName === 'DEL' || child.nodeName === 'S') out += `~~${inner}~~`;
+    else if (child.nodeName === 'CODE') out += `\`${inner}\``;
+    else if (child.nodeName === 'A') out += `[${inner}](${(child as HTMLAnchorElement).getAttribute('href') ?? ''})`;
     else out += inner;
   });
   return out;
@@ -236,9 +313,9 @@ export function useCanvasEditor() {
     if (first?.dataset.uid) selectWidget(first.dataset.uid);
 
     // Safety net: any brand-new top-level line should default to plain
-    // paragraph style, never inherit a heading's size. Needed because the
-    // IME-safe Enter path below sometimes falls back to the browser's own
-    // native split, which can carry the heading class over.
+    // paragraph style, never inherit a heading/quote/list line's style.
+    // Needed because the IME-safe Enter path below sometimes falls back to
+    // the browser's own native split, which can carry the class over.
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((m) => {
         m.addedNodes.forEach((node) => {
@@ -250,7 +327,7 @@ export function useCanvasEditor() {
             delete el.dataset.keepClass;
             return;
           }
-          if (el.classList.contains('md-h1') || el.classList.contains('md-h2')) {
+          if (Object.keys(LINE_PREFIX).some((cls) => el.classList.contains(cls))) {
             el.className = 'md-text';
           }
         });
@@ -327,10 +404,33 @@ export function useCanvasEditor() {
     selectTextBlock(newLine);
   };
 
-  // ---------- typing `**bold**` or `*italic*` converts that run into a real
-  // <strong>/<em> the moment the closing marker is typed, so the canvas
-  // shows actual bold/italic instead of literal asterisks. Only touches the
-  // text node the caret is in — safe to call on every keystroke. ----------
+  // ---------- typing a lone "---" / "***" / "___" line converts it live into
+  // a Divider component, same idea as convertLineToImageWidget above. ----------
+  const convertLineToDividerWidget = (el: HTMLElement) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const instance = mkInstance('dec-divider');
+    const widgetEl = widgetHTMLContainer(instance);
+    canvas.insertBefore(widgetEl, el);
+    el.remove();
+    const root = createRoot(widgetEl);
+    const record: WidgetRecord = { instance, el: widgetEl, root };
+    widgetsRef.current.set(instance.uid, record);
+    renderWidgetRoot(record);
+
+    const newLine = document.createElement('div');
+    newLine.className = 'md-text';
+    widgetEl.insertAdjacentElement('afterend', newLine);
+    ensureTrailingTextLine();
+    placeCaretAtStart(newLine);
+    selectTextBlock(newLine);
+  };
+
+  // ---------- typing `**bold**`, `*italic*`, `~~strike~~`, `` `code` `` or
+  // `[text](url)` converts that run into real inline markup the moment the
+  // closing marker is typed, so the canvas shows the real formatting instead
+  // of literal markdown characters. Only touches the text node the caret is
+  // in — safe to call on every keystroke. ----------
   const convertInlineEmphasis = (el: HTMLElement): boolean => {
     const sel = window.getSelection();
     if (!sel || sel.rangeCount === 0 || !sel.isCollapsed) return false;
@@ -341,7 +441,11 @@ export function useCanvasEditor() {
     const prefix = text.slice(0, caretOffset);
 
     const boldMatch = BOLD_INLINE_RE.exec(prefix);
-    const match = boldMatch ?? ITALIC_INLINE_RE.exec(prefix);
+    const strikeMatch = !boldMatch && STRIKE_INLINE_RE.exec(prefix);
+    const codeMatch = !boldMatch && !strikeMatch && CODE_INLINE_RE.exec(prefix);
+    const linkMatch = !boldMatch && !strikeMatch && !codeMatch && LINK_INLINE_RE.exec(prefix);
+    const italicMatch = !boldMatch && !strikeMatch && !codeMatch && !linkMatch && ITALIC_INLINE_RE.exec(prefix);
+    const match = boldMatch ?? strikeMatch ?? codeMatch ?? linkMatch ?? italicMatch;
     if (!match) return false;
 
     const parent = node.parentNode;
@@ -351,8 +455,10 @@ export function useCanvasEditor() {
     const before = text.slice(0, matchStart);
     const after = text.slice(caretOffset);
 
-    const wrapper = document.createElement(boldMatch ? 'strong' : 'em');
+    const tag = boldMatch ? 'strong' : strikeMatch ? 'del' : codeMatch ? 'code' : linkMatch ? 'a' : 'em';
+    const wrapper = document.createElement(tag);
     wrapper.textContent = match[1];
+    if (linkMatch) (wrapper as HTMLAnchorElement).href = linkMatch[2];
 
     node.textContent = before;
     parent.insertBefore(wrapper, node.nextSibling);
@@ -433,18 +539,33 @@ export function useCanvasEditor() {
     setSelectionToolbar(null); // typing collapses whatever selection the toolbar was anchored to
     const el = currentTextLine();
     if (!el) return;
-    if (!el.classList.contains('md-h1') && !el.classList.contains('md-h2') && !el.classList.contains('md-text')) {
+    const recognized = Object.keys(LINE_PREFIX).concat('md-text');
+    if (!recognized.some((cls) => el.classList.contains(cls))) {
       el.classList.add('md-text');
     }
     const text = el.textContent ?? '';
-    const h2 = /^##\s/.exec(text);
-    const h1 = !h2 && /^#\s/.exec(text);
-    if (h1 || h2) {
-      el.className = h2 ? 'md-h2' : 'md-h1';
-      el.textContent = text.replace(/^#{1,2}\s/, '');
+
+    // "#" through "######" -> heading 1-6. The regex is self-disambiguating:
+    // `#{1,6}` backtracks until the char right after it is whitespace, so
+    // "### " can never also satisfy the "# " (h1) branch mid-match.
+    const headingMatch = /^(#{1,6})\s/.exec(text);
+    if (headingMatch) {
+      el.className = `md-h${headingMatch[1].length}`;
+      el.textContent = text.slice(headingMatch[0].length);
       placeCaretAtEnd(el);
       if (selectedTextEl === el) bump();
       return;
+    }
+
+    for (const { re, className } of LINE_PREFIX_PATTERNS) {
+      const m = re.exec(text);
+      if (m) {
+        el.className = className;
+        el.textContent = text.slice(m[0].length);
+        placeCaretAtEnd(el);
+        if (selectedTextEl === el) bump();
+        return;
+      }
     }
 
     const trimmed = text.trim();
@@ -456,6 +577,10 @@ export function useCanvasEditor() {
     }
     if (plainImg) {
       convertLineToImageWidget(el, plainImg[1], plainImg[2]);
+      return;
+    }
+    if (HR_LINE_RE.test(trimmed)) {
+      convertLineToDividerWidget(el);
       return;
     }
 
@@ -730,9 +855,9 @@ export function useCanvasEditor() {
   );
 
   const setSelectedTextLevel = useCallback(
-    (level: HeadingLevel) => {
+    (style: TextLineStyle) => {
       if (!selectedTextEl) return;
-      selectedTextEl.className = level === 'h1' ? 'md-h1' : level === 'h2' ? 'md-h2' : 'md-text';
+      selectedTextEl.className = STYLE_CLASS[style];
       bump();
     },
     [selectedTextEl],
@@ -818,8 +943,8 @@ export function useCanvasEditor() {
       flushInline();
       const raw = textWithSoftBreaks(el).trim();
       if (!raw) return;
-      if (el.classList.contains('md-h1')) lines.push('# ' + raw.replace(/\n+/g, ' '));
-      else if (el.classList.contains('md-h2')) lines.push('## ' + raw.replace(/\n+/g, ' '));
+      const prefix = Object.keys(LINE_PREFIX).find((cls) => el.classList.contains(cls));
+      if (prefix) lines.push(LINE_PREFIX[prefix] + raw.replace(/\n+/g, ' '));
       else {
         // GFM hard line break: two trailing spaces keeps soft-broken lines
         // inside the SAME paragraph instead of splitting into a new one.
