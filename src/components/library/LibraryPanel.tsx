@@ -5,11 +5,17 @@ import { Icon } from '../Icon';
 import { ComponentCard } from './ComponentCard';
 import type { LibraryEntry } from '../../types/library';
 
+type ViewMode = 'all' | 'components';
+
 /**
  * Left-hand library column: search, category chips, a favorites-only
- * filter, and the scrollable card list. One card per Component — a
- * Component with `.presets` shows a preset picker inside its own card (see
- * ComponentCard) instead of getting one card per preset.
+ * filter, an All/Components view toggle, and the scrollable card list. One
+ * card per Component — a Component with `.presets` shows a preset picker
+ * inside its own card (see ComponentCard) instead of getting one card per
+ * preset. "Components" view narrows that down further to only the entries
+ * that actually bundle presets (e.g. Language Badge, Tech Icon) — single-
+ * purpose entries like "PostgreSQL" or "Docker" don't have presets, so they
+ * only ever show up in "All".
  */
 export function LibraryPanel({
   onUse,
@@ -26,6 +32,7 @@ export function LibraryPanel({
 }) {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState<(typeof CATEGORIES)[number]>('All');
+  const [viewMode, setViewMode] = useState<ViewMode>('all');
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const { favorites, toggleFavorite } = useFavorites();
@@ -34,6 +41,7 @@ export function LibraryPanel({
     const combined = [...LIBRARY_COMPONENTS, ...customComponents];
     const q = search.trim().toLowerCase();
     return combined.filter((item) => {
+      if (viewMode === 'components' && !item.presets?.length) return false;
       if (category !== 'All' && item.category !== category) return false;
       if (favoritesOnly && !favorites.has(item.id)) return false;
       if (!q) return true;
@@ -41,7 +49,7 @@ export function LibraryPanel({
       const hay = `${item.name} ${item.description} ${item.tags.join(' ')} ${presetNames}`.toLowerCase();
       return hay.includes(q);
     });
-  }, [category, customComponents, favorites, favoritesOnly, search]);
+  }, [category, customComponents, favorites, favoritesOnly, search, viewMode]);
 
   return (
     <div className="lib-col">
@@ -50,6 +58,17 @@ export function LibraryPanel({
         <div className="search-box">
           <Icon name="search" />
           <input type="text" placeholder="Search components..." value={search} onChange={(e) => setSearch(e.target.value)} />
+        </div>
+        <div className="mode-toggle-wrap">
+          <span className="mode-toggle-label">View</span>
+          <div className="mode-toggle">
+            <button type="button" className={viewMode === 'all' ? 'active' : ''} onClick={() => setViewMode('all')}>
+              All
+            </button>
+            <button type="button" className={viewMode === 'components' ? 'active' : ''} onClick={() => setViewMode('components')}>
+              Components
+            </button>
+          </div>
         </div>
       </div>
       <div className="cat-row">
