@@ -1,0 +1,51 @@
+name: "🎨 Preset 추가 제안 (Add Preset)"
+description: "이미 있는 Component에 새로운 값 변형(언어, 아이콘 등)을 추가합니다 (예: Language Badge에 Kotlin 추가)"
+title: "[Preset] "
+labels: ["preset", "enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        기존 **Component**에 새로운 **Preset**(데이터·기본값만 다른 변형)을 추가해주세요.
+
+        > 렌더링 방식이나 Settings 구조 자체가 다르다면 이건 Preset이 아니라 새 **Component**입니다.
+        > 그 경우엔 [🧩 Component 추가 제안](../../issues/new?template=component.yml) 템플릿을 대신 사용해주세요.
+  - type: dropdown
+    id: targetComponent
+    attributes:
+      label: 어느 Component에 추가하고 싶나요?
+      options:
+        - Language Badge
+        - Tech Icon
+        - 기타 (아래에 직접 작성)
+    validations:
+      required: true
+  - type: input
+    id: targetComponentOther
+    attributes:
+      label: "'기타'를 골랐다면, Component 이름을 여기에 적어주세요"
+      placeholder: "예: Social Link"
+  - type: input
+    id: presetName
+    attributes:
+      label: Preset 이름
+      placeholder: "예: Kotlin"
+    validations:
+      required: true
+  - type: textarea
+    id: presetValues
+    attributes:
+      label: 이 Preset이 바꾸는 값들
+      description: "해당 Component가 쓰는 설정값을 채워주세요. 잘 모르겠으면 비워둬도 괜찮아요 — 리뷰하면서 채울게요."
+      placeholder: |
+        label: Kotlin
+        color: purple
+        link: https://kotlinlang.org
+      render: yaml
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: 확인해주세요
+      options:
+        - label: 이미 같은 이름의 Preset이 없는지 확인했어요
+          required: true
