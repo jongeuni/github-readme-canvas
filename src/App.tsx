@@ -92,16 +92,6 @@ function App() {
     [customComponents.customComponents, editor],
   );
 
-  const handleCreateComponent = useCallback(
-    (entry: Parameters<typeof customComponents.addCustomComponent>[0]) => {
-      const created = customComponents.addCustomComponent(entry);
-      editor.addCustomEntry(created);
-      setAddComponentOpen(false);
-      showToast('컴포넌트를 추가했어요');
-    },
-    [customComponents, editor, showToast],
-  );
-
   const handleConnectGitHub = useCallback(
     async (token: string) => {
       const ok = await github.connect(token);
@@ -123,6 +113,22 @@ function App() {
       setPrEntry(entry);
     },
     [github.user, showToast],
+  );
+
+  // Adding a component and proposing it to the project used to be two
+  // separate trips (add here, then hunt down the new card in the library to
+  // hit "GitHub에 PR로 올리기"). Now finishing the wizard goes straight into
+  // the same PR flow — still requires the user's own confirm click inside
+  // SubmitComponentPrModal, this just removes the extra navigation before it.
+  const handleCreateComponent = useCallback(
+    (entry: Parameters<typeof customComponents.addCustomComponent>[0]) => {
+      const created = customComponents.addCustomComponent(entry);
+      editor.addCustomEntry(created);
+      setAddComponentOpen(false);
+      if (github.user) showToast('컴포넌트를 추가했어요 · PR을 준비할게요');
+      handleRequestSubmitPr(created);
+    },
+    [customComponents, editor, github.user, showToast, handleRequestSubmitPr],
   );
 
   const openCommitModal = useCallback(() => {
