@@ -32,40 +32,39 @@ export const badgePresets: LibraryEntry<BadgeSettings>[] = [
       { id: 'lang-rust', name: 'Rust', settings: { label: 'Rust', color: 'orange', link: 'https://rust-lang.org' } },
     ],
   },
+  // Same reasoning as Language Badge above — PostgreSQL/MongoDB and Docker/
+  // Git are identical badge rendering+settings, only label/color/link
+  // differ, so they belong grouped as presets too. Split into two Components
+  // (not folded into Language Badge) because a Component's presets all share
+  // ONE category after flattening — Databases and Tools need to stay their
+  // own category, not inherit "Languages". Preset ids match the original
+  // standalone card ids for the same reason noted above.
   {
-    id: 'db-postgres',
+    id: 'db-badge',
     type: 'badge',
-    name: 'PostgreSQL',
-    description: 'A badge for PostgreSQL.',
+    name: 'Database Badge',
+    description: 'A badge for your database.',
     category: 'Databases',
     tags: ['Databases', 'Badge'],
     defaultSettings: { label: 'PostgreSQL', link: 'https://postgresql.org', style: 'flat', color: 'blue' },
+    presetsLabel: 'databases',
+    presets: [
+      { id: 'db-postgres', name: 'PostgreSQL', settings: { label: 'PostgreSQL', color: 'blue', link: 'https://postgresql.org' } },
+      { id: 'db-mongo', name: 'MongoDB', settings: { label: 'MongoDB', color: 'green', link: 'https://mongodb.com' } },
+    ],
   },
   {
-    id: 'db-mongo',
+    id: 'tool-badge',
     type: 'badge',
-    name: 'MongoDB',
-    description: 'A badge for MongoDB.',
-    category: 'Databases',
-    tags: ['Databases', 'Badge'],
-    defaultSettings: { label: 'MongoDB', link: 'https://mongodb.com', style: 'flat', color: 'green' },
-  },
-  {
-    id: 'tool-docker',
-    type: 'badge',
-    name: 'Docker',
-    description: 'A badge for Docker.',
+    name: 'Tool Badge',
+    description: 'A badge for your favorite tool.',
     category: 'Tools',
     tags: ['Tools', 'Badge'],
     defaultSettings: { label: 'Docker', link: 'https://docker.com', style: 'flat', color: 'blue' },
-  },
-  {
-    id: 'tool-git',
-    type: 'badge',
-    name: 'Git',
-    description: 'A badge for Git.',
-    category: 'Tools',
-    tags: ['Tools', 'Badge'],
-    defaultSettings: { label: 'Git', link: 'https://git-scm.com', style: 'flat', color: 'gray' },
+    presetsLabel: 'tools',
+    presets: [
+      { id: 'tool-docker', name: 'Docker', settings: { label: 'Docker', color: 'blue', link: 'https://docker.com' } },
+      { id: 'tool-git', name: 'Git', settings: { label: 'Git', color: 'gray', link: 'https://git-scm.com' } },
+    ],
   },
 ];
