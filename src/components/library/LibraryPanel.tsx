@@ -86,10 +86,10 @@ export function LibraryPanel({
       <div className="lib-list">
         {visible.length === 0 ? (
           <div className="lib-empty">
-            찾는 컴포넌트가 없나요?
+            Can't find what you're looking for?
             <br />
             <span className="add-link" onClick={onRequestAddComponent}>
-              + 컴포넌트 추가하기
+              + Add Component
             </span>
           </div>
         ) : (
@@ -110,7 +110,7 @@ export function LibraryPanel({
       </div>
       <div className="lib-footer">
         <span className="add-link" onClick={onRequestAddComponent}>
-          + 컴포넌트 추가하기
+          + Add Component
         </span>
       </div>
     </div>

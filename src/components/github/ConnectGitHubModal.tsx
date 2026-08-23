@@ -43,7 +43,7 @@ export function ConnectGitHubModal({
   return (
     <div className="modal-overlay open" onClick={(e) => e.target === e.currentTarget && onCancel()}>
       <div className="modal-card">
-        <h4>GitHub 연결</h4>
+        <h4>Connect GitHub</h4>
         <div className="field">
           <label>Personal Access Token</label>
           <input
@@ -59,20 +59,20 @@ export function ConnectGitHubModal({
           />
         </div>
         <p className="field-hint">
-          <code>repo</code> 권한으로 발급한 토큰이 필요해요.{' '}
+          You need a token issued with <code>repo</code> scope.{' '}
           <a href={NEW_TOKEN_URL} target="_blank" rel="noreferrer">
-            새 토큰 만들기 ↗
+            Create a new token ↗
           </a>
         </p>
-        <p className="field-hint">이 브라우저에만 저장돼요. 서버로 전송되지 않고, GitHub API를 직접 호출하는 데만 쓰여요.</p>
+        <p className="field-hint">This is only stored in this browser. It's never sent to a server — it's used only to call the GitHub API directly.</p>
         {error && <div className="field-error">{error}</div>}
         <div className="modal-actions">
           <button type="button" className="btn btn-ghost btn-sm" onClick={onCancel} disabled={connecting}>
-            취소
+            Cancel
           </button>
           <button type="button" className="btn btn-primary btn-sm" onClick={submit} disabled={connecting}>
             <Icon name="github" />
-            {connecting ? '연결 중...' : '연결하기'}
+            {connecting ? 'Connecting...' : 'Connect'}
           </button>
         </div>
       </div>

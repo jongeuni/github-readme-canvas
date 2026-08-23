@@ -5,13 +5,13 @@ import type { SavedDocument } from '../../types/document';
 function formatRelativeTime(iso: string): string {
   const diffMs = Date.now() - new Date(iso).getTime();
   const min = Math.round(diffMs / 60000);
-  if (min < 1) return '방금 전';
-  if (min < 60) return `${min}분 전`;
+  if (min < 1) return 'just now';
+  if (min < 60) return `${min}m ago`;
   const hr = Math.round(min / 60);
-  if (hr < 24) return `${hr}시간 전`;
+  if (hr < 24) return `${hr}h ago`;
   const day = Math.round(hr / 24);
-  if (day < 7) return `${day}일 전`;
-  return new Date(iso).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' });
+  if (day < 7) return `${day}d ago`;
+  return new Date(iso).toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
 }
 
 export function SaveMenu({
@@ -88,12 +88,12 @@ export function SaveMenu({
           className="btn btn-secondary btn-sm"
           onClick={() => (activeDocId ? onQuickSave() : onOpenSaveAs())}
         >
-          저장
+          Save
         </button>
         <button
           type="button"
           className="btn btn-secondary btn-sm split-chevron"
-          aria-label="저장된 문서 목록"
+          aria-label="Saved documents"
           onClick={() => setOpen((v) => !v)}
         >
           <Icon name="chevron-down" />
@@ -103,7 +103,7 @@ export function SaveMenu({
       {open && (
         <div className="save-popover">
           <div className="save-popover-list">
-            {sorted.length === 0 && <div className="save-popover-empty">아직 저장한 문서가 없어요</div>}
+            {sorted.length === 0 && <div className="save-popover-empty">No saved documents yet</div>}
             {sorted.map((doc) => (
               <div key={doc.id} className={`save-row ${doc.id === activeDocId ? 'active' : ''}`}>
                 <div className="doc-icon">{doc.name.trim().charAt(0).toUpperCase() || '·'}</div>
@@ -131,22 +131,22 @@ export function SaveMenu({
                 {renamingId !== doc.id && confirmDeleteId === doc.id && (
                   <div className="save-row-confirm">
                     <button type="button" className="confirm-delete" onClick={() => onDelete(doc.id)}>
-                      삭제
+                      Delete
                     </button>
                     <button type="button" className="confirm-cancel" onClick={() => setConfirmDeleteId(null)}>
-                      취소
+                      Cancel
                     </button>
                   </div>
                 )}
                 {renamingId !== doc.id && confirmDeleteId !== doc.id && (
                   <div className="save-row-actions">
-                    <button type="button" className="mini-icon-btn" aria-label="이름 바꾸기" onClick={() => startRename(doc)}>
+                    <button type="button" className="mini-icon-btn" aria-label="Rename" onClick={() => startRename(doc)}>
                       <Icon name="edit" />
                     </button>
                     <button
                       type="button"
                       className="mini-icon-btn danger"
-                      aria-label="삭제"
+                      aria-label="Delete"
                       onClick={() => setConfirmDeleteId(doc.id)}
                     >
                       <Icon name="trash" />
@@ -165,7 +165,7 @@ export function SaveMenu({
             }}
           >
             <Icon name="plus" />
-            새 이름으로 저장
+            Save As
           </button>
         </div>
       )}

@@ -1,40 +1,40 @@
-name: "🧩 새 컴포넌트 추가 제안 (Add Component)"
-description: "README에서 쓸 수 있는 완전히 새로운 종류의 요소를 제안합니다 (예: GitHub Star Badge, Visitor Counter, Typing Animation)"
+name: "🧩 Add Component"
+description: "Propose a completely new kind of README element (e.g. GitHub Star Badge, Visitor Counter, Typing Animation)"
 title: "[Component] "
 labels: ["component", "enhancement"]
 body:
   - type: markdown
     attributes:
       value: |
-        새로운 **Component**(README에서 쓸 수 있는 기능/요소의 종류)를 제안해주세요.
+        Propose a new **Component** (a kind of feature/element usable in a README).
 
-        > 이미 있는 Component의 데이터·색상·텍스트만 다른 변형이라면 (예: "C++"이 "Language Badge"의 변형이듯) 이건 Component가 아니라 **Preset**입니다.
-        > 그 경우엔 [🎨 Preset 추가 제안](../../issues/new?template=preset.yml) 템플릿을 대신 사용해주세요.
+        > If it's just a data/color/text variant of an existing Component (e.g. "C++" is a variant of "Language Badge"), this isn't a Component — it's a **Preset**.
+        > In that case, please use the [🎨 Add Preset](../../issues/new?template=preset.yml) template instead.
 
-        다음 중 하나라도 해당하면 새 Component가 맞습니다:
-        - Settings 구조가 기존 것들과 본질적으로 다르다
-        - Preview 렌더링 방식이 다르다
-        - Markdown 생성 방식이 다르다
-        - 사용자가 이걸 쓰는 목적/개념 자체가 다르다
+        This should be a new Component if any of these apply:
+        - Its Settings structure is fundamentally different from existing ones
+        - Its Preview rendering works differently
+        - Its Markdown generation works differently
+        - The purpose/concept of using it is different
   - type: input
     id: name
     attributes:
-      label: 이름 (Name)
-      placeholder: "예: GitHub Star Badge"
+      label: Name
+      placeholder: "e.g. GitHub Star Badge"
     validations:
       required: true
   - type: input
     id: description
     attributes:
-      label: 설명 (Description)
-      placeholder: "예: 저장소의 실시간 star 개수를 보여주는 배지"
+      label: Description
+      placeholder: "e.g. A badge showing a repository's live star count"
     validations:
       required: true
   - type: dropdown
     id: category
     attributes:
-      label: 카테고리 (Category)
-      description: "새 카테고리가 필요하면 '기타'를 고르고 아래 칸에 원하는 이름을 적어주세요. (카테고리는 데이터로 관리돼서 새 값도 바로 쓸 수 있어요)"
+      label: Category
+      description: "If you need a new category, pick 'Other' and write the name you want below. (Category is data-driven, so a new value works right away.)"
       options:
         - Languages
         - Frameworks
@@ -43,26 +43,26 @@ body:
         - Stats
         - Social
         - Decorations
-        - 기타 (아래에 직접 작성)
+        - Other (write below)
     validations:
       required: true
   - type: input
     id: categoryOther
     attributes:
-      label: "카테고리를 '기타'로 골랐다면, 원하는 이름을 여기에 적어주세요"
-      placeholder: "예: Widgets"
+      label: "If you picked 'Other' above, write the category name here"
+      placeholder: "e.g. Widgets"
   - type: input
     id: tags
     attributes:
-      label: 태그 (쉼표로 구분)
+      label: Tags (comma-separated)
       placeholder: "Stats, Badge, GitHub Only"
   - type: textarea
     id: exampleUrl
     attributes:
-      label: 예시 URL (실제로 열리는, 이미지가 뜨는 URL)
+      label: Example URL (a real, working URL that renders an image)
       description: |
-        실제로 동작하는 URL을 그대로 붙여넣어주세요. 물음표(?) 뒤 `key=value` 값들은 자동으로 입력 필드가 돼요.
-        경로 중간(예: 저장소 이름 부분)이 바뀌어야 한다면 그 부분만 `{필드명}`으로 직접 감싸주세요.
+        Paste a URL that actually works as-is. Values after the question mark (`?key=value`) automatically become input fields.
+        If a value in the middle of the path (e.g. a repo name) needs to change, wrap just that part in `{fieldName}`.
       placeholder: "https://img.shields.io/github/stars/{owner}/{repo}?style=social"
       render: text
     validations:
@@ -70,23 +70,23 @@ body:
   - type: dropdown
     id: linkable
     attributes:
-      label: 클릭하면 이동할 링크가 필요한가요?
+      label: Does it need a link to navigate to on click?
       options:
-        - "예"
-        - "아니오"
+        - "Yes"
+        - "No"
     validations:
       required: true
   - type: textarea
     id: reason
     attributes:
-      label: 왜 필요한가요? (선택)
-      placeholder: "README에서 이런 걸 쓰고 싶은데 지금 라이브러리엔 없어서요..."
+      label: Why is this needed? (optional)
+      placeholder: "I'd like to use this in my README, but it's not in the library yet..."
   - type: checkboxes
     id: checks
     attributes:
-      label: 확인해주세요
+      label: Please confirm
       options:
-        - label: 라이브러리에 이미 비슷한 컴포넌트가 없는지 확인했어요
+        - label: I checked the library doesn't already have something similar
           required: true
-        - label: 위 Component vs Preset 기준을 확인했고, 이건 Preset이 아니라 새 Component가 맞다고 생각해요
+        - label: I checked the Component vs Preset criteria above, and this should be a new Component, not a Preset
           required: true

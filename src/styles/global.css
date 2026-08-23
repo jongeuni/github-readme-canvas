@@ -2,7 +2,7 @@
  * Editor-only styles ported from the original design spec
  * (design/editor-ui-ux-spec.html). The spec had 5 tabs (Overview, Landing,
  * Editor Empty, Editor Interactive, Mobile) — per the product decision to
- * ship "editor만 우선 개발" (editor only, for now), only the design tokens
+ * ship "editor first" (editor only, for now), only the design tokens
  * and the classes actually used by the editor screen were kept. If the
  * landing page / mobile screens get built later, port the rest from the
  * spec doc at that point rather than speculatively including it now.

@@ -66,11 +66,11 @@ export function AddComponentModal({
 
   const goToStep2 = () => {
     if (!name.trim()) {
-      setError('이름을 입력해 주세요.');
+      setError('Please enter a name.');
       return;
     }
     if (parsed.fields.length === 0) {
-      setError('바뀌는 값이 없어요. URL 뒤에 ?style=flat 처럼 값이 있다면 자동으로 필드가 되고, 경로 중간이 바뀐다면 직접 {필드명}으로 감싸주세요.');
+      setError('No values change here. Add a query param like ?style=flat and it becomes a field automatically, or wrap a path segment directly in {fieldName}.');
       return;
     }
     setFields(parsed.fields.map((f) => defaultFieldDraft(f.key, f.defaultValue)));
@@ -109,11 +109,11 @@ export function AddComponentModal({
   const submit = () => {
     for (const f of fields) {
       if (!f.label.trim()) {
-        setError(`"${f.key}" 필드에 표시 이름을 입력해 주세요.`);
+        setError(`Please enter a display name for "${f.key}".`);
         return;
       }
       if ((f.type === 'select' || f.type === 'color') && f.options.filter((o) => o.value.trim() && o.label.trim()).length === 0) {
-        setError(`"${f.label}" 필드에 옵션을 최소 1개 추가해 주세요.`);
+        setError(`Please add at least one option for "${f.label}".`);
         return;
       }
     }
@@ -149,14 +149,14 @@ export function AddComponentModal({
       <div className="modal-card wide">
         {step === 1 ? (
           <>
-            <h4>컴포넌트 추가하기</h4>
+            <h4>Add Component</h4>
             <div className="field-row">
               <div className="field">
-                <label>이름</label>
-                <input type="text" value={name} placeholder="예: Shields.io 뱃지" onChange={(e) => setName(e.target.value)} />
+                <label>Name</label>
+                <input type="text" value={name} placeholder="e.g. Shields.io badge" onChange={(e) => setName(e.target.value)} />
               </div>
               <div className="field">
-                <label>카테고리</label>
+                <label>Category</label>
                 <select value={category} onChange={(e) => setCategory(e.target.value as ComponentCategory)}>
                   {CATEGORY_OPTIONS.map((c) => (
                     <option key={c} value={c}>
@@ -167,11 +167,11 @@ export function AddComponentModal({
               </div>
             </div>
             <div className="field">
-              <label>설명</label>
+              <label>Description</label>
               <input
                 type="text"
                 value={description}
-                placeholder="라벨과 색상을 골라 만드는 커스텀 뱃지"
+                placeholder="A custom badge with your own label and color"
                 onChange={(e) => setDescription(e.target.value)}
               />
             </div>
@@ -185,13 +185,14 @@ export function AddComponentModal({
                 onChange={(e) => setUrlTemplate(e.target.value)}
               />
               <p className="field-hint">
-                실제로 열리는 예시 URL을 그대로 붙여넣으세요 — <code>?style=flat</code>처럼 물음표 뒤의 값들은 자동으로 필드가 돼요. 경로 중간의 값(예: 저장소
-                이름)이 바뀌어야 한다면 그 부분만 직접 <code>{'{필드명}'}</code>으로 감싸주세요.
+                Paste a real, already-working example URL — values after the question mark like <code>?style=flat</code> automatically
+                become fields. If a value in the middle of the path (e.g. a repo name) needs to change, wrap just that part in{' '}
+                <code>{'{fieldName}'}</code>.
               </p>
             </div>
             {parsed.fields.length > 0 && (
               <div className="detect-row">
-                <span className="detect-label">감지된 필드</span>
+                <span className="detect-label">Detected fields</span>
                 {parsed.fields.map((f) => (
                   <span className="field-chip" key={f.key}>
                     {f.key}
@@ -202,19 +203,23 @@ export function AddComponentModal({
             {error && <div className="field-error">{error}</div>}
             <div className="modal-actions">
               <button type="button" className="btn btn-ghost btn-sm" onClick={handleCancel}>
-                취소
+                Cancel
               </button>
               <button type="button" className="btn btn-primary btn-sm" onClick={goToStep2}>
-                다음: 필드 설정 →
+                Next: Configure Fields →
               </button>
             </div>
           </>
         ) : (
           <>
-            <h4>필드 설정</h4>
+            <h4>Configure Fields</h4>
             <div className="preview-row">
-              {previewUrl ? <img src={previewUrl} alt="미리보기" style={{ maxHeight: 28 }} /> : <span className="preview-caption">필드 값을 채우면 여기에 미리보기가 떠요</span>}
-              <span className="preview-caption">미리보기 · 기본값 기준</span>
+              {previewUrl ? (
+                <img src={previewUrl} alt="Preview" style={{ maxHeight: 28 }} />
+              ) : (
+                <span className="preview-caption">Fill in the field values to see a preview here</span>
+              )}
+              <span className="preview-caption">Preview · based on default values</span>
             </div>
 
             {fields.map((f, i) => (
@@ -224,12 +229,12 @@ export function AddComponentModal({
                 </div>
                 <div className="field-row">
                   <div className="field">
-                    <label>화면에 보일 이름</label>
+                    <label>Display name</label>
                     <input type="text" value={f.label} onChange={(e) => updateField(i, { label: e.target.value })} />
                   </div>
                   {f.type === 'text' && (
                     <div className="field">
-                      <label>기본값</label>
+                      <label>Default value</label>
                       <input type="text" value={f.defaultValue} onChange={(e) => updateField(i, { defaultValue: e.target.value })} />
                     </div>
                   )}
@@ -241,7 +246,7 @@ export function AddComponentModal({
                       className={`type-chip ${f.type === t ? 'selected' : ''}`}
                       onClick={() => updateField(i, { type: t, options: t === 'text' ? [] : f.options })}
                     >
-                      {t === 'text' ? '텍스트 입력' : t === 'color' ? '색상 선택' : '드롭다운'}
+                      {t === 'text' ? 'Text input' : t === 'color' ? 'Color picker' : 'Dropdown'}
                     </span>
                   ))}
                 </div>
@@ -251,26 +256,26 @@ export function AddComponentModal({
                       <div className="option-row" key={j}>
                         <input
                           type="text"
-                          placeholder="값 (URL에 들어갈 값)"
+                          placeholder="Value (goes into the URL)"
                           value={o.value}
                           onChange={(e) => updateOption(i, j, { value: e.target.value })}
                         />
                         <input
                           type="text"
-                          placeholder="표시 이름"
+                          placeholder="Display name"
                           value={o.label}
                           onChange={(e) => updateOption(i, j, { label: e.target.value })}
                         />
                         {f.type === 'color' && (
                           <input type="color" value={o.swatch ?? '#2563eb'} onChange={(e) => updateOption(i, j, { swatch: e.target.value })} />
                         )}
-                        <button type="button" className="mini-icon-btn danger" onClick={() => removeOption(i, j)} aria-label="옵션 삭제">
+                        <button type="button" className="mini-icon-btn danger" onClick={() => removeOption(i, j)} aria-label="Remove option">
                           ×
                         </button>
                       </div>
                     ))}
                     <span className="add-link" style={{ fontSize: 11 }} onClick={() => addOption(i)}>
-                      + 옵션 추가
+                      + Add option
                     </span>
                   </div>
                 )}
@@ -281,11 +286,11 @@ export function AddComponentModal({
               <div className={`toggle-switch ${linkable ? 'on' : ''}`}>
                 <div className="knob" />
               </div>
-              <span>클릭하면 이동할 링크 필드도 추가</span>
+              <span>Also add a link field to navigate to on click</span>
             </div>
             {linkable && (
               <div className="field">
-                <label>기본 링크 (선택)</label>
+                <label>Default link (optional)</label>
                 <input type="url" value={linkDefault} placeholder="https://..." onChange={(e) => setLinkDefault(e.target.value)} />
               </div>
             )}
@@ -293,10 +298,10 @@ export function AddComponentModal({
             {error && <div className="field-error">{error}</div>}
             <div className="modal-actions">
               <button type="button" className="btn btn-ghost btn-sm" onClick={() => setStep(1)}>
-                ← 이전
+                ← Back
               </button>
               <button type="button" className="btn btn-primary btn-sm" onClick={submit}>
-                추가하기
+                Add
               </button>
             </div>
           </>

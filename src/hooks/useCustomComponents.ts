@@ -32,7 +32,7 @@ function slugify(name: string): string {
 }
 
 /**
- * Community/custom components — added via the "컴포넌트 추가하기" flow, kept
+ * Community/custom components — added via the "Add Component" flow, kept
  * local (localStorage) until the user submits them as a PR (see the GitHub
  * PR flow). Ids are namespaced ("custom-...") so they never collide with the
  * hand-authored presets in the static registry.

@@ -43,7 +43,7 @@ export function useGitHubAuth() {
   const connect = useCallback(async (token: string) => {
     const trimmed = token.trim();
     if (!trimmed) {
-      setError('토큰을 입력해 주세요.');
+      setError('Please enter a token.');
       return false;
     }
     setConnecting(true);
@@ -55,7 +55,7 @@ export function useGitHubAuth() {
       persistStored(next);
       return true;
     } catch {
-      setError('토큰이 올바르지 않거나 만료됐어요. 다시 확인해 주세요.');
+      setError('This token is invalid or has expired. Please check it and try again.');
       return false;
     } finally {
       setConnecting(false);

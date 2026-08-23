@@ -108,10 +108,10 @@ export function ComponentCard({
             <button
               type="button"
               className="fav-btn"
-              title="컴포넌트 삭제"
+              title="Delete component"
               onClick={(e) => {
                 e.stopPropagation();
-                if (window.confirm(`"${entry.name}"을(를) 라이브러리에서 삭제할까요?`)) onRemove();
+                if (window.confirm(`Delete "${entry.name}" from the library?`)) onRemove();
               }}
             >
               <Icon name="trash" />
@@ -203,7 +203,7 @@ export function ComponentCard({
               }}
             >
               <Icon name="github" />
-              GitHub에 PR로 올리기
+              Submit PR to GitHub
             </button>
           )}
         </div>

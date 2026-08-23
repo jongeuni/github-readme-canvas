@@ -62,7 +62,7 @@ export function SettingsPanel({ editor }: { editor: UseCanvasEditor }) {
         <form onSubmit={(e) => e.preventDefault()}>
           <TextField label="Text" value={selectedTextEl.textContent ?? ''} onChange={setSelectedTextValue} />
           <SelectField label="Style" value={level} onChange={setSelectedTextLevel} options={LEVEL_OPTIONS} />
-          <div className="hint">캔버스에서 직접 타이핑해도 되고, 여기서 바꿔도 됩니다. 줄 앞에 # / ##을 입력해도 실시간으로 바뀝니다.</div>
+          <div className="hint">You can type directly on the canvas, or change it here. Starting a line with # / ## also converts it live.</div>
         </form>
       </div>
     );

@@ -24,7 +24,7 @@ export function SaveAsModal({
   const submit = () => {
     const trimmed = name.trim();
     if (!trimmed) {
-      setError('이름을 입력해 주세요.');
+      setError('Please enter a name.');
       return;
     }
     onConfirm(trimmed);
@@ -39,14 +39,14 @@ export function SaveAsModal({
     <div className={`modal-overlay ${open ? 'open' : ''}`} onClick={(e) => e.target === e.currentTarget && onCancel()}>
       {open && (
         <div className="modal-card">
-          <h4>새 이름으로 저장</h4>
+          <h4>Save As</h4>
           <div className="field">
-            <label>이름</label>
+            <label>Name</label>
             <input
               ref={inputRef}
               type="text"
               value={name}
-              placeholder="예: 백엔드 포트폴리오 README"
+              placeholder="e.g. Backend Portfolio README"
               onChange={(e) => {
                 setName(e.target.value);
                 if (error) setError(null);
@@ -57,10 +57,10 @@ export function SaveAsModal({
           {error && <div className="field-error">{error}</div>}
           <div className="modal-actions">
             <button type="button" className="btn btn-ghost btn-sm" onClick={onCancel}>
-              취소
+              Cancel
             </button>
             <button type="button" className="btn btn-primary btn-sm" onClick={submit}>
-              저장
+              Save
             </button>
           </div>
         </div>

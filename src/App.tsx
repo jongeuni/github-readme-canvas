@@ -42,7 +42,7 @@ function App() {
   const handleQuickSave = useCallback(() => {
     if (!activeDoc) return;
     documents.overwrite(activeDoc.id, editor.serializeCanvas());
-    showToast('저장했어요');
+    showToast('Saved');
   }, [activeDoc, documents, editor, showToast]);
 
   const handleConfirmSaveAs = useCallback(
@@ -50,7 +50,7 @@ function App() {
       const doc = documents.saveAs(name, editor.serializeCanvas());
       setActiveDoc({ id: doc.id, name: doc.name });
       setSaveAsOpen(false);
-      showToast('저장했어요');
+      showToast('Saved');
     },
     [documents, editor, showToast],
   );
@@ -59,7 +59,7 @@ function App() {
     (doc: SavedDocument) => {
       editor.loadFromBlocks(doc.blocks);
       setActiveDoc({ id: doc.id, name: doc.name });
-      showToast('불러왔어요');
+      showToast('Loaded');
     },
     [editor, showToast],
   );
@@ -97,7 +97,7 @@ function App() {
       const ok = await github.connect(token);
       if (ok) {
         setGithubConnectOpen(false);
-        showToast('GitHub에 연결했어요');
+        showToast('Connected to GitHub');
       }
     },
     [github, showToast],
@@ -106,7 +106,7 @@ function App() {
   const handleRequestSubmitPr = useCallback(
     (entry: LibraryEntry) => {
       if (!github.user) {
-        showToast('먼저 GitHub에 연결해 주세요');
+        showToast('Please connect to GitHub first');
         setGithubConnectOpen(true);
         return;
       }
@@ -117,7 +117,7 @@ function App() {
 
   // Adding a component and proposing it to the project used to be two
   // separate trips (add here, then hunt down the new card in the library to
-  // hit "GitHub에 PR로 올리기"). Now finishing the wizard goes straight into
+  // hit "Submit PR to GitHub"). Now finishing the wizard goes straight into
   // the same PR flow — still requires the user's own confirm click inside
   // SubmitComponentPrModal, this just removes the extra navigation before it.
   const handleCreateComponent = useCallback(
@@ -125,7 +125,7 @@ function App() {
       const created = customComponents.addCustomComponent(entry);
       editor.addCustomEntry(created);
       setAddComponentOpen(false);
-      if (github.user) showToast('컴포넌트를 추가했어요 · PR을 준비할게요');
+      if (github.user) showToast('Component added · Preparing PR');
       handleRequestSubmitPr(created);
     },
     [customComponents, editor, github.user, showToast, handleRequestSubmitPr],
@@ -173,10 +173,10 @@ function App() {
             {github.user ? (
               <div
                 className="avatar-chip"
-                title="클릭하면 GitHub 연결을 해제해요"
+                title="Click to disconnect from GitHub"
                 onClick={() => {
                   github.disconnect();
-                  showToast('GitHub 연결을 해제했어요');
+                  showToast('Disconnected from GitHub');
                 }}
               >
                 {github.user.avatarUrl ? <img src={github.user.avatarUrl} alt="" /> : <span className="dot">{github.user.login.charAt(0).toUpperCase()}</span>}
@@ -186,13 +186,13 @@ function App() {
             {github.user && (
               <button type="button" className="btn btn-primary btn-sm" onClick={openCommitModal}>
                 <Icon name="github" />
-                GitHub에 커밋
+                Commit to GitHub
               </button>
             )}
             {!github.user && (
               <button type="button" className="btn btn-secondary btn-sm" onClick={() => setGithubConnectOpen(true)}>
                 <Icon name="github" />
-                GitHub 연결
+                Connect GitHub
               </button>
             )}
             <SaveMenu

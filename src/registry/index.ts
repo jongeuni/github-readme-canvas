@@ -50,7 +50,7 @@ export const COMPONENT_TYPES: ComponentTypeDefinition[] = [
 
 /**
  * src/data/community-components/ holds "url-component" entries contributed
- * via the app's "GitHub에 PR로 올리기" flow — a PR adds one new file there,
+ * via the app's "Submit PR to GitHub" flow — a PR adds one new file there,
  * and merging it is the ONLY step needed for the new component to go live
  * here. See src/types/urlComponent.ts / src/components/widgets/urlComponent/.
  *
