@@ -245,6 +245,160 @@ function textWithSoftBreaks(node: Node): string {
   return out;
 }
 
+// ---------- bulk markdown paste → blocks ----------
+// Everything else in this file builds HTML via .textContent/createTextNode
+// (auto-escaping) — this is the first thing that has to build an HTML
+// *string*, since turning "**bold**" into "<strong>bold</strong>" is
+// inherently string-level work. Escape first so literal <, >, & in pasted
+// text can't be read as markup, then run the inline-emphasis pass (which
+// introduces real tags) on top.
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// String-level equivalent of convertInlineEmphasis (line ~700) — that one
+// is caret/Selection-driven (matches against sel.anchorOffset in one live
+// text node), which a pure `text -> blocks` parser has nothing equivalent
+// to. Same syntax, same precedence (bold > strike > code > link > italic —
+// matches convertInlineEmphasis's own check order) via one combined
+// alternation: a single left-to-right regex scan finds one non-overlapping
+// match per position, so there's no risk of a later pass re-matching text a
+// previous pass already substituted.
+const INLINE_EMPHASIS_RE = /\*\*([^*\n]+)\*\*|~~([^~\n]+)~~|`([^`\n]+)`|(?<!!)\[([^\]\n]+)\]\((\S+?)\)|(?<!\*)\*([^*\n]+)\*(?!\*)/g;
+
+function applyInlineEmphasis(escaped: string): string {
+  return escaped.replace(INLINE_EMPHASIS_RE, (match, bold, strike, code, linkText, linkUrl, italic) => {
+    if (bold !== undefined) return `<strong>${bold}</strong>`;
+    if (strike !== undefined) return `<del>${strike}</del>`;
+    if (code !== undefined) return `<code>${code}</code>`;
+    if (linkText !== undefined) return `<a href="${linkUrl}">${linkText}</a>`;
+    if (italic !== undefined) return `<em>${italic}</em>`;
+    return match;
+  });
+}
+
+/**
+ * Pure `text -> blocks` parser for a multi-line paste — see handlePaste.
+ * Reuses the exact same regexes/precedence single-line live typing already
+ * uses (LINE_PREFIX_PATTERNS, IMAGE_LINE_RE, HR_LINE_RE, TASK_LINE_RE,
+ * CODE_FENCE_RE, TABLE_SEP_RE, all above), just walked with an index cursor
+ * instead of checked against "the current line" — code fences and tables
+ * each consume multiple source lines into ONE block, same as they already
+ * do live (see convertLineToCodeBlockWidget / convertLinesToTableWidget),
+ * except with the real multi-line content filled in instead of one empty/
+ * placeholder row, since a paste has everything up front.
+ *
+ * One non-blank source line = one block, not CommonMark's "adjacent lines
+ * join into a paragraph" rule — matches the canvas's own one-div-per-line
+ * model (deliberate simplification, not a bug).
+ *
+ * Only the plain-paragraph fallthrough gets the inline-emphasis pass —
+ * matches handleInput, where the heading/task/prefix branches all `return`
+ * before ever reaching convertInlineEmphasis themselves.
+ */
+export function parseMarkdownToBlocks(text: string): SerializedBlock[] {
+  const lines = text.split(/\r\n|\r|\n/);
+  const blocks: SerializedBlock[] = [];
+  let i = 0;
+
+  while (i < lines.length) {
+    const line = lines[i];
+    const trimmed = line.trim();
+
+    if (trimmed === '') {
+      i++;
+      continue;
+    }
+
+    const fenceMatch = CODE_FENCE_RE.exec(trimmed);
+    if (fenceMatch) {
+      const lang = fenceMatch[1];
+      const codeLines: string[] = [];
+      i++;
+      while (i < lines.length && !CODE_FENCE_RE.test(lines[i].trim())) {
+        codeLines.push(lines[i]);
+        i++;
+      }
+      if (i < lines.length) i++; // skip the closing fence; unclosed just runs to end of input
+      const { uid: _uid, ...rest } = mkInstance('dec-codeblock', { lang, code: codeLines.join('\n') });
+      blocks.push({ kind: 'widget', ...rest });
+      continue;
+    }
+
+    if (trimmed.includes('|') && i + 1 < lines.length && TABLE_SEP_RE.test(lines[i + 1].trim())) {
+      const tableLines = [line, lines[i + 1]];
+      i += 2;
+      while (i < lines.length && lines[i].trim().includes('|')) {
+        tableLines.push(lines[i]);
+        i++;
+      }
+      const { uid: _uid, ...rest } = mkInstance('dec-table', { source: tableLines.join('\n') });
+      blocks.push({ kind: 'widget', ...rest });
+      continue;
+    }
+
+    const taskMatch = TASK_LINE_RE.exec(trimmed);
+    if (taskMatch) {
+      const checked = taskMatch[1].toLowerCase() === 'x';
+      const itemText = trimmed.slice(taskMatch[0].length);
+      const checkbox = `<input type="checkbox" contenteditable="false"${checked ? ' checked' : ''}>`;
+      blocks.push({ kind: 'text', className: 'md-task', html: checkbox + escapeHtml(itemText) });
+      i++;
+      continue;
+    }
+
+    const headingMatch = /^(#{1,6})\s(.*)$/.exec(trimmed);
+    if (headingMatch) {
+      blocks.push({
+        kind: 'text',
+        className: `md-h${headingMatch[1].length}` as SerializedTextBlock['className'],
+        html: escapeHtml(headingMatch[2]),
+      });
+      i++;
+      continue;
+    }
+
+    const linkedImg = LINKED_IMAGE_LINE_RE.exec(trimmed);
+    const plainImg = linkedImg ? null : IMAGE_LINE_RE.exec(trimmed);
+    const imgMatch = linkedImg ?? plainImg;
+    if (imgMatch) {
+      const [, alt, url] = imgMatch;
+      const link = linkedImg?.[3];
+      const linkable = link !== undefined;
+      blocks.push({
+        kind: 'widget',
+        libId: 'inline-image',
+        type: 'url-component',
+        name: alt || 'Image',
+        settings: linkable ? { link } : {},
+        meta: { urlTemplate: url, fields: [], linkable, altTemplate: alt || 'image' },
+      });
+      i++;
+      continue;
+    }
+
+    if (HR_LINE_RE.test(trimmed)) {
+      const { uid: _uid, ...rest } = mkInstance('dec-divider');
+      blocks.push({ kind: 'widget', ...rest });
+      i++;
+      continue;
+    }
+
+    const prefixRule = LINE_PREFIX_PATTERNS.find(({ re }) => re.test(trimmed));
+    if (prefixRule) {
+      const rest = trimmed.slice(prefixRule.re.exec(trimmed)![0].length);
+      blocks.push({ kind: 'text', className: prefixRule.className as SerializedTextBlock['className'], html: escapeHtml(rest) });
+      i++;
+      continue;
+    }
+
+    blocks.push({ kind: 'text', className: 'md-text', html: applyInlineEmphasis(escapeHtml(trimmed)) });
+    i++;
+  }
+
+  return blocks;
+}
+
 export function useCanvasEditor() {
   const canvasRef = useRef<HTMLDivElement | null>(null);
   const widgetsRef = useRef<Map<string, WidgetRecord>>(new Map());
@@ -983,13 +1137,103 @@ export function useCanvasEditor() {
     [selectedUid, removeSelectedWidget],
   );
 
+  // Inserts a parsed multi-line paste (see parseMarkdownToBlocks) at the
+  // caret — mirrors placeLibraryEntry's anchor-insert pattern (build one
+  // node, insertAdjacentElement 'afterend' the anchor) but repeated in
+  // order, advancing the anchor to each new node so a multi-block paste
+  // lands in the right order instead of reversed.
+  const insertParsedBlocks = useCallback(
+    (blocks: SerializedBlock[]) => {
+      const canvas = canvasRef.current;
+      if (!canvas || blocks.length === 0) return;
+
+      // A non-collapsed selection (pasting over highlighted text) has no
+      // native execCommand to fall back on here, unlike single-line paste —
+      // remove it ourselves so old selected content doesn't linger next to
+      // the new blocks.
+      const sel = window.getSelection();
+      if (sel && sel.rangeCount > 0 && !sel.isCollapsed) {
+        sel.getRangeAt(0).deleteContents();
+      }
+
+      let anchor = currentTextLine();
+      const originalAnchor = anchor;
+      const insert = (node: HTMLElement) => {
+        if (anchor) anchor.insertAdjacentElement('afterend', node);
+        else canvas.appendChild(node);
+        anchor = node;
+      };
+
+      let lastTextNode: HTMLElement | null = null;
+      let lastUid: string | null = null;
+      for (const block of blocks) {
+        if (block.kind === 'text') {
+          const div = document.createElement('div');
+          div.className = block.className;
+          div.innerHTML = block.html;
+          if (block.align && block.align !== 'left') div.dataset.align = block.align;
+          if (block.className !== 'md-text') div.dataset.keepClass = '1'; // exempt from the safety-net observer, same as appendTextLine
+          insert(div);
+          lastTextNode = div;
+          lastUid = null;
+        } else {
+          const instance: WidgetInstance = {
+            uid: nextUid(),
+            libId: block.libId,
+            type: block.type,
+            name: block.name,
+            settings: block.settings,
+            meta: block.meta,
+            align: block.align,
+          };
+          const el = widgetHTMLContainer(instance);
+          insert(el);
+          const root = createRoot(el);
+          const record: WidgetRecord = { instance, el, root };
+          widgetsRef.current.set(instance.uid, record);
+          renderWidgetRoot(record);
+          lastTextNode = null;
+          lastUid = instance.uid;
+        }
+      }
+
+      // The line the caret was on when paste happened is now redundant if
+      // it was empty (the common case — pasting into a fresh/placeholder
+      // line) — same "empty line" check serializeCanvas already uses.
+      if (originalAnchor && !originalAnchor.dataset.uid && originalAnchor.innerHTML.trim() === '') {
+        originalAnchor.remove();
+      }
+
+      ensureTrailingTextLine();
+      if (lastTextNode) {
+        placeCaretAtEnd(lastTextNode);
+        selectTextBlock(lastTextNode);
+      } else if (lastUid) {
+        selectWidget(lastUid);
+      }
+      pushHistorySnapshot();
+    },
+    [widgetHTMLContainer, renderWidgetRoot, ensureTrailingTextLine, selectTextBlock, selectWidget, pushHistorySnapshot],
+  );
+
   // Force plain-text paste so pasted content always matches the design
-  // system instead of pulling in foreign fonts/colors/markup.
-  const handlePaste = useCallback((e: ClipboardEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    const text = e.clipboardData.getData('text/plain');
-    document.execCommand('insertText', false, text);
-  }, []);
+  // system instead of pulling in foreign fonts/colors/markup. Multi-line
+  // paste is the exception — parsed into real blocks/widgets (see
+  // parseMarkdownToBlocks) instead of landing as one inert blob of text,
+  // since handleInput's live conversion only ever checks "the current
+  // line," never a whole pasted document. Single-line paste is untouched.
+  const handlePaste = useCallback(
+    (e: ClipboardEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      const text = e.clipboardData.getData('text/plain');
+      if (text.includes('\n')) {
+        insertParsedBlocks(parseMarkdownToBlocks(text));
+        return;
+      }
+      document.execCommand('insertText', false, text);
+    },
+    [insertParsedBlocks],
+  );
 
   // ---------- click delegation: widget vs. plain text line ----------
   const handleClick = useCallback(
