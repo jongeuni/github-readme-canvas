@@ -122,32 +122,53 @@ export function ComponentCard({
           {hasPresets && (
             <>
               <div className="comp-detail-label">{presetPickerLabel(entry.presetsLabel)}</div>
-              {(entry.presets?.length ?? 0) > PRESET_SEARCH_THRESHOLD && (
-                <div className="search-box">
-                  <Icon name="search" />
-                  <input
-                    type="text"
-                    placeholder={`Search ${entry.presetsLabel ?? 'presets'}...`}
-                    value={presetFilter}
-                    onChange={(e) => setPresetFilter(e.target.value)}
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                </div>
+              {entry.type === 'text-art' ? (
+                // Picking a look, not reading a label — the option text IS
+                // the kaomoji/decorative line itself, not its name. A plain
+                // <select> renders arbitrary unicode fine natively, no rich
+                // custom dropdown needed.
+                <select
+                  className="text-art-preset-select"
+                  value={selectedPresetId}
+                  onClick={(e) => e.stopPropagation()}
+                  onChange={(e) => setSelectedPresetId(e.target.value)}
+                >
+                  {(entry.presets ?? []).map((p: PresetDefinition) => (
+                    <option key={p.id} value={p.id}>
+                      {p.settings?.text as string}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <>
+                  {(entry.presets?.length ?? 0) > PRESET_SEARCH_THRESHOLD && (
+                    <div className="search-box">
+                      <Icon name="search" />
+                      <input
+                        type="text"
+                        placeholder={`Search ${entry.presetsLabel ?? 'presets'}...`}
+                        value={presetFilter}
+                        onChange={(e) => setPresetFilter(e.target.value)}
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    </div>
+                  )}
+                  <div className="preset-list">
+                    {filteredPresets.map((p: PresetDefinition) => (
+                      <span
+                        key={p.id}
+                        className={`preset-row ${p.id === selectedPresetId ? 'selected' : ''}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedPresetId(p.id);
+                        }}
+                      >
+                        {p.name}
+                      </span>
+                    ))}
+                  </div>
+                </>
               )}
-              <div className="preset-list">
-                {filteredPresets.map((p: PresetDefinition) => (
-                  <span
-                    key={p.id}
-                    className={`preset-row ${p.id === selectedPresetId ? 'selected' : ''}`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedPresetId(p.id);
-                    }}
-                  >
-                    {p.name}
-                  </span>
-                ))}
-              </div>
             </>
           )}
           <div className="comp-detail-label">Usage</div>

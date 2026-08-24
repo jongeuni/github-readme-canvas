@@ -39,7 +39,15 @@ export function LibraryPanel({
   const { favorites, toggleFavorite } = useFavorites();
 
   const visible = useMemo(() => {
-    const combined = [...(viewMode === 'all' ? LIBRARY : LIBRARY_COMPONENTS), ...customComponents];
+    // text-art (Kaomoji / Decorative Line) stays grouped as its own single
+    // card even in "All" view — flattening it would mean one list row per
+    // preset (46 of them), when picking a look belongs in the card's own
+    // dropdown (see ComponentCard), not a wall of near-identical cards.
+    const base =
+      viewMode === 'all'
+        ? [...LIBRARY.filter((item) => item.type !== 'text-art'), ...LIBRARY_COMPONENTS.filter((item) => item.type === 'text-art')]
+        : LIBRARY_COMPONENTS;
+    const combined = [...base, ...customComponents];
     const q = search.trim().toLowerCase();
     return combined.filter((item) => {
       if (category !== 'All' && item.category !== category) return false;

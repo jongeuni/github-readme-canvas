@@ -557,6 +557,20 @@ pre {
   color: #fff;
   border-color: var(--text-1);
 }
+.text-art-preset-select {
+  width: 100%;
+  padding: 7px 9px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  background: #fafafa;
+  margin-bottom: 12px;
+}
+.text-art-preset-select:focus {
+  border-color: var(--border-strong);
+  background: #fff;
+  outline: none;
+}
 .usage-block {
   position: relative;
   background: #18181b;
