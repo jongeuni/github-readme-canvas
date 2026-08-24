@@ -262,6 +262,7 @@ pre {
 .editor-topbar .left .mark {
   width: 20px;
   height: 20px;
+  border: none;
   border-radius: 5px;
   background: var(--text-1);
   color: #fff;
@@ -270,6 +271,15 @@ pre {
   justify-content: center;
   font-size: 10px;
   font-weight: 700;
+  padding: 0;
+  cursor: pointer;
+}
+.editor-topbar .left .brand-link {
+  color: inherit;
+  text-decoration: none;
+}
+.editor-topbar .left .brand-link:hover {
+  text-decoration: underline;
 }
 .editor-topbar .left .doc-name {
   font-weight: 400;

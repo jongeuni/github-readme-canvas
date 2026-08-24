@@ -177,8 +177,18 @@ function App() {
       <div className="editor-shell">
         <div className="editor-topbar">
           <div className="left">
-            <div className="mark">R</div>
-            GitHub Readme Canvas
+            <button type="button" className="mark" onClick={() => window.location.reload()} title="Refresh" aria-label="Refresh">
+              R
+            </button>
+            <a
+              className="brand-link"
+              href="https://github.com/jongeuni/github-readme-canvas"
+              target="_blank"
+              rel="noreferrer"
+              title="View source on GitHub"
+            >
+              GitHub Readme Canvas
+            </a>
             <a
               className="icon-btn repo-link"
               href="https://github.com/jongeuni/github-readme-canvas"
