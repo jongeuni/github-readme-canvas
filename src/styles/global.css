@@ -689,8 +689,11 @@ pre {
 /* No wrapping container groups aligned inline widgets on the canvas (see
    updateSelectedWidgetAlign) so their on-screen position can't reflow to
    show alignment — this corner badge is the visual signal instead; the
-   actual centered/right-aligned result shows in Copy Markdown / GitHub. */
-.block[data-align]::after {
+   actual centered/right-aligned result shows in Copy Markdown / GitHub.
+   Hover/selected-only (not always-on) — a row of several aligned widgets
+   each showing their own permanent badge got noisy fast. */
+.block:hover[data-align]::after,
+.block.selected[data-align]::after {
   content: attr(data-align);
   position: absolute;
   top: -7px;
