@@ -1,14 +1,7 @@
-import type { ComponentTypeDefinition } from '../types/component';
+import type { ComponentModule, ComponentTypeDefinition } from '../types/component';
 import type { LibraryEntry, PresetDefinition } from '../types/library';
 
-import { badgeDefinition } from '../components/widgets/badge/definition';
-import { badgePresets } from '../components/widgets/badge/presets';
-import { techIconDefinition } from '../components/widgets/techIcon/definition';
-import { techIconPresets } from '../components/widgets/techIcon/presets';
-import { statsDefinition } from '../components/widgets/stats/definition';
-import { statsPresets } from '../components/widgets/stats/presets';
-import { socialDefinition } from '../components/widgets/social/definition';
-import { socialPresets } from '../components/widgets/social/presets';
+import { urlComponentDefinition } from '../components/widgets/urlComponent/definition';
 import { headingDefinition } from '../components/widgets/heading/definition';
 import { headingPresets } from '../components/widgets/heading/presets';
 import { dividerDefinition } from '../components/widgets/divider/definition';
@@ -17,49 +10,52 @@ import { codeBlockDefinition } from '../components/widgets/codeBlock/definition'
 import { codeBlockPresets } from '../components/widgets/codeBlock/presets';
 import { tableDefinition } from '../components/widgets/table/definition';
 import { tablePresets } from '../components/widgets/table/presets';
-import { urlComponentDefinition } from '../components/widgets/urlComponent/definition';
 import { CATEGORIES_SEED } from '../data/categories';
 import { flattenLibrary } from './presets';
 
 /**
- * One JSON file per community component under src/data/community-components/
- * (filename = the component's own id, e.g. "social-discord.json") — each PR
- * that adds a component only ever touches its own new file, instead of
- * every contributor racing to edit the same shared array (which is exactly
- * how this used to work, as a single community-components.json, before it
- * got split up). `eager: true` inlines every file at build time, same as a
- * normal static import — no runtime fetching.
+ * src/data/community-components/ is where every PLUGGABLE library component
+ * lives — badges, cards, links that pull from an external URL/service, the
+ * kind a community contributor would reasonably submit a variant of. No
+ * other file needs to change when one is added, edited, or removed:
+ *
+ *   - A no-code component is one JSON file (filename = its own id, e.g.
+ *     "social-discord.json") — each PR that adds one only ever touches its
+ *     own new file, instead of every contributor racing to edit a shared
+ *     array. It's a "url-component" entry (see src/types/urlComponent.ts):
+ *     just a urlTemplate + a field schema, rendered generically.
+ *   - A component that needs real code (its rendering can't be expressed as
+ *     "fill a URL template") is a directory (e.g. "badge/") whose
+ *     component.ts exports `module: ComponentModule` — its renderer
+ *     (Preview/SettingsForm/toMarkdown) plus the Library card(s) it backs.
+ *     Everything it needs lives inside that same directory.
+ *
+ * Both are discovered by `import.meta.glob` below (`eager: true` inlines
+ * every file at build time, same as a normal static import — no runtime
+ * fetching), so adding either kind is purely additive: create the file or
+ * directory and it's live, nothing here needs editing.
+ *
+ * heading/divider/codeBlock/table are NOT here — they're core editor
+ * primitives (they emit raw markdown directly, e.g. `# text` or `---`),
+ * not services a community would contribute variants of, so they stay
+ * hand-wired below like url-component itself.
  */
-const communityComponentModules = import.meta.glob<{ default: LibraryEntry }>('../data/community-components/*.json', { eager: true });
-const communityComponents: LibraryEntry[] = Object.values(communityComponentModules).map((m) => m.default);
+const jsonModules = import.meta.glob<{ default: LibraryEntry }>('../data/community-components/*.json', { eager: true });
+const dirModules = import.meta.glob<{ module: ComponentModule }>('../data/community-components/*/component.ts', { eager: true });
 
-/**
- * This is the ONE place that wires a new component type into the whole app.
- * To add a brand-new kind of README component:
- *   1. Create src/components/widgets/<name>/ with types.ts, a Preview, a
- *      SettingsForm, and a definition.ts (see any existing widget folder).
- *   2. Add its definition + presets to the two arrays below.
- * The library list, canvas rendering, settings panel, and markdown export
- * all read from this registry — none of them need to change.
- */
+const jsonComponents: LibraryEntry[] = Object.values(jsonModules).map((m) => m.default);
+const componentModules: ComponentModule[] = Object.values(dirModules).map((m) => m.module);
+
 export const COMPONENT_TYPES: ComponentTypeDefinition[] = [
-  badgeDefinition,
-  techIconDefinition,
-  statsDefinition,
-  socialDefinition,
+  urlComponentDefinition,
   headingDefinition,
   dividerDefinition,
   codeBlockDefinition,
   tableDefinition,
-  urlComponentDefinition,
+  ...componentModules.map((m) => m.definition),
 ];
 
 /**
- * src/data/community-components/ holds "url-component" entries contributed
- * via the app's "Submit PR to GitHub" flow — a PR adds one new file there,
- * and merging it is the ONLY step needed for the new component to go live
- * here. See src/types/urlComponent.ts / src/components/widgets/urlComponent/.
- *
  * This is the "authoring" list — entries here may carry `.presets` (see
  * types/library.ts's PresetDefinition doc comment for when to use one
  * Component-with-presets vs. several separate Components). The Library
@@ -68,15 +64,12 @@ export const COMPONENT_TYPES: ComponentTypeDefinition[] = [
  * `.presets` — it's flattened away first.
  */
 export const LIBRARY_COMPONENTS: LibraryEntry[] = [
-  ...badgePresets,
-  ...techIconPresets,
-  ...statsPresets,
-  ...socialPresets,
   ...headingPresets,
   ...dividerPresets,
   ...codeBlockPresets,
   ...tablePresets,
-  ...communityComponents,
+  ...componentModules.flatMap((m) => m.entries),
+  ...jsonComponents,
 ];
 
 /** Fully flat — one addable LibraryEntry per id, never a `.presets` field.

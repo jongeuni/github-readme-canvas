@@ -1,0 +1,18 @@
+{
+  "id": "social-github",
+  "type": "url-component",
+  "name": "GitHub",
+  "description": "Link to your GitHub profile.",
+  "category": "Social",
+  "tags": ["Social", "Link"],
+  "defaultSettings": { "username": "alex123", "label": "GitHub" },
+  "meta": {
+    "urlTemplate": "https://img.shields.io/badge/{label}-18181b?logo=github&logoColor=white",
+    "linkTemplate": "https://github.com/{username}",
+    "linkable": false,
+    "fields": [
+      { "key": "label", "label": "Label", "type": "text" },
+      { "key": "username", "label": "Username", "type": "text" }
+    ]
+  }
+}

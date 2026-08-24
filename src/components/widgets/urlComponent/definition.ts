@@ -23,6 +23,7 @@ export const urlComponentDefinition: ComponentTypeDefinition<UrlComponentSetting
     const url = fillUrlTemplate(m.urlTemplate, s);
     const alt = m.altTemplate ? fillUrlTemplate(m.altTemplate, s) : (s[m.fields[0]?.key] ?? 'badge');
     const img = `![${alt}](${url})`;
-    return m.linkable && s.link ? `[${img}](${s.link})` : img;
+    const link = m.linkTemplate ? fillUrlTemplate(m.linkTemplate, s) : m.linkable ? s.link : undefined;
+    return link ? `[${img}](${link})` : img;
   },
 };

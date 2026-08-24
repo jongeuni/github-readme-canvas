@@ -1,20 +1,21 @@
 import { createElement } from 'react';
 import type { UseCanvasEditor } from '../editor/useCanvasEditor';
 import { TEXT_LINE_STYLE_OPTIONS, textLineStyle, textLineStyleLabel } from '../editor/useCanvasEditor';
-import { getComponentType, PRESET_PARENT_MAP } from '../../registry';
+import { getComponentType, LIBRARY_MAP, PRESET_PARENT_MAP } from '../../registry';
 import { Icon } from '../Icon';
 import { SelectField, TextField } from './fields';
 
+/** Types with their own bespoke rendering code get a fixed label. Anything
+ *  else (every 'url-component' entry — badges, stats, social links, ...)
+ *  falls back to that entry's own Library category (e.g. "Languages",
+ *  "Social"), which is more specific than one flat "Component" label ever
+ *  was — see the fallback at its use site below. */
 const TYPE_LABELS: Record<string, string> = {
-  badge: 'Badge',
   'tech-icon': 'Tech Icon',
-  stats: 'GitHub Stats',
-  social: 'Social Link',
   heading: 'Heading / Text',
   divider: 'Divider',
   'code-block': 'Code Block',
   table: 'Table',
-  'url-component': 'Component',
 };
 
 /**
@@ -82,7 +83,7 @@ export function SettingsPanel({ editor }: { editor: UseCanvasEditor }) {
   return (
     <div className="settings-col">
       <div className="settings-head">
-        <div className="settings-eyebrow">{TYPE_LABELS[widget.type] ?? widget.type}</div>
+        <div className="settings-eyebrow">{TYPE_LABELS[widget.type] ?? LIBRARY_MAP.get(widget.libId)?.category ?? widget.type}</div>
         <div className="settings-title">{widget.name}</div>
       </div>
       <form onSubmit={(e) => e.preventDefault()}>

@@ -1,4 +1,4 @@
-export type UrlFieldType = 'text' | 'color' | 'select';
+export type UrlFieldType = 'text' | 'color' | 'select' | 'number' | 'checkbox-group';
 
 export interface UrlFieldOption {
   value: string;
@@ -12,8 +12,16 @@ export interface UrlFieldDef {
   key: string;
   label: string;
   type: UrlFieldType;
-  /** Required for 'color' and 'select' types. */
+  /** Required for 'color', 'select', and 'checkbox-group' types — for
+   *  'checkbox-group' each option is one checkbox, and the field's stored
+   *  value is the comma-joined list of checked option values (e.g.
+   *  "issues,prs"), ready to substitute straight into a `{key}` — the
+   *  target API/service must accept a comma-separated list at that param. */
   options?: UrlFieldOption[];
+  /** 'number' only — rendered as a range slider. */
+  min?: number;
+  max?: number;
+  step?: number;
 }
 
 /**
@@ -29,6 +37,12 @@ export interface UrlComponentMeta {
   linkable: boolean;
   /** Alt-text template, same {key} substitution as urlTemplate. Defaults to the first field's value. */
   altTemplate?: string;
+  /** When set, the wrapping link is computed from settings via the same
+   *  {key} substitution as urlTemplate — for a component whose link isn't a
+   *  free-text field but derived from its other values (e.g. a profile URL
+   *  built from a username). Takes precedence over `linkable`/`link`; shown
+   *  to the user as a read-only computed value, not an editable field. */
+  linkTemplate?: string;
   [key: string]: unknown;
 }
 

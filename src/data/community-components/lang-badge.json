@@ -1,0 +1,41 @@
+{
+  "id": "lang-badge",
+  "type": "url-component",
+  "name": "Language Badge",
+  "description": "A badge for your programming language.",
+  "category": "Languages",
+  "tags": ["Languages", "Badge"],
+  "defaultSettings": { "label": "C++", "color": "blue", "style": "flat", "link": "https://isocpp.org" },
+  "meta": {
+    "urlTemplate": "https://img.shields.io/badge/{label}-{color}?style={style}",
+    "altTemplate": "{label}",
+    "linkable": true,
+    "fields": [
+      { "key": "label", "label": "Label", "type": "text" },
+      { "key": "style", "label": "Style", "type": "select", "options": [
+        { "value": "flat", "label": "Flat" },
+        { "value": "flat-square", "label": "Flat Square" },
+        { "value": "for-the-badge", "label": "For The Badge" },
+        { "value": "plastic", "label": "Plastic" }
+      ] },
+      { "key": "color", "label": "Color", "type": "color", "options": [
+        { "value": "blue", "label": "blue", "swatch": "#2563eb" },
+        { "value": "green", "label": "green", "swatch": "#16a34a" },
+        { "value": "red", "label": "red", "swatch": "#dc2626" },
+        { "value": "orange", "label": "orange", "swatch": "#ea580c" },
+        { "value": "purple", "label": "purple", "swatch": "#9333ea" },
+        { "value": "black", "label": "black", "swatch": "#18181b" },
+        { "value": "gray", "label": "gray", "swatch": "#6b7280" }
+      ] }
+    ]
+  },
+  "presetsLabel": "languages",
+  "presets": [
+    { "id": "lang-cpp", "name": "C++", "settings": { "label": "C++", "color": "blue", "link": "https://isocpp.org" } },
+    { "id": "lang-python", "name": "Python", "settings": { "label": "Python", "color": "green", "link": "https://python.org" } },
+    { "id": "lang-ts", "name": "TypeScript", "settings": { "label": "TypeScript", "color": "blue", "link": "https://typescriptlang.org" } },
+    { "id": "lang-java", "name": "Java", "settings": { "label": "Java", "color": "orange", "link": "https://java.com" } },
+    { "id": "lang-go", "name": "Go", "settings": { "label": "Go", "color": "blue", "link": "https://go.dev" } },
+    { "id": "lang-rust", "name": "Rust", "settings": { "label": "Rust", "color": "orange", "link": "https://rust-lang.org" } }
+  ]
+}

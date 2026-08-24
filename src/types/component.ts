@@ -1,4 +1,5 @@
 import type { ComponentType } from 'react';
+import type { LibraryEntry } from './library';
 
 /**
  * Data-driven, not a closed union — a Component's category is just whatever
@@ -28,15 +29,16 @@ export interface SettingsFormProps<TSettings> {
  * The single contract every README component TYPE (badge, stats card, social
  * link, heading, divider, ...) implements.
  *
- * To add a brand-new KIND of component: create one folder under
- * src/components/widgets/<name>/ exporting one of these, then add it to the
- * list in src/registry/componentTypes.ts. Nothing else in the app needs to
- * change — the library, canvas, settings panel, and markdown export all work
- * off this registry.
+ * To add a brand-new KIND of component: create one directory under
+ * src/data/community-components/<name>/ whose component.ts exports a
+ * `ComponentModule` (see below) built from one of these. Nothing else in the
+ * app needs to change — the library, canvas, settings panel, and markdown
+ * export all read from src/registry/index.ts, which discovers this
+ * directory automatically.
  *
  * To add a new PRESET of an existing kind (e.g. a new badge color, a new
  * tech icon) — see src/types/library.ts — you only ever add a plain data
- * object, no component code at all.
+ * object to that component's presets.ts, no new component code at all.
  */
 export interface ComponentTypeDefinition<TSettings = any> {
   type: string;
@@ -44,4 +46,15 @@ export interface ComponentTypeDefinition<TSettings = any> {
   Preview: ComponentType<PreviewProps<TSettings>>;
   SettingsForm: ComponentType<SettingsFormProps<TSettings>>;
   toMarkdown: (settings: TSettings, meta?: Record<string, unknown>) => string;
+}
+
+/**
+ * What one `src/data/community-components/<name>/component.ts` file must
+ * export as `module` — the renderer (`definition`) plus the Library card(s)
+ * it backs (`entries`). See that directory's own doc comment for the full
+ * contract; this is the type the registry's directory-discovery reads.
+ */
+export interface ComponentModule<TSettings = any> {
+  definition: ComponentTypeDefinition<TSettings>;
+  entries: LibraryEntry<TSettings>[];
 }
