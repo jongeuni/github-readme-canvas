@@ -44,7 +44,6 @@ export function ComponentCard({
   onToggleExpand,
   onToggleFavorite,
   onUse,
-  onRemove,
   onSubmitPr,
 }: {
   entry: LibraryEntry;
@@ -53,8 +52,6 @@ export function ComponentCard({
   onToggleExpand: () => void;
   onToggleFavorite: () => void;
   onUse: (id: string) => void;
-  /** Present only for locally-added custom components — lets them be deleted from the library. */
-  onRemove?: () => void;
   /** Present only for locally-added custom components — proposes it to the project via PR. */
   onSubmitPr?: () => void;
 }) {
@@ -104,19 +101,6 @@ export function ComponentCard({
           >
             <Icon name="star" />
           </button>
-          {onRemove && (
-            <button
-              type="button"
-              className="fav-btn"
-              title="Delete component"
-              onClick={(e) => {
-                e.stopPropagation();
-                if (window.confirm(`Delete "${entry.name}" from the library?`)) onRemove();
-              }}
-            >
-              <Icon name="trash" />
-            </button>
-          )}
         </div>
         {hasPresets ? (
           <div className="comp-card-desc preset-summary">{presetSummary(entry)}</div>

@@ -23,13 +23,11 @@ type ViewMode = 'all' | 'components';
 export function LibraryPanel({
   onUse,
   customComponents,
-  onRemoveCustomComponent,
   onRequestAddComponent,
   onSubmitPr,
 }: {
   onUse: (libId: string) => void;
   customComponents: LibraryEntry[];
-  onRemoveCustomComponent: (id: string) => void;
   onRequestAddComponent: () => void;
   onSubmitPr: (entry: LibraryEntry) => void;
 }) {
@@ -104,7 +102,6 @@ export function LibraryPanel({
               onToggleExpand={() => setExpandedId((cur) => (cur === item.id ? null : item.id))}
               onToggleFavorite={() => toggleFavorite(item.id)}
               onUse={onUse}
-              onRemove={item.id.startsWith('custom-') ? () => onRemoveCustomComponent(item.id) : undefined}
               onSubmitPr={item.id.startsWith('custom-') ? () => onSubmitPr(item) : undefined}
             />
           ))

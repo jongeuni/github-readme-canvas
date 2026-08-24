@@ -240,7 +240,6 @@ function App() {
           <LibraryPanel
             onUse={handleUseComponent}
             customComponents={customComponents.customComponents}
-            onRemoveCustomComponent={customComponents.removeCustomComponent}
             onRequestAddComponent={() => setAddComponentOpen(true)}
             onSubmitPr={handleRequestSubmitPr}
           />

@@ -69,13 +69,5 @@ export function useCustomComponents() {
     [makeUniqueId],
   );
 
-  const removeCustomComponent = useCallback((id: string) => {
-    setCustomComponents((prev) => {
-      const next = prev.filter((c) => c.id !== id);
-      persistCustomComponents(next);
-      return next;
-    });
-  }, []);
-
-  return { customComponents, addCustomComponent, removeCustomComponent };
+  return { customComponents, addCustomComponent };
 }
