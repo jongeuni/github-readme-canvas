@@ -286,6 +286,12 @@ export function useCanvasEditor() {
     div.className = className;
     div.innerHTML = html;
     if (align && align !== 'left') div.dataset.align = align;
+    // Exempt from the initial-mount safety-net observer's downgrade-to-
+    // md-text (see that observer's own comment) — that guard exists for an
+    // accidental native Enter-split carrying a heading class over, not for
+    // an intentional restore. Every caller here (Templates, Load, undo/redo)
+    // is intentional, same as placeLibraryEntry's own use of this flag.
+    if (className !== 'md-text') div.dataset.keepClass = '1';
     canvas.appendChild(div);
   }, []);
 
