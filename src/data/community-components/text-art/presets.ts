@@ -1,0 +1,56 @@
+import type { PresetDefinition } from '../../../types/library';
+import type { TextArtSettings } from './types';
+
+/** A starter batch — user-supplied, more to be added over time directly
+ *  here (or ad hoc per-instance via the free-text Settings field). */
+export const kaomojiPresets: PresetDefinition<TextArtSettings>[] = [
+  { id: 'kaomoji-shy-peek', name: 'Shy Peek', settings: { text: '₍⸝⸝•ᢦ- ₎⸝⸝ި ʕᦏ´-' } },
+  { id: 'kaomoji-content-smile', name: 'Content Smile', settings: { text: 'ദ്ദിᐢ. .ᐢ₎' } },
+  { id: 'kaomoji-gentle-smile', name: 'Gentle Smile', settings: { text: 'ദ്ദി（• ˕ •マ.ᐟ' } },
+  { id: 'kaomoji-censored', name: 'Censored', settings: { text: '❚█══█❚' } },
+  { id: 'kaomoji-table-flip', name: 'Table Flip', settings: { text: '‿︵‿ヽ(°□° )ノ︵‿︵' } },
+  { id: 'kaomoji-double-hug', name: 'Double Hug', settings: { text: 'ଘ(੭˵ᓀ◡ᓂ˵)੭ c(˵ㅇ◡ㅇ˵c )ଓ' } },
+  { id: 'kaomoji-looking-away', name: 'Looking Away', settings: { text: '◜( _ᗝ_)◝ ⤵︎⤵︎⤵︎' } },
+];
+
+export const dividerPresets: PresetDefinition<TextArtSettings>[] = [
+  { id: 'line-fish-chain', name: 'Fish Chain', settings: { text: '🐟·´¯`·.´¯`·.¸🐠🐟·´¯`·.´¯`·.¸🐠🐟·´¯`·.´¯`·.¸🐠' } },
+  { id: 'line-cross-frame', name: 'Cross Frame', settings: { text: '╔⊶⊶⊶⊶⊶✞⊷⊷⊷⊷⊷╗\n╚⊶⊶⊶⊶⊶✞⊷⊷⊷⊷⊷╝' } },
+  { id: 'line-sparkle-row', name: 'Sparkle Row', settings: { text: '✧･ﾟ: *✧･ﾟ:* 　　 *:･ﾟ✧*:･ﾟ✧' } },
+  { id: 'line-soft-dots', name: 'Soft Dots', settings: { text: '.・゜゜・　　・゜゜・．' } },
+  { id: 'line-flower-burst', name: 'Flower Burst', settings: { text: '*＊✿❀　❀✿＊*' } },
+  { id: 'line-circle-dots', name: 'Circle Dots', settings: { text: '*:..｡o○　　○o｡..:*' } },
+  { id: 'line-star-circles', name: 'Star Circles', settings: { text: '☆○o。　　。o○☆' } },
+  { id: 'line-plus-dots', name: 'Plus Dots', settings: { text: '*+:｡.｡　　｡.｡:+*' } },
+  { id: 'line-star-dots', name: 'Star Dots', settings: { text: '☆.｡.:*　　.｡.:*☆' } },
+  { id: 'line-twin-stars', name: 'Twin Stars', settings: { text: '｡･:*:･ﾟ★,｡･:*:･ﾟ☆　　｡･:*:･ﾟ★,｡･:*:･ﾟ☆' } },
+  { id: 'line-flower-petal', name: 'Flower Petal', settings: { text: '❀。• *₊°。 ❀°。' } },
+  { id: 'line-flower-dot', name: 'Flower Dot', settings: { text: '.•° ✿ °•.' } },
+  { id: 'line-flower-dot-reverse', name: 'Flower Dot Reverse', settings: { text: '°•. ✿ .•°' } },
+  { id: 'line-simple-frame', name: 'Simple Frame', settings: { text: '╭─────────╮\n╰─────────╯' } },
+  { id: 'line-crown-frame', name: 'Crown Frame', settings: { text: '╔═════ °• ♔ •° ═════╗\n╚═════ °• ♔ •° ═════╝' } },
+  { id: 'line-star-diamond-frame', name: 'Star Diamond Frame', settings: { text: '╔═══°∴,*⋅✲══〖✰〗══✲⋅*,∴°═══╗\n╚═══°∴,*⋅✲══〖✰〗══✲⋅*,∴°═══╝' } },
+  { id: 'line-lotus-frame', name: 'Lotus Frame', settings: { text: '┏━━━━━━༻❁༺━━━━━━┓\n┗━━━━━━༻❁༺━━━━━━┛' } },
+  { id: 'line-crosshatch-frame', name: 'Crosshatch Frame', settings: { text: '❉ ╤╤╤╤ ✿ ╤╤╤╤ ❉\n❉ ╧╧╧╧ ✿ ╧╧╧╧ ❉' } },
+  { id: 'line-bracket-wave', name: 'Bracket Wave', settings: { text: '┏━━━✦❘༻༺❘✦━━━┓' } },
+  { id: 'line-wave-dots-frame', name: 'Wave Dots Frame', settings: { text: '┌┄◦◡◦┄◦◡◦┄┐\n┖┄◦◠◦┄◦◠◦┄┚' } },
+  { id: 'line-bar-frame', name: 'Bar Frame', settings: { text: '╭╼|══════════|╾╮\n╰╼|══════════|╾╯' } },
+  { id: 'line-star-diamond-curve-frame', name: 'Star Diamond Curve Frame', settings: { text: '╔═══ -ˋˏ *.·:·.⟐.·:·.* ˎˊ- ═══╗\n╚═══ -ˋˏ *.·:·.⟐.·:·.* ˎˊ- ═══╝' } },
+  { id: 'line-moon-sparkle', name: 'Moon Sparkle', settings: { text: '•❅──────✧❅✦❅✧──────❅•' } },
+  { id: 'line-pipe-row', name: 'Pipe Row', settings: { text: '°l||l°l||l°l||l°l||l°l||l°l||l°l||l°l||l°l||l°l||l°' } },
+  { id: 'line-cross-sparkle-row', name: 'Cross Sparkle Row', settings: { text: '╳°»｡ ∾･⁙･ ღ ➵ ⁘ ➵ ღ ･⁙･∾ ｡«°╳' } },
+  { id: 'line-sparkle-dot-row', name: 'Sparkle Dot Row', settings: { text: '◦◦,｀°.✽✦✽.◦.✽✦✽.°｀,◦◦' } },
+  { id: 'line-arrow-row', name: 'Arrow Row', settings: { text: '➴➵➶➴➵➶➴➵➶➴➵➶➴➵➶' } },
+  { id: 'line-moon-star', name: 'Moon Star', settings: { text: '─── ･ ｡ﾟ☆: *.☽ .* :☆ﾟ. ───' } },
+  { id: 'line-dash-diamond', name: 'Dash Diamond', settings: { text: '- - ┈┈∘┈˃̶༒˂̶┈∘┈┈ - -' } },
+  { id: 'line-music-row', name: 'Music Row', settings: { text: '¸¸♬·¯·♩¸¸♪·¯·♫¸¸¸♬·¯·♩¸¸♪·¯·♫¸¸' } },
+  { id: 'line-moon-dash', name: 'Moon Dash', settings: { text: '•─────⋅☾ ☽⋅─────•' } },
+  { id: 'line-flower-dash', name: 'Flower Dash', settings: { text: '❀⊱┄┄┄┄┄┄┄┄┄┄┄⊰❀' } },
+  { id: 'line-tibetan-dots', name: 'Tibetan Dots', settings: { text: '༛༛ ༛ ༛༺༻༛ ༛ ༛༛' } },
+  { id: 'line-mandala-row', name: 'Mandala Row', settings: { text: '࿇ ══━━━━✥◈✥━━━━══ ࿇' } },
+  { id: 'line-triangle-row', name: 'Triangle Row', settings: { text: '◢◤◢◤◢◤◢◤◢◤◢◤◢◤' } },
+  { id: 'line-triangle-row-alt', name: 'Triangle Row Alt', settings: { text: '◤◢◣◥◤◢◣◥◤◢◣◥◤◢◣◥' } },
+  { id: 'line-heart-dash', name: 'Heart Dash', settings: { text: '♥═━┈┈ ♡═━┈┈ ♥═━┈┈ ♡═━┈┈' } },
+  { id: 'line-note-row', name: 'Note Row', settings: { text: '¸¸.•*¨*•♫♪¸¸.•*¨*•♫♪¸¸.•*¨*•♫♪¸¸.•*¨*•♫♪' } },
+  { id: 'line-block-row', name: 'Block Row', settings: { text: '▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀' } },
+];

@@ -1529,14 +1529,25 @@ export function useCanvasEditor() {
       const anchor = getInsertionAnchor();
       const insert = (node: HTMLElement) => (anchor ? anchor.insertAdjacentElement('afterend', node) : canvas.appendChild(node));
 
-      if (lib.type === 'heading') {
+      if (lib.type === 'heading' || lib.type === 'text-art') {
         // Inserted as plain free text, not a tracked widget — becomes exactly
-        // the same kind of editable line as anything typed by hand.
-        const level = (lib.defaultSettings as { level: HeadingLevel }).level;
+        // the same kind of editable line as anything typed by hand. text-art
+        // (kaomoji / decorative lines) is pure text with no settings worth
+        // configuring, so it skips the widget path entirely — no Settings
+        // panel, no forced center-align, just a normal left-aligned line the
+        // user can edit/align/delete exactly like anything they typed.
+        const level = lib.type === 'heading' ? (lib.defaultSettings as { level: HeadingLevel }).level : undefined;
         const cls = level === 'h1' ? 'md-h1' : level === 'h2' ? 'md-h2' : 'md-text';
         const div = document.createElement('div');
         div.className = cls;
-        div.textContent = (lib.defaultSettings as { text: string }).text;
+        // A handful of decorative-line presets are two lines (a top/bottom
+        // frame) — real <br> nodes so it still renders as one canvas line,
+        // same convention Shift+Enter's soft break already uses.
+        const text = (lib.defaultSettings as { text: string }).text;
+        text.split('\n').forEach((line, i) => {
+          if (i > 0) div.appendChild(document.createElement('br'));
+          div.appendChild(document.createTextNode(line));
+        });
         if (cls !== 'md-text') div.dataset.keepClass = '1'; // exempt from the observer's downgrade
         insert(div);
         div.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
