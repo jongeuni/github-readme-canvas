@@ -51,6 +51,13 @@ const ZERO_WIDTH_SPACE_RE = /\u200B/g;
 const IMAGE_LINE_RE = /^!\[([^\]]*)\]\((\S+)\)$/;
 const LINKED_IMAGE_LINE_RE = /^\[!\[([^\]]*)\]\((\S+)\)\]\((\S+)\)$/;
 
+/** Same two token shapes as above, but matched as a *run* — parseMarkdownToBlocks
+ *  only (not live typing) needs this, since buildFullMarkdown joins consecutive
+ *  inline widgets (e.g. a row of language badges) onto one line separated by a
+ *  single space (see buildFullMarkdown's inlineBuffer). Global, so a whole line
+ *  can be decomposed into N tokens instead of requiring exactly one. */
+const INLINE_IMAGE_RUN_TOKEN_RE = /\[!\[([^\]]*)\]\((\S+)\)\]\((\S+)\)|!\[([^\]]*)\]\((\S+)\)/g;
+
 /** Matched against the text run right before the caret, so typing the
  *  closing marker converts immediately — same live-conversion idea as the
  *  line-level rules above, just mid-paragraph instead of whole-line.
@@ -108,6 +115,32 @@ const CODE_FENCE_RE = /^```(\S*)$/;
  *  reasoning as the code-fence rule above (a table is a multi-row unit that
  *  doesn't fit the one-div-per-line canvas model once past its first row). */
 const TABLE_SEP_RE = /^\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)+\|?$/;
+
+/** Raw HTML block detection — multi-line paste only (parseMarkdownToBlocks
+ *  below), not live single-line typing. Void elements never get a closing
+ *  tag, so they're a one-line block on sight; everything else waits for its
+ *  own tag name's open/close count to balance back to zero, which is what
+ *  lets a wrapper like `<div align="center">...</div>` absorb whatever
+ *  markdown-looking lines or blank lines sit inside it as one opaque block
+ *  instead of being decomposed. Requiring the tag name to be immediately
+ *  followed by whitespace/`/`/`>` (not just any character) is what keeps a
+ *  markdown autolink like `<https://x.com>` from false-positives as a tag
+ *  named "https". */
+const HTML_VOID_ELEMENTS = new Set([
+  'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr',
+]);
+const HTML_OPEN_TAG_RE = /^<([a-zA-Z][a-zA-Z0-9-]*)(?:\s[^>]*)?\/?>/;
+
+function htmlTagDepthDelta(line: string, tagName: string): number {
+  const re = new RegExp(`<(/?)${tagName}\\b[^>]*?(/?)>`, 'gi');
+  let delta = 0;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(line))) {
+    if (m[1] === '/') delta -= 1;
+    else if (m[2] !== '/') delta += 1;
+  }
+  return delta;
+}
 
 export type TextLineStyle = 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'quote' | 'ul' | 'ol' | 'task' | 'text';
 
@@ -310,6 +343,67 @@ export function parseMarkdownToBlocks(text: string): SerializedBlock[] {
       continue;
     }
 
+    // These two are buildFullMarkdown's OWN align-wrapper conventions (the
+    // only two it ever emits — see HEADING_LEVEL/AlignField usage there), so
+    // they're special-cased ahead of the generic HTML-block detector below:
+    // otherwise a round-tripped aligned heading/paragraph/widget would get
+    // swallowed whole into an opaque raw-html block instead of being restored
+    // as the real block it was.
+    const alignedHeadingMatch = /^<h([1-6]) align="(left|center|right)">(.*)<\/h\1>$/.exec(trimmed);
+    if (alignedHeadingMatch) {
+      const [, level, align, innerText] = alignedHeadingMatch;
+      const headingBlock: SerializedTextBlock = {
+        kind: 'text',
+        className: `md-h${level}` as SerializedTextBlock['className'],
+        html: escapeHtml(innerText),
+      };
+      if (align !== 'left') headingBlock.align = align as 'center' | 'right';
+      blocks.push(headingBlock);
+      i++;
+      continue;
+    }
+
+    const alignedParaOpenMatch = /^<p align="(left|center|right)">/.exec(trimmed);
+    if (alignedParaOpenMatch) {
+      const align = alignedParaOpenMatch[1] as 'left' | 'center' | 'right';
+      const pLines = [line];
+      i++;
+      let pDepth = htmlTagDepthDelta(trimmed, 'p');
+      while (pDepth > 0 && i < lines.length) {
+        pLines.push(lines[i]);
+        pDepth += htmlTagDepthDelta(lines[i], 'p');
+        i++;
+      }
+      const inner = pLines
+        .join('\n')
+        .replace(/^<p align="[^"]*">/, '')
+        .replace(/<\/p>\s*$/, '');
+      // Recurse rather than duplicate classification logic — whatever the
+      // wrapper held (a paragraph, a badge row, a widget) gets reconstructed
+      // by the very same branches below, then align is layered on top.
+      const innerBlocks = parseMarkdownToBlocks(inner);
+      blocks.push(...(align === 'left' ? innerBlocks : innerBlocks.map((b) => ({ ...b, align }))));
+      continue;
+    }
+
+    const htmlOpenMatch = HTML_OPEN_TAG_RE.exec(trimmed);
+    if (htmlOpenMatch) {
+      const tagName = htmlOpenMatch[1].toLowerCase();
+      const htmlLines = [line];
+      i++;
+      if (!HTML_VOID_ELEMENTS.has(tagName)) {
+        let depth = htmlTagDepthDelta(trimmed, tagName);
+        while (depth > 0 && i < lines.length) {
+          htmlLines.push(lines[i]);
+          depth += htmlTagDepthDelta(lines[i], tagName);
+          i++;
+        }
+      }
+      const { uid: _uid, ...rest } = mkInstance('raw-html', { html: htmlLines.join('\n') });
+      blocks.push({ kind: 'widget', ...rest });
+      continue;
+    }
+
     const fenceMatch = CODE_FENCE_RE.exec(trimmed);
     if (fenceMatch) {
       const lang = fenceMatch[1];
@@ -358,21 +452,29 @@ export function parseMarkdownToBlocks(text: string): SerializedBlock[] {
       continue;
     }
 
-    const linkedImg = LINKED_IMAGE_LINE_RE.exec(trimmed);
-    const plainImg = linkedImg ? null : IMAGE_LINE_RE.exec(trimmed);
-    const imgMatch = linkedImg ?? plainImg;
-    if (imgMatch) {
-      const [, alt, url] = imgMatch;
-      const link = linkedImg?.[3];
-      const linkable = link !== undefined;
-      blocks.push({
-        kind: 'widget',
-        libId: 'inline-image',
-        type: 'url-component',
-        name: alt || 'Image',
-        settings: linkable ? { link } : {},
-        meta: { urlTemplate: url, fields: [], linkable, altTemplate: alt || 'image' },
-      });
+    // One or more image/linked-image tokens separated only by whitespace —
+    // covers both a lone pasted image line AND a re-imported row of inline
+    // widgets (buildFullMarkdown joins those with a single space). The
+    // whitespace-normalized-equality check is what rejects a line that only
+    // *contains* an image ref amid other text, same rejection the old
+    // anchored ^...$ single-token regexes gave for the N=1 case.
+    const runTokens = [...trimmed.matchAll(INLINE_IMAGE_RUN_TOKEN_RE)];
+    if (runTokens.length > 0 && trimmed.replace(/\s+/g, ' ') === runTokens.map((m) => m[0]).join(' ')) {
+      for (const m of runTokens) {
+        const linked = m[1] !== undefined;
+        const alt = linked ? m[1] : m[4];
+        const url = linked ? m[2] : m[5];
+        const link = linked ? m[3] : undefined;
+        const linkable = link !== undefined;
+        blocks.push({
+          kind: 'widget',
+          libId: 'inline-image',
+          type: 'url-component',
+          name: alt || 'Image',
+          settings: linkable ? { link } : {},
+          meta: { urlTemplate: url, fields: [], linkable, altTemplate: alt || 'image' },
+        });
+      }
       i++;
       continue;
     }
@@ -392,6 +494,24 @@ export function parseMarkdownToBlocks(text: string): SerializedBlock[] {
       continue;
     }
 
+    // A hard-broken paragraph (buildFullMarkdown marks a soft-break
+    // continuation with a trailing "  " before the newline — same GFM hard
+    // break rule GitHub itself uses) round-trips as one block with <br>
+    // between lines, instead of shredding into separate paragraphs.
+    if (/ {2}$/.test(line)) {
+      const paraLines = [trimmed];
+      i++;
+      let hasMore = true;
+      while (hasMore && i < lines.length) {
+        const contd = lines[i];
+        paraLines.push(contd.trim());
+        hasMore = / {2}$/.test(contd);
+        i++;
+      }
+      blocks.push({ kind: 'text', className: 'md-text', html: paraLines.map((l) => applyInlineEmphasis(escapeHtml(l))).join('<br>') });
+      continue;
+    }
+
     blocks.push({ kind: 'text', className: 'md-text', html: applyInlineEmphasis(escapeHtml(trimmed)) });
     i++;
   }
@@ -408,6 +528,13 @@ export function useCanvasEditor() {
   // null hides it. Rendered outside the contentEditable region (see Canvas.tsx)
   // so it's plain React, not another thing fighting the canvas for control.
   const [selectionToolbar, setSelectionToolbar] = useState<{ top: number; left: number } | null>(null);
+  // True while the toolbar's Bold/Italic row is swapped for a URL input —
+  // see openLinkInput/applyLink/cancelLinkInput below.
+  const [linkInputOpen, setLinkInputOpen] = useState(false);
+  // Captured at the moment the Link button is clicked, since the URL <input>
+  // taking focus clears the contentEditable's live window.getSelection() —
+  // a cloned Range survives that (Range is independent of Selection focus).
+  const pendingLinkRangeRef = useRef<Range | null>(null);
   // Widget settings live outside React state (in widgetsRef) for the reasons
   // above; this counter is bumped whenever they change so components that
   // *read* the current selection (SettingsPanel) re-render with fresh data.
@@ -947,6 +1074,54 @@ export function useCanvasEditor() {
         // an existing <strong>/<em>) — surroundContents refuses rather than
         // produce broken markup. Just skip; nothing was corrupted.
       }
+      setSelectionToolbar(null);
+      const line = currentTextLine();
+      if (line && selectedTextEl === line) bump();
+      pushHistorySnapshot();
+    },
+    [selectedTextEl, pushHistorySnapshot],
+  );
+
+  // Swaps the toolbar's button row for a URL input (see Canvas.tsx) instead
+  // of applying anything immediately — a link needs text input, which steals
+  // focus from the contentEditable, so the Range is captured now while the
+  // selection is still live and reused once the URL is confirmed.
+  const openLinkInput = useCallback(() => {
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return;
+    pendingLinkRangeRef.current = sel.getRangeAt(0).cloneRange();
+    setLinkInputOpen(true);
+  }, []);
+
+  const cancelLinkInput = useCallback(() => {
+    pendingLinkRangeRef.current = null;
+    setLinkInputOpen(false);
+    setSelectionToolbar(null);
+  }, []);
+
+  // Wraps the captured Range in <a href>, same surroundContents technique
+  // and export path as applyInlineFormat — textWithSoftBreaks already turns
+  // a real <a> back into [text](url) on export, no separate handling needed.
+  const applyLink = useCallback(
+    (url: string) => {
+      const range = pendingLinkRangeRef.current;
+      const trimmedUrl = url.trim();
+      if (range && trimmedUrl) {
+        try {
+          const wrapper = document.createElement('a');
+          wrapper.setAttribute('href', trimmedUrl);
+          range.surroundContents(wrapper);
+          const newRange = document.createRange();
+          newRange.selectNodeContents(wrapper);
+          const sel = window.getSelection();
+          sel?.removeAllRanges();
+          sel?.addRange(newRange);
+        } catch {
+          // Same partial-boundary case applyInlineFormat guards against.
+        }
+      }
+      pendingLinkRangeRef.current = null;
+      setLinkInputOpen(false);
       setSelectionToolbar(null);
       const line = currentTextLine();
       if (line && selectedTextEl === line) bump();
@@ -1599,6 +1774,10 @@ export function useCanvasEditor() {
     selectedTextEl,
     selectionToolbar,
     applyInlineFormat,
+    linkInputOpen,
+    openLinkInput,
+    applyLink,
+    cancelLinkInput,
     toggleSelectionCenterAlign,
     getSelectedWidget,
     addFromLibrary,

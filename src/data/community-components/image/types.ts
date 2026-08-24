@@ -8,4 +8,9 @@ export interface ImageSettings {
   url: string;
   width: string;
   alt: string;
+  /** Optional — wraps the exported `<img>` in a markdown link, same idea as
+   *  a badge's `linkable` field: `[<img ...>](link)` so clicking the image
+   *  on GitHub navigates. Doesn't affect the in-canvas Preview (consistent
+   *  with url-component, which also only feeds `link` into toMarkdown). */
+  link: string;
 }

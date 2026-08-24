@@ -127,4 +127,167 @@ describe('parseMarkdownToBlocks', () => {
       'inline-image',
     ]);
   });
+
+  describe('raw HTML blocks', () => {
+    it('parses a single self-closing HTML img tag as one raw-html block', () => {
+      const blocks = parseMarkdownToBlocks('<img src="https://example.com/a.png" />');
+      const b = widget(blocks[0]);
+      expect(b.libId).toBe('raw-html');
+      expect(b.type).toBe('raw-html');
+      expect(b.settings.html).toBe('<img src="https://example.com/a.png" />');
+    });
+
+    it('parses a void element without a self-closing slash as one raw-html block', () => {
+      const blocks = parseMarkdownToBlocks('<br>');
+      expect(blocks).toHaveLength(1);
+      expect(widget(blocks[0]).settings.html).toBe('<br>');
+    });
+
+    it('absorbs a multi-line wrapper into one raw-html block, preserving the source verbatim', () => {
+      const md = ['<div align="center">', '  <img src="https://example.com/a.png">', '</div>'].join('\n');
+      const blocks = parseMarkdownToBlocks(md);
+      expect(blocks).toHaveLength(1);
+      expect(widget(blocks[0]).settings.html).toBe(md);
+    });
+
+    it('tracks same-tag nesting depth instead of stopping at the first closing tag', () => {
+      const md = ['<div>', '  <div>', '    <span>Hello</span>', '  </div>', '</div>'].join('\n');
+      const blocks = parseMarkdownToBlocks(md);
+      expect(blocks).toHaveLength(1);
+      expect(widget(blocks[0]).settings.html).toBe(md);
+    });
+
+    it('absorbs an SVG with a self-closing child element as one block', () => {
+      const md = ['<svg viewBox="0 0 100 100">', '  <circle cx="50" cy="50" r="40"/>', '</svg>'].join('\n');
+      const blocks = parseMarkdownToBlocks(md);
+      expect(blocks).toHaveLength(1);
+      expect(widget(blocks[0]).settings.html).toBe(md);
+    });
+
+    it('does not decompose markdown-looking lines or blank lines inside an HTML wrapper', () => {
+      const md = ['<div align="center">', '', '# Hello', '', 'This is **bold**.', '', '<img src="https://example.com/a.png">', '', '</div>'].join('\n');
+      const blocks = parseMarkdownToBlocks(md);
+      expect(blocks).toHaveLength(1);
+      expect(widget(blocks[0]).settings.html).toBe(md);
+    });
+
+    it('runs an unclosed HTML tag to the end of input', () => {
+      const md = ['<div>', 'stray content'].join('\n');
+      const blocks = parseMarkdownToBlocks(md);
+      expect(blocks).toHaveLength(1);
+      expect(widget(blocks[0]).settings.html).toBe(md);
+    });
+
+    it('keeps correct order across a mixed markdown + HTML document', () => {
+      const md = [
+        '# My Project',
+        '',
+        '<div align="center">',
+        '<img src="https://example.com/a.png">',
+        '</div>',
+        '',
+        '## Features',
+        '',
+        '- feature 1',
+        '- feature 2',
+      ].join('\n');
+      const blocks = parseMarkdownToBlocks(md);
+      expect(blocks.map((b) => (b.kind === 'text' ? b.className : (b as SerializedWidgetBlock).libId))).toEqual([
+        'md-h1',
+        'raw-html',
+        'md-h2',
+        'md-ul-item',
+        'md-ul-item',
+      ]);
+    });
+
+    it('still escapes a bare stray HTML-like fragment mid-sentence as plain text', () => {
+      const blocks = parseMarkdownToBlocks('a <script> & more');
+      expect(text(blocks[0]).className).toBe('md-text');
+      expect(text(blocks[0]).html).toBe('a &lt;script&gt; &amp; more');
+    });
+  });
+
+  describe('Copy Markdown round-trip (buildFullMarkdown align wrappers + inline widget runs)', () => {
+    it('restores an aligned heading instead of swallowing it as raw HTML', () => {
+      const blocks = parseMarkdownToBlocks('<h2 align="center">Centered</h2>');
+      expect(blocks).toHaveLength(1);
+      expect(text(blocks[0]).className).toBe('md-h2');
+      expect(text(blocks[0]).html).toBe('Centered');
+      expect(text(blocks[0]).align).toBe('center');
+    });
+
+    it('unwraps a <p align> around a single inline image into one aligned widget', () => {
+      const blocks = parseMarkdownToBlocks('<p align="center">![alt](https://example.com/a.png)</p>');
+      expect(blocks).toHaveLength(1);
+      const b = widget(blocks[0]);
+      expect(b.libId).toBe('inline-image');
+      expect(b.align).toBe('center');
+    });
+
+    it('splits a row of inline widgets joined by buildFullMarkdown into separate blocks, all sharing the wrapper align', () => {
+      const blocks = parseMarkdownToBlocks('<p align="center">![a](https://example.com/a.png) ![b](https://example.com/b.png)</p>');
+      expect(blocks).toHaveLength(2);
+      expect(widget(blocks[0]).align).toBe('center');
+      expect(widget(blocks[1]).align).toBe('center');
+      expect(widget(blocks[0]).meta?.urlTemplate).toBe('https://example.com/a.png');
+      expect(widget(blocks[1]).meta?.urlTemplate).toBe('https://example.com/b.png');
+    });
+
+    it('splits a bare (unwrapped) row of inline widgets with no align', () => {
+      const blocks = parseMarkdownToBlocks('![a](https://example.com/a.png) ![b](https://example.com/b.png) ![c](https://example.com/c.png)');
+      expect(blocks).toHaveLength(3);
+      blocks.forEach((b) => expect(widget(b).align).toBeUndefined());
+    });
+
+    it('unwraps a <p align> around plain text, still applying inline emphasis', () => {
+      const blocks = parseMarkdownToBlocks('<p align="right">This is **bold** text.</p>');
+      expect(blocks).toHaveLength(1);
+      expect(text(blocks[0]).className).toBe('md-text');
+      expect(text(blocks[0]).html).toBe('This is <strong>bold</strong> text.');
+      expect(text(blocks[0]).align).toBe('right');
+    });
+
+    it('does not let the new <h>/<p> align cases interfere with an unrelated raw-html <div>', () => {
+      const md = ['<div align="center">', '<img src="https://example.com/a.png">', '</div>'].join('\n');
+      const blocks = parseMarkdownToBlocks(md);
+      expect(blocks).toHaveLength(1);
+      expect(widget(blocks[0]).libId).toBe('raw-html');
+      expect(widget(blocks[0]).align).toBeUndefined();
+    });
+
+    it('restores a full mixed document shaped like real buildFullMarkdown output', () => {
+      const md = [
+        '<h1 align="center">Welcome</h1>',
+        '',
+        '<p align="center">![C++](https://img.shields.io/badge/c%2B%2B-blue) ![Python](https://img.shields.io/badge/python-green)</p>',
+        '',
+        '<div align="center">',
+        '<img src="https://example.com/a.png">',
+        '</div>',
+        '',
+        'Some text here.',
+      ].join('\n\n');
+      const blocks = parseMarkdownToBlocks(md);
+      expect(blocks.map((b) => (b.kind === 'text' ? b.className : (b as SerializedWidgetBlock).libId))).toEqual([
+        'md-h1',
+        'inline-image',
+        'inline-image',
+        'raw-html',
+        'md-text',
+      ]);
+      expect(text(blocks[0]).align).toBe('center');
+      expect(widget(blocks[1]).align).toBe('center');
+      expect(widget(blocks[2]).align).toBe('center');
+      expect(widget(blocks[3]).align).toBeUndefined();
+      expect(text(blocks[4]).align).toBeUndefined();
+    });
+
+    it('merges a hard-broken paragraph (trailing double space) into one block with <br>', () => {
+      const blocks = parseMarkdownToBlocks('Line one  \nLine two');
+      expect(blocks).toHaveLength(1);
+      expect(text(blocks[0]).className).toBe('md-text');
+      expect(text(blocks[0]).html).toBe('Line one<br>Line two');
+    });
+  });
 });

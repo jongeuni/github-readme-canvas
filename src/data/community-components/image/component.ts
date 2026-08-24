@@ -16,7 +16,8 @@ const definition: ComponentTypeDefinition<ImageSettings> = {
     // `<img>` markup (to paste a URL into by hand) instead of going blank.
     const width = s.width ? ` width="${s.width}"` : '';
     const alt = s.alt ? ` alt="${s.alt}"` : '';
-    return `<img src="${s.url}"${width}${alt}>`;
+    const img = `<img src="${s.url}"${width}${alt}>`;
+    return s.link ? `[${img}](${s.link})` : img;
   },
 };
 
@@ -26,9 +27,9 @@ const entries: LibraryEntry<ImageSettings>[] = [
     type: 'image',
     name: 'Image',
     description: 'Any image by URL — paste your own.',
-    category: 'Decorations',
-    tags: ['Decorations', 'Image'],
-    defaultSettings: { url: '', width: '100%', alt: '' },
+    category: '✨ decoration',
+    tags: ['✨ decoration', 'Image'],
+    defaultSettings: { url: '', width: '100%', alt: '', link: '' },
   },
   // Functionally identical to Image — exists as its own card purely so
   // searching "gif" finds something, instead of only ever surfacing "Image".
@@ -37,18 +38,18 @@ const entries: LibraryEntry<ImageSettings>[] = [
     type: 'image',
     name: 'GIF',
     description: 'Any GIF by URL — paste your own.',
-    category: 'Decorations',
-    tags: ['Decorations', 'Image', 'GIF'],
-    defaultSettings: { url: '', width: '100%', alt: '' },
+    category: '✨ decoration',
+    tags: ['✨ decoration', 'Image', 'GIF'],
+    defaultSettings: { url: '', width: '100%', alt: '', link: '' },
   },
   {
     id: 'line',
     type: 'image',
     name: 'Line',
     description: 'A decorative divider line — pick a style below.',
-    category: 'Decorations',
-    tags: ['Decorations', 'Image'],
-    defaultSettings: { ...linePresets[0].settings, alt: '' } as ImageSettings,
+    category: '✨ decoration',
+    tags: ['✨ decoration', 'Image'],
+    defaultSettings: { ...linePresets[0].settings, alt: '', link: '' } as ImageSettings,
     presetsLabel: 'styles',
     presets: linePresets,
     // Read by SettingsForm — Line is variant-only (see presets above), no

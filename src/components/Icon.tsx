@@ -63,6 +63,13 @@ export function IconSprite() {
         <line x1="6" y1="10" x2="14" y2="10" />
         <line x1="3" y1="15" x2="17" y2="15" />
       </symbol>
+      <symbol id="i-link" viewBox="0 0 20 20">
+        <path d="M8.3 11.7a3 3 0 0 0 4.5.3l2-2a3 3 0 0 0-4.2-4.2l-1.1 1.1" />
+        <path d="M11.7 8.3a3 3 0 0 0-4.5-.3l-2 2a3 3 0 0 0 4.2 4.2l1.1-1.1" />
+      </symbol>
+      <symbol id="i-check" viewBox="0 0 20 20">
+        <polyline points="4,11 8,15 16,6" />
+      </symbol>
     </svg>
   );
 }

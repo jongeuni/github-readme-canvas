@@ -13,6 +13,7 @@ export function SettingsForm({ settings, meta, onChange }: SettingsFormProps<Ima
       <UrlField label="Image URL" value={settings.url} onChange={(url) => onChange({ url })} />
       <TextField label="Width" value={settings.width} onChange={(width) => onChange({ width })} placeholder="100%, 300px, 50%…" />
       <TextField label="Alt text" value={settings.alt} onChange={(alt) => onChange({ alt })} placeholder="Optional" />
+      <UrlField label="Link" value={settings.link} onChange={(link) => onChange({ link })} />
     </>
   );
 }

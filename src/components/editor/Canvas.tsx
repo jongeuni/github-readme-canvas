@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Icon } from '../Icon';
 import type { UseCanvasEditor } from './useCanvasEditor';
 
@@ -9,6 +10,7 @@ import type { UseCanvasEditor } from './useCanvasEditor';
  */
 export function Canvas({ editor }: { editor: UseCanvasEditor }) {
   const toolbar = editor.selectionToolbar;
+  const [linkUrl, setLinkUrl] = useState('');
   return (
     <div className="canvas-col">
       <div
@@ -25,7 +27,45 @@ export function Canvas({ editor }: { editor: UseCanvasEditor }) {
           never hand the canvas div itself JSX children. `position: fixed`
           means it can sit anywhere in the tree and still land in the right
           spot using the viewport-relative coordinates the hook computed. */}
-      {toolbar && (
+      {toolbar && editor.linkInputOpen && (
+        <form
+          className="selection-toolbar selection-toolbar-link-form"
+          style={{ top: toolbar.top, left: toolbar.left }}
+          onSubmit={(e) => {
+            e.preventDefault();
+            editor.applyLink(linkUrl);
+            setLinkUrl('');
+          }}
+        >
+          <input
+            type="url"
+            autoFocus
+            value={linkUrl}
+            onChange={(e) => setLinkUrl(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') {
+                editor.cancelLinkInput();
+                setLinkUrl('');
+              }
+            }}
+            placeholder="https://..."
+          />
+          <button type="submit" title="Add link">
+            <Icon name="check" />
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              editor.cancelLinkInput();
+              setLinkUrl('');
+            }}
+            title="Cancel"
+          >
+            <Icon name="close" />
+          </button>
+        </form>
+      )}
+      {toolbar && !editor.linkInputOpen && (
         <div className="selection-toolbar" style={{ top: toolbar.top, left: toolbar.left }}>
           <button type="button" onMouseDown={(e) => { e.preventDefault(); editor.applyInlineFormat('strong'); }} title="Bold">
             <strong>B</strong>
@@ -35,6 +75,9 @@ export function Canvas({ editor }: { editor: UseCanvasEditor }) {
           </button>
           <button type="button" onMouseDown={(e) => { e.preventDefault(); editor.applyInlineFormat('del'); }} title="Strikethrough">
             <del>S</del>
+          </button>
+          <button type="button" onMouseDown={(e) => { e.preventDefault(); editor.openLinkInput(); }} title="Link">
+            <Icon name="link" />
           </button>
           <button type="button" onMouseDown={(e) => { e.preventDefault(); editor.toggleSelectionCenterAlign(); }} title="Center align">
             <Icon name="align-center" />
