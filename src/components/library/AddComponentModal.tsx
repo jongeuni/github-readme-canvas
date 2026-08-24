@@ -149,7 +149,17 @@ export function AddComponentModal({
       <div className="modal-card wide">
         {step === 1 ? (
           <>
-            <h4>Add Component</h4>
+            <div className="modal-head-row">
+              <h4>Add Component</h4>
+              <a
+                className="add-on-github-link"
+                href="https://github.com/jongeuni/github-readme-canvas/issues/1"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Add directly on GitHub →
+              </a>
+            </div>
             <div className="field-row">
               <div className="field">
                 <label>Name</label>

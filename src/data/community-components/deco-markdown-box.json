@@ -37,7 +37,49 @@
       {
         "key": "style",
         "label": "Style",
-        "type": "text"
+        "type": "select",
+        "options": [
+          {
+            "value": "DEFAULT", 
+            "label": "DEFAULT"
+          },
+          {
+            "value": "TISTORY",
+            "label": "TISTORY"
+          },
+          {
+            "value": "BRUNCH",
+            "label": "BRUNCH"
+          },
+          {
+            "value": "INSTA",
+            "label": "INSTA"
+          },
+          {
+            "value": "LIINKED",
+            "label": "LIINKED"
+          },
+          {
+            "value": "MEDIUM",
+            "label": "MEDIUM"
+          },
+          {
+            "value": "VELOG",
+            "label": "VELOG"
+          },
+          {
+            "value": "NAVER",
+            "label": "NAVER"
+          },
+          {
+            "value": "GLOW",
+            "label": "GLOW (NEON)"
+          },
+          {
+            "value": "GITHUB",
+            "label": "GITHUB"
+          }
+        ]
       }
     ]
   }

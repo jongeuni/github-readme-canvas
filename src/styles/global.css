@@ -1468,6 +1468,24 @@ a.icon-btn {
   font-weight: 600;
   margin: 0 0 14px;
 }
+.modal-head-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+.modal-head-row h4 {
+  margin: 0 0 14px;
+}
+.add-on-github-link {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--accent);
+  white-space: nowrap;
+}
+.add-on-github-link:hover {
+  text-decoration: underline;
+}
 .modal-card .field {
   margin-bottom: 4px;
 }
