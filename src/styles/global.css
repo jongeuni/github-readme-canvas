@@ -934,14 +934,25 @@ pre {
   stroke: #fff;
 }
 .divider-line {
+  width: 100%;
   border: none;
   border-top: 1px solid var(--border);
   margin: 16px 0;
 }
 .divider-dashed {
+  width: 100%;
   border: none;
   border-top: 1px dashed var(--border-strong);
   margin: 16px 0;
+}
+/* On the real canvas, --border's subtlety is intentional (a divider reads
+   fine next to other content). Isolated in an empty Library preview box,
+   that same 1px #e7e7ea line is effectively invisible — darken it there only. */
+.comp-card-preview .divider-line,
+.comp-detail-preview .divider-line,
+.comp-card-preview .divider-dashed,
+.comp-detail-preview .divider-dashed {
+  border-top-color: var(--text-3);
 }
 .md-codeblock-preview {
   position: relative;
