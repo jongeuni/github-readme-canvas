@@ -9,7 +9,9 @@ const definition: ComponentTypeDefinition<RawHtmlSettings> = {
   layout: 'block',
   Preview,
   SettingsForm,
-  toMarkdown: (s) => s.html,
+  // A copy-pasteable placeholder, not blank, when nothing's been typed yet —
+  // same reasoning as Image/GIF's Usage preview (see that component.ts).
+  toMarkdown: (s) => s.html || '<div align="center">\n\n</div>',
 };
 
 const entries: LibraryEntry<RawHtmlSettings>[] = [
