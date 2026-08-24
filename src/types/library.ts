@@ -55,6 +55,11 @@ export interface LibraryEntry<TSettings = any> {
    *  entry has presets, e.g. "languages" → "6 languages · C++ · Java · ...".
    *  Defaults to "presets" when omitted. */
   presetsLabel?: string;
+  /** Align a freshly-placed instance starts with — unset/'left' (the
+   *  default) matches every existing Component's prior behavior. Only worth
+   *  setting when a Component's whole visual purpose assumes centering
+   *  (e.g. a decorative separator line). */
+  defaultAlign?: 'left' | 'center' | 'right';
 }
 
 /** A live instance of a component placed on the canvas. */

@@ -41,6 +41,9 @@ const entries: LibraryEntry<TextArtSettings>[] = [
     presetsLabel: 'styles',
     presets: dividerPresets,
     meta: { family: 'divider' },
+    // A decorative separator's whole visual point assumes it's centered —
+    // unlike Kaomoji, which reads fine left-aligned inline with other text.
+    defaultAlign: 'center',
   },
 ];
 

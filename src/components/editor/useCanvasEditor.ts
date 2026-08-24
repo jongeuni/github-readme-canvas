@@ -221,6 +221,7 @@ function mkInstanceFromEntry(lib: LibraryEntry, overrides?: Record<string, unkno
     name: lib.name,
     settings: { ...(lib.defaultSettings as object), ...(overrides ?? {}) },
     meta: lib.meta,
+    align: lib.defaultAlign,
   };
 }
 

@@ -21,6 +21,7 @@ export function flattenLibrary(components: LibraryEntry[]): LibraryEntry[] {
       tags: c.tags,
       defaultSettings: { ...c.defaultSettings, ...p.settings },
       meta: p.meta ? { ...c.meta, ...p.meta } : c.meta,
+      defaultAlign: c.defaultAlign,
     }));
   });
 }

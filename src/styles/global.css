@@ -1088,6 +1088,15 @@ pre {
   white-space: pre-wrap;
   word-break: break-word;
 }
+/* text-art is plain text in a full-width block, so — unlike other widgets,
+   which only get the corner badge since they can't meaningfully reflow —
+   its align actually moves the text, same as a real text line would. */
+.block[data-align='center'] .text-art-preview {
+  text-align: center;
+}
+.block[data-align='right'] .text-art-preview {
+  text-align: right;
+}
 
 /* right: settings */
 .settings-col {
