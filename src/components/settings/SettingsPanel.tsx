@@ -40,6 +40,7 @@ export function SettingsPanel({ editor }: { editor: UseCanvasEditor }) {
     updateSelectedWidgetPreset,
     updateSelectedWidgetAlign,
     removeSelectedWidget,
+    removeSelectedTextLine,
     setSelectedTextValue,
     setSelectedTextLevel,
     setSelectedTextAlign,
@@ -65,6 +66,12 @@ export function SettingsPanel({ editor }: { editor: UseCanvasEditor }) {
             table header followed by a --- separator row becomes a Table.
           </div>
         </form>
+        <div className="remove-row">
+          <button type="button" className="remove-link" onClick={removeSelectedTextLine}>
+            <Icon name="trash" />
+            Remove line
+          </button>
+        </div>
       </div>
     );
   }

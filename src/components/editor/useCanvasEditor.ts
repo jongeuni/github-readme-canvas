@@ -947,6 +947,20 @@ export function useCanvasEditor() {
     pushHistorySnapshot();
   }, [selectedUid, ensureTrailingTextLine, pushHistorySnapshot]);
 
+  // Removes the whole selected line (see SettingsPanel's "Remove" button in
+  // its Text branch) — Backspace/Delete can't do this on their own since
+  // they're needed for normal in-line editing; at the start of a line they
+  // merge into the previous one (native contentEditable behavior) rather
+  // than deleting the line itself, which is exactly the "delete removes the
+  // wrong thing" report this button fixes.
+  const removeSelectedTextLine = useCallback(() => {
+    if (!selectedTextEl) return;
+    selectedTextEl.remove();
+    setSelectedTextEl(null);
+    ensureTrailingTextLine();
+    pushHistorySnapshot();
+  }, [selectedTextEl, ensureTrailingTextLine, pushHistorySnapshot]);
+
   const handleKeyDown = useCallback(
     (e: KeyboardEvent<HTMLDivElement>) => {
       // A selected widget is contentEditable=false, so clicking it never
@@ -1349,6 +1363,7 @@ export function useCanvasEditor() {
     updateSelectedWidgetPreset,
     updateSelectedWidgetAlign,
     removeSelectedWidget,
+    removeSelectedTextLine,
     setSelectedTextValue,
     setSelectedTextLevel,
     setSelectedTextAlign,
