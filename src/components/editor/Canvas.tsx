@@ -1,3 +1,4 @@
+import { Icon } from '../Icon';
 import type { UseCanvasEditor } from './useCanvasEditor';
 
 /**
@@ -34,6 +35,9 @@ export function Canvas({ editor }: { editor: UseCanvasEditor }) {
           </button>
           <button type="button" onMouseDown={(e) => { e.preventDefault(); editor.applyInlineFormat('del'); }} title="Strikethrough">
             <del>S</del>
+          </button>
+          <button type="button" onMouseDown={(e) => { e.preventDefault(); editor.toggleSelectionCenterAlign(); }} title="Center align">
+            <Icon name="align-center" />
           </button>
         </div>
       )}

@@ -3,7 +3,12 @@ import type { UseCanvasEditor } from '../editor/useCanvasEditor';
 import { TEXT_LINE_STYLE_OPTIONS, textLineStyle, textLineStyleLabel } from '../editor/useCanvasEditor';
 import { getComponentType, LIBRARY_MAP, PRESET_PARENT_MAP } from '../../registry';
 import { Icon } from '../Icon';
-import { SelectField, TextField } from './fields';
+import { AlignField, SelectField, TextField } from './fields';
+
+/** Align is only offered for these text-line styles — Quote/List/Task markdown
+ *  prefixes (`>`/`-`/`1.`) don't combine cleanly with an HTML align wrapper,
+ *  and centering a bullet list isn't a real use case. See buildFullMarkdown. */
+const ALIGNABLE_TEXT_STYLES = new Set(['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'text']);
 
 /** Types with their own bespoke rendering code get a fixed label. Anything
  *  else (every 'url-component' entry — badges, stats, social links, ...)
@@ -33,9 +38,11 @@ export function SettingsPanel({ editor }: { editor: UseCanvasEditor }) {
     getSelectedWidget,
     updateSelectedWidgetSettings,
     updateSelectedWidgetPreset,
+    updateSelectedWidgetAlign,
     removeSelectedWidget,
     setSelectedTextValue,
     setSelectedTextLevel,
+    setSelectedTextAlign,
   } = editor;
 
   if (selectedTextEl && selectedTextEl.isConnected) {
@@ -49,6 +56,9 @@ export function SettingsPanel({ editor }: { editor: UseCanvasEditor }) {
         <form onSubmit={(e) => e.preventDefault()}>
           <TextField label="Text" value={selectedTextEl.textContent ?? ''} onChange={setSelectedTextValue} />
           <SelectField label="Style" value={style} onChange={setSelectedTextLevel} options={TEXT_LINE_STYLE_OPTIONS} />
+          {ALIGNABLE_TEXT_STYLES.has(style) && (
+            <AlignField value={(selectedTextEl.dataset.align as 'left' | 'center' | 'right') ?? 'left'} onChange={setSelectedTextAlign} />
+          )}
           <div className="hint">
             You can type directly on the canvas, or change it here. Starting a line with #…###### / &gt; / - / 1. / - [ ] also converts it
             live, and **bold**, *italic*, ~~strike~~, `code`, and [link](url) work mid-paragraph. A lone ``` line becomes a Code Block, and a
@@ -99,6 +109,7 @@ export function SettingsPanel({ editor }: { editor: UseCanvasEditor }) {
           />
         )}
         {createElement(def.SettingsForm, { settings: widget.settings, meta: widget.meta, onChange: updateSelectedWidgetSettings })}
+        <AlignField value={widget.align ?? 'left'} onChange={updateSelectedWidgetAlign} />
       </form>
       <div className="remove-row">
         <button type="button" className="remove-link" onClick={removeSelectedWidget}>

@@ -58,6 +58,11 @@ export function IconSprite() {
         <line x1="3" y1="7.5" x2="17" y2="7.5" />
         <line x1="8" y1="7.5" x2="8" y2="17" />
       </symbol>
+      <symbol id="i-align-center" viewBox="0 0 20 20">
+        <line x1="3" y1="5" x2="17" y2="5" />
+        <line x1="6" y1="10" x2="14" y2="10" />
+        <line x1="3" y1="15" x2="17" y2="15" />
+      </symbol>
     </svg>
   );
 }

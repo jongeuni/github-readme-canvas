@@ -167,6 +167,19 @@ const LINE_PREFIX: Partial<Record<string, string>> = {
   'md-ol-item': '1. ',
 };
 
+/** Heading level per className, used only when an h1–h6 line has a non-left
+ *  align — the `#` prefix above doesn't survive being wrapped in HTML, so an
+ *  aligned heading exports as `<h{n} align="...">` instead. See AlignField /
+ *  setSelectedTextAlign — align is only ever offered for these + plain text. */
+const HEADING_LEVEL: Partial<Record<string, number>> = {
+  'md-h1': 1,
+  'md-h2': 2,
+  'md-h3': 3,
+  'md-h4': 4,
+  'md-h5': 5,
+  'md-h6': 6,
+};
+
 function mkInstanceFromEntry(lib: LibraryEntry, overrides?: Record<string, unknown>): WidgetInstance {
   return {
     uid: nextUid(),
@@ -260,17 +273,19 @@ export function useCanvasEditor() {
     div.contentEditable = 'false';
     div.draggable = true;
     if (def.layout === 'inline') div.style.display = 'inline-flex';
+    if (instance.align && instance.align !== 'left') div.dataset.align = instance.align;
     return div;
   }, []);
 
   // ---------- appending blocks — shared by the initial seed content and by
   // loading a saved document (see loadFromBlocks below) ----------
-  const appendTextLine = useCallback((className: string, html: string) => {
+  const appendTextLine = useCallback((className: string, html: string, align?: 'left' | 'center' | 'right') => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const div = document.createElement('div');
     div.className = className;
     div.innerHTML = html;
+    if (align && align !== 'left') div.dataset.align = align;
     canvas.appendChild(div);
   }, []);
 
@@ -347,12 +362,18 @@ export function useCanvasEditor() {
       if (uid) {
         const record = widgetsRef.current.get(uid);
         if (!record) return;
-        const { libId, type, name, settings, meta } = record.instance;
-        blocks.push({ kind: 'widget', libId, type, name, settings, meta });
+        const { libId, type, name, settings, meta, align } = record.instance;
+        blocks.push({ kind: 'widget', libId, type, name, settings, meta, ...(align ? { align } : {}) });
         return;
       }
       if (el.innerHTML.trim() === '') return; // skip the empty trailing line
-      blocks.push({ kind: 'text', className: el.className as SerializedTextBlock['className'], html: el.innerHTML });
+      const align = el.dataset.align as SerializedTextBlock['align'];
+      // el.className can carry extra classes (e.g. 'text-selected' while
+      // selected — see selectTextBlock) that must NOT leak into the saved
+      // block, or a save/undo-snapshot taken mid-selection would bake
+      // "text-selected" into className permanently on reload.
+      const styleClass = (Object.values(STYLE_CLASS).find((c) => el.classList.contains(c)) ?? 'md-text') as SerializedTextBlock['className'];
+      blocks.push({ kind: 'text', className: styleClass, html: el.innerHTML, ...(align ? { align } : {}) });
     });
     return blocks;
   }, []);
@@ -370,7 +391,7 @@ export function useCanvasEditor() {
       canvas.innerHTML = '';
       blocks.forEach((block) => {
         if (block.kind === 'text') {
-          appendTextLine(block.className, block.html);
+          appendTextLine(block.className, block.html, block.align);
         } else {
           appendWidgetInstance({
             uid: nextUid(),
@@ -379,6 +400,7 @@ export function useCanvasEditor() {
             name: block.name,
             settings: block.settings,
             meta: block.meta,
+            align: block.align,
           });
         }
       });
@@ -773,6 +795,22 @@ export function useCanvasEditor() {
     [selectedTextEl, pushHistorySnapshot],
   );
 
+  // Same floating toolbar as Bold/Italic/Strike above, offering the most
+  // common align action (center) right where a drag-selection already put
+  // the user's attention — writes the exact same `data-align` attribute as
+  // the Settings panel's AlignField (see setSelectedTextAlign), so opening
+  // Settings afterward shows "Center" active too; a non-alignable line style
+  // (Quote/List/Task) just doesn't affect export, same as via Settings.
+  const toggleSelectionCenterAlign = useCallback(() => {
+    const line = currentTextLine();
+    if (!line) return;
+    if (line.dataset.align === 'center') delete line.dataset.align;
+    else line.dataset.align = 'center';
+    setSelectionToolbar(null);
+    if (selectedTextEl === line) bump();
+    pushHistorySnapshot();
+  }, [selectedTextEl, pushHistorySnapshot]);
+
   // ---------- "# " / "## " live heading conversion + keep Settings in sync ----------
   const handleInput = useCallback((e: FormEvent<HTMLDivElement>) => {
     // A task checkbox's native 'input' event (fired when it's toggled)
@@ -1130,6 +1168,44 @@ export function useCanvasEditor() {
     [selectedUid, renderWidgetRoot, pushHistorySnapshot],
   );
 
+  // Offered for every widget type. For layout:'inline' widgets (badges,
+  // icons, social links), setting align on one applies it to every
+  // contiguous inline-layout sibling too, since buildFullMarkdown joins them
+  // into ONE exported line — aligning just one would otherwise be silently
+  // overridden by (or fight with) its neighbors' align at export time.
+  // layout:'block' widgets (stats cards, tables, ...) always export on their
+  // own line already, so there's nothing to propagate to.
+  const updateSelectedWidgetAlign = useCallback(
+    (align: 'left' | 'center' | 'right') => {
+      if (!selectedUid) return;
+      const record = widgetsRef.current.get(selectedUid);
+      if (!record) return;
+
+      const applyAlign = (r: WidgetRecord) => {
+        r.instance.align = align;
+        if (align === 'left') delete r.el.dataset.align;
+        else r.el.dataset.align = align;
+      };
+      applyAlign(record);
+
+      if (getComponentType(record.instance.type).layout === 'inline') {
+        for (const dir of ['previousElementSibling', 'nextElementSibling'] as const) {
+          let sib = record.el[dir] as HTMLElement | null;
+          while (sib?.dataset.uid) {
+            const sibRecord = widgetsRef.current.get(sib.dataset.uid);
+            if (!sibRecord || getComponentType(sibRecord.instance.type).layout !== 'inline') break;
+            applyAlign(sibRecord);
+            sib = sib[dir] as HTMLElement | null;
+          }
+        }
+      }
+
+      bump();
+      pushHistorySnapshot();
+    },
+    [selectedUid, pushHistorySnapshot],
+  );
+
   // ---------- editing the selected text line ----------
   const setSelectedTextValue = useCallback(
     (text: string) => {
@@ -1167,6 +1243,19 @@ export function useCanvasEditor() {
     [selectedTextEl, pushHistorySnapshot],
   );
 
+  // Only offered for h1–h6/plain-text lines (see SettingsPanel) — Quote/List/
+  // Task don't combine cleanly with an HTML align wrapper, see buildFullMarkdown.
+  const setSelectedTextAlign = useCallback(
+    (align: 'left' | 'center' | 'right') => {
+      if (!selectedTextEl) return;
+      if (align === 'left') delete selectedTextEl.dataset.align;
+      else selectedTextEl.dataset.align = align;
+      bump();
+      pushHistorySnapshot();
+    },
+    [selectedTextEl, pushHistorySnapshot],
+  );
+
   // ---------- markdown export ----------
   // Walks the live DOM (not a JS array) since free text only exists there.
   const buildFullMarkdown = useCallback((): string => {
@@ -1174,10 +1263,16 @@ export function useCanvasEditor() {
     if (!canvas) return '';
     const lines: string[] = [];
     let inlineBuffer: string[] = [];
+    // Set from the FIRST widget pushed into the current run — propagation in
+    // updateSelectedWidgetAlign keeps every widget in one run consistent, so
+    // this is the whole run's align, not just one widget's.
+    let inlineAlign: 'left' | 'center' | 'right' | undefined;
     const flushInline = () => {
       if (inlineBuffer.length) {
-        lines.push(inlineBuffer.join(' '));
+        const line = inlineBuffer.join(' ');
+        lines.push(inlineAlign && inlineAlign !== 'left' ? `<p align="${inlineAlign}">${line}</p>` : line);
         inlineBuffer = [];
+        inlineAlign = undefined;
       }
     };
 
@@ -1189,10 +1284,13 @@ export function useCanvasEditor() {
         if (!record) return;
         const def = getComponentType(record.instance.type);
         const md = def.toMarkdown(record.instance.settings, record.instance.meta);
-        if (def.layout === 'inline') inlineBuffer.push(md);
-        else {
+        if (def.layout === 'inline') {
+          if (inlineAlign === undefined) inlineAlign = record.instance.align ?? 'left';
+          inlineBuffer.push(md);
+        } else {
           flushInline();
-          lines.push(md);
+          const align = record.instance.align;
+          lines.push(align && align !== 'left' ? `<p align="${align}">${md}</p>` : md);
         }
         return;
       }
@@ -1205,17 +1303,26 @@ export function useCanvasEditor() {
       }
       const raw = textWithSoftBreaks(el).trim();
       if (!raw) return;
+      const align = el.dataset.align as 'left' | 'center' | 'right' | undefined;
+      // el.className can carry extra classes (e.g. 'text-selected' while
+      // selected — see selectTextBlock), so match via classList, not an
+      // exact string — same reasoning as the `prefix` lookup just below.
+      const headingClass = Object.keys(HEADING_LEVEL).find((cls) => el.classList.contains(cls));
+      const headingLevel = headingClass ? HEADING_LEVEL[headingClass] : undefined;
+      if (headingLevel && align && align !== 'left') {
+        lines.push(`<h${headingLevel} align="${align}">${raw.replace(/\n+/g, ' ')}</h${headingLevel}>`);
+        return;
+      }
       const prefix = Object.keys(LINE_PREFIX).find((cls) => el.classList.contains(cls));
       if (prefix) lines.push(LINE_PREFIX[prefix] + raw.replace(/\n+/g, ' '));
       else {
         // GFM hard line break: two trailing spaces keeps soft-broken lines
         // inside the SAME paragraph instead of splitting into a new one.
-        lines.push(
-          raw
-            .split('\n')
-            .map((s) => s.trim())
-            .join('  \n'),
-        );
+        const body = raw
+          .split('\n')
+          .map((s) => s.trim())
+          .join('  \n');
+        lines.push(align && align !== 'left' ? `<p align="${align}">${body}</p>` : body);
       }
     });
     flushInline();
@@ -1228,14 +1335,17 @@ export function useCanvasEditor() {
     selectedTextEl,
     selectionToolbar,
     applyInlineFormat,
+    toggleSelectionCenterAlign,
     getSelectedWidget,
     addFromLibrary,
     addCustomEntry,
     updateSelectedWidgetSettings,
     updateSelectedWidgetPreset,
+    updateSelectedWidgetAlign,
     removeSelectedWidget,
     setSelectedTextValue,
     setSelectedTextLevel,
+    setSelectedTextAlign,
     clearSelection,
     buildFullMarkdown,
     serializeCanvas,

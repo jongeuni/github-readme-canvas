@@ -65,4 +65,8 @@ export interface WidgetInstance<TSettings = any> {
   name: string;
   settings: TSettings;
   meta?: Record<string, unknown>;
+  /** Canvas-layout property, not a component setting — how this widget (and,
+   *  for 'inline' layouts, the row of siblings it's part of) is exported:
+   *  unset/'left' is the default, plain markdown line. See buildFullMarkdown. */
+  align?: 'left' | 'center' | 'right';
 }

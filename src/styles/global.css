@@ -659,6 +659,32 @@ pre {
 .block.flash {
   animation: flashIn 0.9s ease;
 }
+/* No wrapping container groups aligned inline widgets on the canvas (see
+   updateSelectedWidgetAlign) so their on-screen position can't reflow to
+   show alignment — this corner badge is the visual signal instead; the
+   actual centered/right-aligned result shows in Copy Markdown / GitHub. */
+.block[data-align]::after {
+  content: attr(data-align);
+  position: absolute;
+  top: -7px;
+  right: -6px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.3;
+  text-transform: capitalize;
+  color: var(--text-2);
+  background: #f2f2f4;
+  border: 1px solid var(--border-strong);
+  pointer-events: none;
+}
+.canvas-paper > [data-align='center']:not([data-uid]) {
+  text-align: center;
+}
+.canvas-paper > [data-align='right']:not([data-uid]) {
+  text-align: right;
+}
 @keyframes flashIn {
   0% {
     background: var(--accent-bg);
@@ -1108,7 +1134,6 @@ pre {
   border-color: var(--text-1);
   color: #fff;
 }
-
 /* markdown drawer */
 .md-overlay {
   position: fixed;

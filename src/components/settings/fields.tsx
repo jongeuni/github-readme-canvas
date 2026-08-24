@@ -123,6 +123,34 @@ export function CheckboxRow({
   );
 }
 
+export type AlignValue = 'left' | 'center' | 'right';
+
+const ALIGN_OPTIONS: { value: AlignValue; label: string }[] = [
+  { value: 'left', label: 'Left' },
+  { value: 'center', label: 'Center' },
+  { value: 'right', label: 'Right' },
+];
+
+/** Left/Center/Right control for canvas-layout alignment (a text line, or the
+ *  row of inline widgets a selected one is part of). Also settable, for
+ *  center only, from the floating Bold/Italic toolbar on a drag-selection —
+ *  see Canvas.tsx / useCanvasEditor's toggleSelectionCenterAlign — both
+ *  write the same underlying value, so either one stays in sync with this. */
+export function AlignField({ label = 'Align', value, onChange }: { label?: string; value: AlignValue; onChange: (value: AlignValue) => void }) {
+  return (
+    <div className="field">
+      <label>{label}</label>
+      <div className="align-row">
+        {ALIGN_OPTIONS.map((o) => (
+          <button key={o.value} type="button" className={`align-btn ${value === o.value ? 'active' : ''}`} onClick={() => onChange(o.value)}>
+            {o.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function ReadOnlyField({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
     <div className="field">

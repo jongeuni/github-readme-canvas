@@ -4,6 +4,8 @@ export interface SerializedTextBlock {
   className: 'md-h1' | 'md-h2' | 'md-h3' | 'md-h4' | 'md-h5' | 'md-h6' | 'md-quote' | 'md-ul-item' | 'md-ol-item' | 'md-task' | 'md-text';
   /** innerHTML, not textContent — preserves Shift+Enter <br> soft breaks. */
   html: string;
+  /** Only meaningful for h1–h6/plain-text lines — see buildFullMarkdown. */
+  align?: 'left' | 'center' | 'right';
 }
 
 /** One placed widget instance (badge / tech-icon / stats / social / divider). */
@@ -14,6 +16,7 @@ export interface SerializedWidgetBlock {
   name: string;
   settings: Record<string, unknown>;
   meta?: Record<string, unknown>;
+  align?: 'left' | 'center' | 'right';
 }
 
 export type SerializedBlock = SerializedTextBlock | SerializedWidgetBlock;
