@@ -96,12 +96,25 @@ export function SettingsPanel({ editor }: { editor: UseCanvasEditor }) {
   // Generic across every component type — undefined for anything without
   // presets, so this renders nothing extra for them. A new preset-bearing
   // Component gets this dropdown automatically, no change needed here.
-  const presetGroup = PRESET_PARENT_MAP.get(widget.libId);
+  // text-art is the one exception: its own SettingsForm renders a preset
+  // picker showing the actual glyphs instead of names (see its file), so
+  // this name-based dropdown would just be a confusing duplicate for it.
+  const presetGroup = widget.type === 'text-art' ? undefined : PRESET_PARENT_MAP.get(widget.libId);
+  // widget.name is fixed at placement time (whichever preset it started as,
+  // e.g. "Plus Dots") — text-art's own Style dropdown only ever changes
+  // `settings.text`, so a name-based title would go stale the moment the
+  // user picks a different look. Family-based instead, stays accurate.
+  const title =
+    widget.type === 'text-art'
+      ? (widget.meta as { family?: string } | undefined)?.family === 'divider'
+        ? 'Decorative Line'
+        : 'Kaomoji'
+      : widget.name;
   return (
     <div className="settings-col">
       <div className="settings-head">
         <div className="settings-eyebrow">{TYPE_LABELS[widget.type] ?? LIBRARY_MAP.get(widget.libId)?.category ?? widget.type}</div>
-        <div className="settings-title">{widget.name}</div>
+        <div className="settings-title">{title}</div>
       </div>
       <form onSubmit={(e) => e.preventDefault()}>
         {presetGroup && (

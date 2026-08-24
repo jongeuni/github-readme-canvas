@@ -24,6 +24,11 @@ const entries: LibraryEntry<TextArtSettings>[] = [
     defaultSettings: { text: kaomojiPresets[0].settings!.text! },
     presetsLabel: 'kaomoji',
     presets: kaomojiPresets,
+    // Read by SettingsForm to pick which preset list its own glyph-preview
+    // dropdown shows — inherited by every preset below via flattenLibrary,
+    // so a placed instance still knows its family regardless of which
+    // specific kaomoji it started as.
+    meta: { family: 'kaomoji' },
   },
   {
     id: 'text-divider',
@@ -35,6 +40,7 @@ const entries: LibraryEntry<TextArtSettings>[] = [
     defaultSettings: { text: dividerPresets[0].settings!.text! },
     presetsLabel: 'styles',
     presets: dividerPresets,
+    meta: { family: 'divider' },
   },
 ];
 
