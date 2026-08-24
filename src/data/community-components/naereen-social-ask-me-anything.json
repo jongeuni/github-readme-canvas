@@ -1,0 +1,16 @@
+{
+  "id": "naereen-social-ask-me-anything",
+  "type": "url-component",
+  "name": "Ask Me Anything",
+  "description": "A playful \"Ask me anything\" call-to-action badge. Not GitHub-specific.",
+  "category": "Social",
+  "tags": ["Social", "Badge"],
+  "defaultSettings": {},
+  "meta": {
+    "urlTemplate": "https://img.shields.io/badge/Ask%20me-anything-1abc9c.svg",
+    "altTemplate": "Ask Me Anything !",
+    "linkTemplate": "https://github.com/Naereen/ama",
+    "linkable": false,
+    "fields": []
+  }
+}

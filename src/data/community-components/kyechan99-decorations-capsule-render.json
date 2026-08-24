@@ -1,0 +1,48 @@
+{
+  "id": "kyechan99-decorations-capsule-render",
+  "type": "url-component",
+  "name": "Capsule Render Banner",
+  "description": "An animated header/footer capsule banner for your README. Works anywhere — self-contained generated SVG.",
+  "category": "Decorations",
+  "tags": ["Decorations", "Animation", "Banner"],
+  "defaultSettings": { "text": "Welcome to my profile", "type": "waving", "color": "gradient", "height": "200", "fontSize": "60" },
+  "meta": {
+    "urlTemplate": "https://capsule-render.vercel.app/api?type={type}&color={color}&height={height}&section=header&text={text}&fontSize={fontSize}",
+    "altTemplate": "{text}",
+    "linkable": false,
+    "fields": [
+      { "key": "text", "label": "Text", "type": "text" },
+      {
+        "key": "type",
+        "label": "Type",
+        "type": "select",
+        "options": [
+          { "value": "waving", "label": "Waving" },
+          { "value": "wave", "label": "Wave" },
+          { "value": "rect", "label": "Rectangle" },
+          { "value": "soft", "label": "Soft" },
+          { "value": "rounded", "label": "Rounded" },
+          { "value": "egg", "label": "Egg" },
+          { "value": "shark", "label": "Shark" },
+          { "value": "cylinder", "label": "Cylinder" },
+          { "value": "transparent", "label": "Transparent" }
+        ]
+      },
+      {
+        "key": "color",
+        "label": "Color",
+        "type": "select",
+        "options": [
+          { "value": "gradient", "label": "Gradient" },
+          { "value": "auto", "label": "Auto" },
+          { "value": "random", "label": "Random" },
+          { "value": "0099ff", "label": "Blue" },
+          { "value": "6a0dad", "label": "Purple" },
+          { "value": "ff6666", "label": "Pink" }
+        ]
+      },
+      { "key": "height", "label": "Height", "type": "number", "min": 100, "max": 400, "step": 10 },
+      { "key": "fontSize", "label": "Font Size", "type": "number", "min": 20, "max": 120, "step": 5 }
+    ]
+  }
+}

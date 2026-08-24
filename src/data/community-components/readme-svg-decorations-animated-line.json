@@ -1,0 +1,32 @@
+{
+  "id": "readme-svg-decorations-animated-line",
+  "type": "url-component",
+  "name": "Animated Line",
+  "description": "A thin animated divider line for your README. Works anywhere — self-contained generated SVG.",
+  "category": "Decorations",
+  "tags": ["Decorations", "Animation"],
+  "defaultSettings": { "color": "3E80ED" },
+  "meta": {
+    "urlTemplate": "https://raw.githubusercontent.com/readme-SVG/animated-line/main/STORAGE/line-svg-{color}.svg",
+    "altTemplate": "animated-line",
+    "linkTemplate": "https://github.com/readme-SVG/animated-line",
+    "linkable": false,
+    "fields": [
+      {
+        "key": "color",
+        "label": "Color",
+        "type": "color",
+        "options": [
+          { "value": "3E80ED", "label": "blue", "swatch": "#3E80ED" },
+          { "value": "FF0000", "label": "red", "swatch": "#FF0000" },
+          { "value": "00FF40", "label": "green", "swatch": "#00FF40" },
+          { "value": "FFF700", "label": "yellow", "swatch": "#FFF700" },
+          { "value": "FF00EA", "label": "pink", "swatch": "#FF00EA" },
+          { "value": "8C00FF", "label": "purple", "swatch": "#8C00FF" },
+          { "value": "FFFFFF", "label": "white", "swatch": "#FFFFFF" },
+          { "value": "000000", "label": "black", "swatch": "#000000" }
+        ]
+      }
+    ]
+  }
+}
