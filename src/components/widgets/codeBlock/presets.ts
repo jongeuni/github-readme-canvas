@@ -7,8 +7,8 @@ export const codeBlockPresets: LibraryEntry<CodeBlockSettings>[] = [
     type: 'code-block',
     name: 'Code Block',
     description: 'A fenced, syntax-labeled code block.',
-    category: 'Decorations',
-    tags: ['Decorations', 'Text', 'Code'],
+    category: '🏷️ markdown',
+    tags: ['🏷️ markdown', 'Text', 'Code'],
     defaultSettings: { lang: '', code: '' },
   },
 ];

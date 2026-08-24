@@ -1,11 +1,11 @@
 {
-  "id": "social-youtube-subs",
+  "id": "status-youtube-subs",
   "type": "url-component",
   "name": "YouTube Subscribers",
   "description": "A live subscriber-count badge for a YouTube channel. Not GitHub-specific — data comes from the YouTube API.",
-  "category": "Social",
+  "category": "📊 status",
   "tags": [
-    "Social",
+    "📊 status",
     "Badge"
   ],
   "defaultSettings": {

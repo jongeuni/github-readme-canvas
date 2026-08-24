@@ -6,10 +6,10 @@ const FAVORITES_STORAGE_KEY = 'readmeComponents:favorites';
  *  of, so a favorite from before the Component/Preset migration still shows
  *  up (favorited on the grouped card) instead of silently disappearing. */
 const LEGACY_ID_REMAP: Record<string, string> = {
-  'lang-cpp': 'lang-badge',
-  'lang-python': 'lang-badge',
-  'lang-ts': 'lang-badge',
-  'lang-java': 'lang-badge',
+  'lang-cpp': 'tech-lang-badge',
+  'lang-python': 'tech-lang-badge',
+  'lang-ts': 'tech-lang-badge',
+  'lang-java': 'tech-lang-badge',
   'fw-react': 'tech-icon-picker',
   'fw-node': 'tech-icon-picker',
   'fw-spring': 'tech-icon-picker',

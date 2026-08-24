@@ -1,11 +1,11 @@
 {
-  "id": "stats-github-streak",
+  "id": "status-github-streak",
   "type": "url-component",
   "name": "GitHub Streak Stats",
   "description": "Shows current and longest GitHub contribution streak. GitHub Only — reads commit history from the GitHub API, so it only works for GitHub accounts.",
-  "category": "Stats",
+  "category": "📊 status",
   "tags": [
-    "Stats",
+    "📊 status",
     "Card",
     "GitHub Only"
   ],

@@ -3,16 +3,30 @@
   "type": "url-component",
   "name": "LinkedIn",
   "description": "Link to your LinkedIn profile.",
-  "category": "Social",
-  "tags": ["Social", "Link"],
-  "defaultSettings": { "username": "alex123", "label": "LinkedIn" },
+  "category": "🌐 social",
+  "tags": [
+    "🌐 social",
+    "Link"
+  ],
+  "defaultSettings": {
+    "username": "alex123",
+    "label": "LinkedIn"
+  },
   "meta": {
     "urlTemplate": "https://img.shields.io/badge/{label}-0a66c2?logo=linkedin&logoColor=white",
     "linkTemplate": "https://linkedin.com/in/{username}",
     "linkable": false,
     "fields": [
-      { "key": "label", "label": "Label", "type": "text" },
-      { "key": "username", "label": "Username", "type": "text" }
+      {
+        "key": "label",
+        "label": "Label",
+        "type": "text"
+      },
+      {
+        "key": "username",
+        "label": "Username",
+        "type": "text"
+      }
     ]
   }
 }

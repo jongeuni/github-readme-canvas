@@ -12,8 +12,8 @@ const ALIGNABLE_TEXT_STYLES = new Set(['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'text
 
 /** Types with their own bespoke rendering code get a fixed label. Anything
  *  else (every 'url-component' entry — badges, stats, social links, ...)
- *  falls back to that entry's own Library category (e.g. "Languages",
- *  "Social"), which is more specific than one flat "Component" label ever
+ *  falls back to that entry's own Library category (e.g. "🧑‍💻 tech",
+ *  "🌐 social"), which is more specific than one flat "Component" label ever
  *  was — see the fallback at its use site below. */
 const TYPE_LABELS: Record<string, string> = {
   'tech-icon': 'Tech Icon',

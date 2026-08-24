@@ -7,8 +7,8 @@ export const headingPresets: LibraryEntry<HeadingSettings>[] = [
     type: 'heading',
     name: 'Heading',
     description: 'A section heading or text block.',
-    category: 'Decorations',
-    tags: ['Decorations', 'Text'],
+    category: '🏷️ markdown',
+    tags: ['🏷️ markdown', 'Text'],
     defaultSettings: { text: 'About Me', level: 'h2' },
   },
 ];

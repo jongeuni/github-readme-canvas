@@ -3,9 +3,9 @@
   "type": "url-component",
   "name": "Dev.to",
   "description": "Link to your dev.to blog profile. Not GitHub-specific.",
-  "category": "Social",
+  "category": "🌐 social",
   "tags": [
-    "Social",
+    "🌐 social",
     "Badge"
   ],
   "defaultSettings": {

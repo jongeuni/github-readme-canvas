@@ -1,11 +1,11 @@
 {
-  "id": "tool-github-license",
+  "id": "status-github-license",
   "type": "url-component",
   "name": "GitHub License",
   "description": "Shows a repository's license. GitHub Only — read from the repo's metadata via the GitHub API.",
-  "category": "Tools",
+  "category": "📊 status",
   "tags": [
-    "Tools",
+    "📊 status",
     "Badge",
     "GitHub Only"
   ],

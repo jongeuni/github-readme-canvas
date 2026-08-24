@@ -1,11 +1,11 @@
 {
-  "id": "social-github-followers",
+  "id": "status-github-followers",
   "type": "url-component",
   "name": "GitHub Followers",
   "description": "A live follower-count badge for a GitHub account. GitHub Only — the follower count comes from the GitHub API.",
-  "category": "Social",
+  "category": "📊 status",
   "tags": [
-    "Social",
+    "📊 status",
     "Badge",
     "GitHub Only"
   ],

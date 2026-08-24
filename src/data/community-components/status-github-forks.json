@@ -1,11 +1,11 @@
 {
-  "id": "stats-github-forks",
+  "id": "status-github-forks",
   "type": "url-component",
   "name": "GitHub Repo Forks",
   "description": "A live fork-count badge for a repository. GitHub Only — the fork count comes from the GitHub API, so it only works for GitHub repos.",
-  "category": "Stats",
+  "category": "📊 status",
   "tags": [
-    "Stats",
+    "📊 status",
     "Badge",
     "GitHub Only"
   ],

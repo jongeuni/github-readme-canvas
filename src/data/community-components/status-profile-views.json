@@ -1,11 +1,11 @@
 {
-  "id": "stats-profile-views",
+  "id": "status-profile-views",
   "type": "url-component",
   "name": "Profile Views Counter",
   "description": "A badge that counts and displays how many times your README has been viewed. Works anywhere — it just counts image loads, not GitHub-specific.",
-  "category": "Stats",
+  "category": "📊 status",
   "tags": [
-    "Stats",
+    "📊 status",
     "Badge"
   ],
   "defaultSettings": {

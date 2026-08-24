@@ -1,11 +1,11 @@
 {
-  "id": "social-discord",
+  "id": "status-discord",
   "type": "url-component",
   "name": "Discord Server",
   "description": "A live member-count badge linking to a Discord server invite. Not GitHub-specific — data comes from Discord's own API.",
-  "category": "Social",
+  "category": "📊 status",
   "tags": [
-    "Social",
+    "📊 status",
     "Badge"
   ],
   "defaultSettings": {

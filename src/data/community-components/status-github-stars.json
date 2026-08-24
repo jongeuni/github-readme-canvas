@@ -1,11 +1,11 @@
 {
-  "id": "stats-github-stars",
+  "id": "status-github-stars",
   "type": "url-component",
   "name": "GitHub Repo Stars",
   "description": "A live star-count badge for a repository. GitHub Only — the star count comes from the GitHub API, so it only works for GitHub repos.",
-  "category": "Stats",
+  "category": "📊 status",
   "tags": [
-    "Stats",
+    "📊 status",
     "Badge",
     "GitHub Only"
   ],

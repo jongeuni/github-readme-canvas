@@ -1,11 +1,11 @@
 {
-  "id": "deco-typing-svg",
+  "id": "decoration-typing-svg",
   "type": "url-component",
   "name": "Typing SVG Animation",
   "description": "An animated typewriter-effect line of text. Works anywhere — it's a self-contained generated SVG, not tied to GitHub.",
-  "category": "Decorations",
+  "category": "✨ decoration",
   "tags": [
-    "Decorations",
+    "✨ decoration",
     "Animation"
   ],
   "defaultSettings": {

@@ -788,7 +788,7 @@ export function useCanvasEditor() {
     appendTextLine('md-h2', 'About Me');
     appendTextLine('md-text', 'I build backend systems that scale.');
     appendTextLine('md-h2', 'GitHub Stats');
-    appendWidgetInstance(mkInstance('stats-github'));
+    appendWidgetInstance(mkInstance('status-github-stats'));
     appendTextLine('md-h2', 'Connect with me');
     appendWidgetInstance(mkInstance('social-github'));
     appendWidgetInstance(mkInstance('social-linkedin'));

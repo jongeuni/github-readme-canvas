@@ -1,11 +1,11 @@
 {
-  "id": "deco-markdown-box",
+  "id": "decoration-markdown-box",
   "type": "url-component",
   "name": "Markdown Box",
   "description": "A styled info box showing a title, author, and date. Not GitHub-specific.",
-  "category": "Decorations",
+  "category": "✨ decoration",
   "tags": [
-    "Decorations"
+    "✨ decoration"
   ],
   "defaultSettings": {
     "title": "Default_Title",
@@ -40,7 +40,7 @@
         "type": "select",
         "options": [
           {
-            "value": "DEFAULT", 
+            "value": "DEFAULT",
             "label": "DEFAULT"
           },
           {

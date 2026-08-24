@@ -1,11 +1,11 @@
 {
-  "id": "tool-github-actions-status",
+  "id": "status-github-actions",
   "type": "url-component",
   "name": "GitHub Actions Status",
   "description": "Shows the pass/fail status of a GitHub Actions workflow. GitHub Only — requires a workflow file already running in the repo's Actions tab.",
-  "category": "Tools",
+  "category": "📊 status",
   "tags": [
-    "Tools",
+    "📊 status",
     "Badge",
     "GitHub Only"
   ],

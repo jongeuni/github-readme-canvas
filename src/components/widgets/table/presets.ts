@@ -7,8 +7,8 @@ export const tablePresets: LibraryEntry<TableSettings>[] = [
     type: 'table',
     name: 'Table',
     description: 'A GitHub-flavored-markdown table.',
-    category: 'Decorations',
-    tags: ['Decorations', 'Text', 'Table'],
+    category: '🏷️ markdown',
+    tags: ['🏷️ markdown', 'Text', 'Table'],
     defaultSettings: { source: '| Column A | Column B |\n| --- | --- |\n| Cell 1 | Cell 2 |' },
   },
 ];

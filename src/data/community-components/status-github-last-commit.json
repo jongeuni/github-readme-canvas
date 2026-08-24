@@ -1,11 +1,11 @@
 {
-  "id": "tool-github-issues",
+  "id": "status-github-last-commit",
   "type": "url-component",
-  "name": "GitHub Open Issues",
-  "description": "Shows the open-issue count for a repository. GitHub Only — the count comes from the GitHub API.",
-  "category": "Tools",
+  "name": "GitHub Last Commit",
+  "description": "Shows how long ago the last commit landed. GitHub Only — the commit timestamp comes from the GitHub API.",
+  "category": "📊 status",
   "tags": [
-    "Tools",
+    "📊 status",
     "Badge",
     "GitHub Only"
   ],
@@ -14,7 +14,7 @@
     "repo": "Hello-World"
   },
   "meta": {
-    "urlTemplate": "https://img.shields.io/github/issues/{owner}/{repo}?style=flat",
+    "urlTemplate": "https://img.shields.io/github/last-commit/{owner}/{repo}?style=flat",
     "linkable": false,
     "fields": [
       {

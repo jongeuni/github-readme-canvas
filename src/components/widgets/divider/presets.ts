@@ -7,8 +7,8 @@ export const dividerPresets: LibraryEntry<DividerSettings>[] = [
     type: 'divider',
     name: 'Divider',
     description: 'A simple horizontal divider.',
-    category: 'Decorations',
-    tags: ['Decorations'],
+    category: '🏷️ markdown',
+    tags: ['🏷️ markdown'],
     defaultSettings: { style: 'line' },
   },
 ];

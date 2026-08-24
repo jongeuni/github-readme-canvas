@@ -3,16 +3,30 @@
   "type": "url-component",
   "name": "X (Twitter)",
   "description": "Link to your X profile.",
-  "category": "Social",
-  "tags": ["Social", "Link"],
-  "defaultSettings": { "username": "alex123", "label": "X" },
+  "category": "🌐 social",
+  "tags": [
+    "🌐 social",
+    "Link"
+  ],
+  "defaultSettings": {
+    "username": "alex123",
+    "label": "X"
+  },
   "meta": {
     "urlTemplate": "https://img.shields.io/badge/{label}-18181b?logo=twitter&logoColor=white",
     "linkTemplate": "https://x.com/{username}",
     "linkable": false,
     "fields": [
-      { "key": "label", "label": "Label", "type": "text" },
-      { "key": "username", "label": "Username", "type": "text" }
+      {
+        "key": "label",
+        "label": "Label",
+        "type": "text"
+      },
+      {
+        "key": "username",
+        "label": "Username",
+        "type": "text"
+      }
     ]
   }
 }

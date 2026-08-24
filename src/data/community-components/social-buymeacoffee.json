@@ -3,9 +3,9 @@
   "type": "url-component",
   "name": "Buy Me a Coffee",
   "description": "A support-me badge linking to your Buy Me a Coffee page. Not GitHub-specific.",
-  "category": "Social",
+  "category": "🌐 social",
   "tags": [
-    "Social",
+    "🌐 social",
     "Badge"
   ],
   "defaultSettings": {
