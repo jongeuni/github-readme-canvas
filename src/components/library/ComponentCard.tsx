@@ -172,21 +172,25 @@ export function ComponentCard({
               )}
             </>
           )}
-          <div className="comp-detail-label">Usage</div>
-          <div className="usage-block">
-            <code>{usage}</code>
-            <button
-              type="button"
-              className="usage-copy"
-              title="Copy"
-              onClick={(e) => {
-                e.stopPropagation();
-                navigator.clipboard?.writeText(usage);
-              }}
-            >
-              <Icon name="copy" />
-            </button>
-          </div>
+          {usage.trim() && (
+            <>
+              <div className="comp-detail-label">Usage</div>
+              <div className="usage-block">
+                <code>{usage}</code>
+                <button
+                  type="button"
+                  className="usage-copy"
+                  title="Copy"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigator.clipboard?.writeText(usage);
+                  }}
+                >
+                  <Icon name="copy" />
+                </button>
+              </div>
+            </>
+          )}
           <button
             type="button"
             className="btn btn-primary btn-sm"
