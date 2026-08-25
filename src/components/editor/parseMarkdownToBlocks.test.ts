@@ -248,6 +248,31 @@ describe('parseMarkdownToBlocks', () => {
       expect(text(blocks[0]).align).toBe('right');
     });
 
+    it('unwraps a blank-line-separated <p align> (current wrapAlign format) around an image', () => {
+      const blocks = parseMarkdownToBlocks(['<p align="center">', '', '![alt](https://example.com/a.png)', '', '</p>'].join('\n'));
+      expect(blocks).toHaveLength(1);
+      const b = widget(blocks[0]);
+      expect(b.libId).toBe('inline-image');
+      expect(b.align).toBe('center');
+    });
+
+    it('unwraps a blank-line-separated <p align> around plain text, still applying inline emphasis', () => {
+      const blocks = parseMarkdownToBlocks(['<p align="right">', '', 'This is **bold** text.', '', '</p>'].join('\n'));
+      expect(blocks).toHaveLength(1);
+      expect(text(blocks[0]).className).toBe('md-text');
+      expect(text(blocks[0]).html).toBe('This is <strong>bold</strong> text.');
+      expect(text(blocks[0]).align).toBe('right');
+    });
+
+    it('splits a blank-line-separated <p align> around a badge row into separate blocks, all sharing the align', () => {
+      const blocks = parseMarkdownToBlocks(
+        ['<p align="center">', '', '![a](https://example.com/a.png) ![b](https://example.com/b.png)', '', '</p>'].join('\n'),
+      );
+      expect(blocks).toHaveLength(2);
+      expect(widget(blocks[0]).align).toBe('center');
+      expect(widget(blocks[1]).align).toBe('center');
+    });
+
     it('does not let the new <h>/<p> align cases interfere with an unrelated raw-html <div>', () => {
       const md = ['<div align="center">', '<img src="https://example.com/a.png">', '</div>'].join('\n');
       const blocks = parseMarkdownToBlocks(md);

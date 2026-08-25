@@ -295,6 +295,24 @@ function textWithSoftBreaks(node: Node): string {
   return out;
 }
 
+// GitHub's markdown parser treats any line starting with a recognized HTML
+// tag (div/p/h1/...) as a literal HTML block that runs until the next blank
+// line — nothing inside gets parsed as markdown. `<p align="center">
+// ![alt](url)</p>` all on one line is exactly that: GitHub renders the raw
+// `![alt](url)` text instead of an image, since the whole line is just one
+// un-parsed HTML block (confirmed against real GitHub rendering, not just
+// spec-reading). Blank-line-separating the wrapper from its content avoids
+// this: the opening tag becomes a one-line HTML block that ends the moment
+// the blank line after it is hit, the content is an ordinary paragraph (or
+// widget row) that gets full markdown treatment, and the closing tag is its
+// own trailing HTML block. `<p>`, not `<div>` — `<div align="...">` is
+// reserved for the user's OWN raw HTML (see parseMarkdownToBlocks' raw-html
+// tests), which must keep round-tripping untouched.
+function wrapAlign(align: 'left' | 'center' | 'right' | undefined, content: string): string {
+  if (!align || align === 'left') return content;
+  return `<p align="${align}">\n\n${content}\n\n</p>`;
+}
+
 // ---------- bulk markdown paste → blocks ----------
 // Everything else in this file builds HTML via .textContent/createTextNode
 // (auto-escaping) — this is the first thing that has to build an HTML
@@ -362,12 +380,15 @@ export function parseMarkdownToBlocks(text: string): SerializedBlock[] {
       continue;
     }
 
-    // These two are buildFullMarkdown's OWN align-wrapper conventions (the
-    // only two it ever emits — see HEADING_LEVEL/AlignField usage there), so
-    // they're special-cased ahead of the generic HTML-block detector below:
+    // buildFullMarkdown's own align-wrapper convention (see wrapAlign) is
+    // `<p align>` / `<h# align>` — deliberately NOT `<div align>`, which is
+    // reserved for the user's own raw HTML (see the "does not let the new
+    // <h>/<p> align cases interfere with an unrelated raw-html <div>" test)
+    // and must keep round-tripping through the generic HTML-block detector
+    // below, untouched, verbatim. Special-cased ahead of that detector:
     // otherwise a round-tripped aligned heading/paragraph/widget would get
-    // swallowed whole into an opaque raw-html block instead of being restored
-    // as the real block it was.
+    // swallowed whole into an opaque raw-html block instead of being
+    // restored as the real block it was.
     const alignedHeadingMatch = /^<h([1-6]) align="(left|center|right)">(.*)<\/h\1>$/.exec(trimmed);
     if (alignedHeadingMatch) {
       const [, level, align, innerText] = alignedHeadingMatch;
@@ -382,24 +403,46 @@ export function parseMarkdownToBlocks(text: string): SerializedBlock[] {
       continue;
     }
 
-    const alignedParaOpenMatch = /^<p align="(left|center|right)">/.exec(trimmed);
+    // `<p align="...">` on its own, with nothing after the `>`, is
+    // wrapAlign's current blank-line-separated form (see its own comment
+    // for why: GitHub only parses nested markdown inside a wrapper tag when
+    // the tag and its content are separate blocks). `<p align="...">` with
+    // content right after the `>` on the same line is the OLDER form
+    // wrapAlign used to emit — kept working here too, just so a document
+    // exported before that fix still pastes back correctly.
+    const alignedParaOpenMatch = /^<p align="(left|center|right)">(.*)$/.exec(trimmed);
     if (alignedParaOpenMatch) {
       const align = alignedParaOpenMatch[1] as 'left' | 'center' | 'right';
-      const pLines = [line];
-      i++;
-      let pDepth = htmlTagDepthDelta(trimmed, 'p');
-      while (pDepth > 0 && i < lines.length) {
-        pLines.push(lines[i]);
-        pDepth += htmlTagDepthDelta(lines[i], 'p');
+      const restOfLine = alignedParaOpenMatch[2];
+      let inner: string;
+      if (restOfLine === '') {
         i++;
+        while (i < lines.length && lines[i].trim() === '') i++;
+        const contentLines: string[] = [];
+        while (i < lines.length && lines[i].trim() !== '</p>') {
+          contentLines.push(lines[i]);
+          i++;
+        }
+        if (i < lines.length) i++; // consume the closing </p> line itself
+        inner = contentLines.join('\n').trim();
+      } else {
+        const pLines = [line];
+        i++;
+        let pDepth = htmlTagDepthDelta(trimmed, 'p');
+        while (pDepth > 0 && i < lines.length) {
+          pLines.push(lines[i]);
+          pDepth += htmlTagDepthDelta(lines[i], 'p');
+          i++;
+        }
+        inner = pLines
+          .join('\n')
+          .replace(/^<p align="[^"]*">/, '')
+          .replace(/<\/p>\s*$/, '');
       }
-      const inner = pLines
-        .join('\n')
-        .replace(/^<p align="[^"]*">/, '')
-        .replace(/<\/p>\s*$/, '');
       // Recurse rather than duplicate classification logic — whatever the
-      // wrapper held (a paragraph, a badge row, a widget) gets reconstructed
-      // by the very same branches below, then align is layered on top.
+      // wrapper held (a paragraph, a badge row, a widget, a heading) gets
+      // reconstructed by the very same branches below, then align is
+      // layered on top.
       const innerBlocks = parseMarkdownToBlocks(inner);
       blocks.push(...(align === 'left' ? innerBlocks : innerBlocks.map((b) => ({ ...b, align }))));
       continue;
@@ -1956,8 +1999,7 @@ export function useCanvasEditor() {
     let inlineAlign: 'left' | 'center' | 'right' | undefined;
     const flushInline = () => {
       if (inlineBuffer.length) {
-        const line = inlineBuffer.join(' ');
-        lines.push(inlineAlign && inlineAlign !== 'left' ? `<p align="${inlineAlign}">${line}</p>` : line);
+        lines.push(wrapAlign(inlineAlign, inlineBuffer.join(' ')));
         inlineBuffer = [];
         inlineAlign = undefined;
       }
@@ -1976,8 +2018,7 @@ export function useCanvasEditor() {
           inlineBuffer.push(md);
         } else {
           flushInline();
-          const align = record.instance.align;
-          lines.push(align && align !== 'left' ? `<p align="${align}">${md}</p>` : md);
+          lines.push(wrapAlign(record.instance.align, md));
         }
         return;
       }
@@ -1994,6 +2035,10 @@ export function useCanvasEditor() {
       // el.className can carry extra classes (e.g. 'text-selected' while
       // selected — see selectTextBlock), so match via classList, not an
       // exact string — same reasoning as the `prefix` lookup just below.
+      // Headings get their own `<h# align>` wrapper instead of going
+      // through wrapAlign's blank-line `<p>` — plain heading text has no
+      // nested-markdown-inside-one-line risk the way a badge or bolded
+      // paragraph does, so the simpler single-line form is fine here.
       const headingClass = Object.keys(HEADING_LEVEL).find((cls) => el.classList.contains(cls));
       const headingLevel = headingClass ? HEADING_LEVEL[headingClass] : undefined;
       if (headingLevel && align && align !== 'left') {
@@ -2001,16 +2046,15 @@ export function useCanvasEditor() {
         return;
       }
       const prefix = Object.keys(LINE_PREFIX).find((cls) => el.classList.contains(cls));
-      if (prefix) lines.push(LINE_PREFIX[prefix] + raw.replace(/\n+/g, ' '));
-      else {
-        // GFM hard line break: two trailing spaces keeps soft-broken lines
-        // inside the SAME paragraph instead of splitting into a new one.
-        const body = raw
-          .split('\n')
-          .map((s) => s.trim())
-          .join('  \n');
-        lines.push(align && align !== 'left' ? `<p align="${align}">${body}</p>` : body);
-      }
+      const body = prefix
+        ? LINE_PREFIX[prefix] + raw.replace(/\n+/g, ' ')
+        : // GFM hard line break: two trailing spaces keeps soft-broken lines
+          // inside the SAME paragraph instead of splitting into a new one.
+          raw
+            .split('\n')
+            .map((s) => s.trim())
+            .join('  \n');
+      lines.push(wrapAlign(align, body));
     });
     flushInline();
     return lines.join('\n\n');
