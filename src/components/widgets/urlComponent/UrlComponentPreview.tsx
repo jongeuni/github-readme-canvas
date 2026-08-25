@@ -7,11 +7,14 @@ export function UrlComponentPreview({ settings, meta }: PreviewProps<UrlComponen
   const m = meta as UrlComponentMeta;
   const url = fillUrlTemplate(m.urlTemplate, settings);
   const alt = m.altTemplate ? fillUrlTemplate(m.altTemplate, settings) : (settings[m.fields[0]?.key] ?? '');
-  // No width style here on purpose — for an inline-layout widget the
-  // container itself carries `settings.width` (see widgetHTMLContainer /
-  // updateSelectedWidgetSettings), and `.url-component-img`'s own
-  // `max-width: 100%` naturally caps the image to that container's real
-  // size. Setting width here too would double-apply a percentage (45% of
-  // an already-45%-sized container isn't 45% of the canvas).
-  return <img className="url-component-img" src={url} alt={alt} />;
+  // `width: 100%` of the CONTAINER (not a percentage of the canvas — the
+  // container itself already carries `settings.width`, see
+  // widgetHTMLContainer / updateSelectedWidgetSettings), only when a width
+  // is actually set. `.url-component-img`'s own `max-width: 100%` only ever
+  // caps an oversized image down — real GitHub `width="..."` also GROWS an
+  // undersized one, which this preview needs to match: a 330px-natural
+  // image set to width 100% genuinely renders huge on GitHub (the
+  // container there is the whole README content column), not "as big as
+  // its own pixels" the way max-width-only sizing would show here.
+  return <img className="url-component-img" src={url} alt={alt} style={{ width: settings.width ? '100%' : undefined }} />;
 }
