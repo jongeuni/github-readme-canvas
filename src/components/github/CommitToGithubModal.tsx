@@ -8,6 +8,7 @@ import {
   putFileContent,
   type GitHubRepo,
 } from '../../lib/github';
+import { track } from '../../lib/analytics';
 
 type Result = { kind: 'success'; message: string; url: string } | { kind: 'conflict'; message: string } | { kind: 'error'; message: string };
 
@@ -63,7 +64,13 @@ export function CommitToGithubModal({
     return repos.filter((r) => r.fullName.toLowerCase().includes(q));
   }, [repos, repoQuery]);
 
-  const canSubmit = !!(token && selectedRepo && branch.trim() && path.trim() && message.trim() && !busy);
+  // A successful commit disables both buttons until something about the
+  // target actually changes (see the field handlers below clearing
+  // `result`) — without this, the buttons re-enable the instant `busy`
+  // clears, and a second click (a real "just in case" double-click, or
+  // hitting Enter again out of habit) silently fires a second, identical
+  // commit against the same repo/branch/path.
+  const canSubmit = !!(token && selectedRepo && branch.trim() && path.trim() && message.trim() && !busy && result?.kind !== 'success');
 
   const runDirectPush = async () => {
     if (!token || !selectedRepo) return;
@@ -78,6 +85,7 @@ export function CommitToGithubModal({
         sha: existing?.sha,
       });
       setResult({ kind: 'success', message: `Committed · ${selectedRepo.fullName}/${path.trim()}`, url: put.contentHtmlUrl });
+      track({ name: 'github_committed', props: { mode: 'direct' } });
     } catch (e) {
       if (e instanceof GitHubApiError && (e.status === 409 || e.status === 422)) {
         setResult({ kind: 'conflict', message: 'This file was just changed somewhere else · please refresh and try again' });
@@ -106,6 +114,7 @@ export function CommitToGithubModal({
       });
       const compareUrl = `https://github.com/${selectedRepo.fullName}/compare/${encodeURIComponent(branch.trim())}...${encodeURIComponent(newBranch)}?expand=1`;
       setResult({ kind: 'success', message: `Committed to branch "${newBranch}" · main is untouched`, url: compareUrl });
+      track({ name: 'github_committed', props: { mode: 'branch' } });
     } catch (e) {
       setResult({ kind: 'error', message: e instanceof Error ? e.message : 'Commit failed.' });
     } finally {
@@ -132,7 +141,10 @@ export function CommitToGithubModal({
                 <div
                   key={r.fullName}
                   className={`repo-row ${selectedRepo?.fullName === r.fullName ? 'selected' : ''}`}
-                  onClick={() => setSelectedRepo(r)}
+                  onClick={() => {
+                    setSelectedRepo(r);
+                    setResult(null);
+                  }}
                 >
                   <span className="name">{r.fullName}</span>
                   <span className="vis">{r.private ? 'Private' : 'Public'}</span>
@@ -145,16 +157,38 @@ export function CommitToGithubModal({
         <div className="field-row">
           <div className="field">
             <label>Branch</label>
-            <input type="text" value={branch} onChange={(e) => setBranch(e.target.value)} disabled={!selectedRepo} />
+            <input
+              type="text"
+              value={branch}
+              onChange={(e) => {
+                setBranch(e.target.value);
+                setResult(null);
+              }}
+              disabled={!selectedRepo}
+            />
           </div>
           <div className="field">
             <label>File path</label>
-            <input type="text" value={path} onChange={(e) => setPath(e.target.value)} />
+            <input
+              type="text"
+              value={path}
+              onChange={(e) => {
+                setPath(e.target.value);
+                setResult(null);
+              }}
+            />
           </div>
         </div>
         <div className="field">
           <label>Commit message</label>
-          <input type="text" value={message} onChange={(e) => setMessage(e.target.value)} />
+          <input
+            type="text"
+            value={message}
+            onChange={(e) => {
+              setMessage(e.target.value);
+              setResult(null);
+            }}
+          />
         </div>
 
         {result && (
@@ -171,13 +205,13 @@ export function CommitToGithubModal({
         <div className="commit-actions">
           <div className="commit-option">
             <button type="button" className="btn btn-secondary btn-sm" disabled={!canSubmit} onClick={runNewBranch}>
-              {busy === 'branch' ? 'Committing...' : 'Commit'}
+              {busy === 'branch' ? 'Committing...' : result?.kind === 'success' ? 'Committed ✓' : 'Commit'}
             </button>
             <p>Creates a new branch with the change. main stays untouched — you'll need to merge it on GitHub for it to show up in the real README.</p>
           </div>
           <div className="commit-option primary">
             <button type="button" className="btn btn-primary btn-sm" disabled={!canSubmit} onClick={runDirectPush}>
-              {busy === 'direct' ? 'Committing...' : 'Commit & Push Directly'}
+              {busy === 'direct' ? 'Committing...' : result?.kind === 'success' ? 'Committed ✓' : 'Commit & Push Directly'}
             </button>
             <p>Applies directly to the branch you picked. The real README changes the moment you save.</p>
           </div>

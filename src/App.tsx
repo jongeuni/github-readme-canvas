@@ -16,6 +16,8 @@ import { ConnectGitHubModal } from './components/github/ConnectGitHubModal';
 import { CommitToGithubModal } from './components/github/CommitToGithubModal';
 import { SubmitComponentPrModal } from './components/library/SubmitComponentPrModal';
 import type { LibraryEntry } from './types/library';
+import { getLibraryEntry } from './registry';
+import { track } from './lib/analytics';
 
 function App() {
   const editor = useCanvasEditor();
@@ -71,6 +73,7 @@ function App() {
       // The canvas no longer matches whatever saved doc was active (if any)
       // — same reasoning as starting a brand-new unsaved document.
       setActiveDoc(null);
+      track({ name: 'template_used', props: { template_id: template.id } });
       showToast(`Loaded "${template.name}" template`);
     },
     [editor, showToast],
@@ -96,10 +99,15 @@ function App() {
     (libId: string) => {
       if (libId.startsWith('custom-')) {
         const entry = customComponents.customComponents.find((c) => c.id === libId);
-        if (entry) editor.addCustomEntry(entry);
+        if (entry) {
+          editor.addCustomEntry(entry);
+          track({ name: 'component_added', props: { component_type: entry.type, component_id: entry.id, source: 'custom' } });
+        }
         return;
       }
       editor.addFromLibrary(libId);
+      const entry = getLibraryEntry(libId);
+      track({ name: 'component_added', props: { component_type: entry.type, component_id: entry.id, source: 'library' } });
     },
     [customComponents.customComponents, editor],
   );
@@ -156,6 +164,7 @@ function App() {
   const copyMarkdown = useCallback(() => {
     const md = editor.buildFullMarkdown();
     navigator.clipboard?.writeText(md).catch(() => {});
+    track({ name: 'markdown_copied' });
     showToast('Markdown copied to clipboard');
   }, [editor, showToast]);
 
@@ -168,6 +177,7 @@ function App() {
     a.download = 'README.md';
     a.click();
     URL.revokeObjectURL(url);
+    track({ name: 'markdown_exported' });
     showToast('README.md downloaded');
   }, [editor, showToast]);
 

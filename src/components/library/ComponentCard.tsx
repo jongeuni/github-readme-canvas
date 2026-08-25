@@ -3,6 +3,7 @@ import { getComponentType } from '../../registry';
 import type { LibraryEntry, PresetDefinition } from '../../types/library';
 import { Icon } from '../Icon';
 import { SearchableSelectField } from '../settings/fields';
+import { track } from '../../lib/analytics';
 
 /** "6 languages · C++ · Python · TypeScript + 3 more" — never lists every
  *  preset, just enough to signal "there's a picker in here". */
@@ -66,6 +67,16 @@ export function ComponentCard({
     if (expanded) setSelectedPresetId(entry.presets?.[0]?.id);
   }, [expanded, entry.presets]);
 
+  const selectPreset = (id: string) => {
+    setSelectedPresetId(id);
+    track({ name: 'preset_selected', props: { component_type: entry.type, preset_id: id } });
+  };
+
+  const handleToggleExpand = () => {
+    if (!expanded) track({ name: 'component_view', props: { component_type: entry.type, component_id: entry.id } });
+    onToggleExpand();
+  };
+
   const selectedPreset = entry.presets?.find((p) => p.id === selectedPresetId);
   const resolvedSettings = selectedPreset ? { ...entry.defaultSettings, ...selectedPreset.settings } : entry.defaultSettings;
   const resolvedMeta = selectedPreset?.meta ? { ...entry.meta, ...selectedPreset.meta } : entry.meta;
@@ -77,7 +88,7 @@ export function ComponentCard({
 
   return (
     <div className={`comp-card ${expanded ? 'expanded' : ''}`}>
-      <div className="comp-card-head" onClick={onToggleExpand}>
+      <div className="comp-card-head" onClick={handleToggleExpand}>
         <div className="comp-card-preview">{createElement(def.Preview, { settings: resolvedSettings, meta: resolvedMeta })}</div>
         <div className="comp-card-name-row">
           <div className="comp-card-name">{entry.name}</div>
@@ -122,7 +133,7 @@ export function ComponentCard({
                   className="text-art-preset-select"
                   value={selectedPresetId}
                   onClick={(e) => e.stopPropagation()}
-                  onChange={(e) => setSelectedPresetId(e.target.value)}
+                  onChange={(e) => selectPreset(e.target.value)}
                 >
                   {(entry.presets ?? []).map((p: PresetDefinition) => (
                     <option key={p.id} value={p.id}>
@@ -140,7 +151,7 @@ export function ComponentCard({
                   value={selectedPresetId ?? ''}
                   displayLabel={selectedPreset?.name}
                   options={(entry.presets ?? []).map((p: PresetDefinition) => ({ value: p.id, label: p.name }))}
-                  onChange={(id) => setSelectedPresetId(id)}
+                  onChange={(id) => selectPreset(id)}
                   placeholder={`Search ${entry.presetsLabel ?? 'presets'}...`}
                 />
               ) : (
@@ -151,7 +162,7 @@ export function ComponentCard({
                       className={`preset-row ${p.id === selectedPresetId ? 'selected' : ''}`}
                       onClick={(e) => {
                         e.stopPropagation();
-                        setSelectedPresetId(p.id);
+                        selectPreset(p.id);
                       }}
                     >
                       {p.name}
