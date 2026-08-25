@@ -1,5 +1,6 @@
 import type { SettingsFormProps } from '../../../types/component';
 import { TextField, TextAreaField } from '../../settings/fields';
+import { DetailsContentPreview } from './DetailsContentPreview';
 import type { DetailsSettings } from './types';
 
 export function DetailsSettingsForm({ settings, onChange }: SettingsFormProps<DetailsSettings>) {
@@ -13,6 +14,7 @@ export function DetailsSettingsForm({ settings, onChange }: SettingsFormProps<De
         rows={8}
         hint="Regular markdown — headings, images, code blocks, etc. all work here on GitHub, same as anywhere else in the README."
       />
+      <DetailsContentPreview content={settings.content} />
     </>
   );
 }

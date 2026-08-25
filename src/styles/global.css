@@ -1197,6 +1197,24 @@ pre {
   color: var(--text-2);
   white-space: pre-wrap;
 }
+/* Live preview of the Collapsible Section's own Content field (Settings
+   panel) — reuses .canvas-paper for its scoped typography/list/code/link
+   rules (.md-h1 etc., ordered-list numbering, [data-align]), just overriding
+   its page-canvas sizing/chrome down to fit a sidebar field. */
+.md-details-content-preview {
+  max-width: none;
+  padding: 10px 12px;
+  font-size: 13px;
+  background: var(--page-bg);
+}
+.md-details-content-preview .md-details-preview-widget[data-align='center'] {
+  display: flex;
+  justify-content: center;
+}
+.md-details-content-preview .md-details-preview-widget[data-align='right'] {
+  display: flex;
+  justify-content: flex-end;
+}
 .raw-html-preview {
   max-width: 100%;
   overflow-x: auto;
