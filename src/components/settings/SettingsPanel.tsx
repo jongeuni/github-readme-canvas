@@ -25,6 +25,7 @@ const TYPE_LABELS: Record<string, string> = {
   'code-block': 'Code Block',
   table: 'Table',
   toc: 'Table of Contents',
+  details: 'Collapsible Section',
 };
 
 /**

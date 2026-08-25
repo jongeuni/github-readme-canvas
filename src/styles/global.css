@@ -1176,6 +1176,22 @@ pre {
   font-style: italic;
   padding: 10px 0;
 }
+.md-details-preview {
+  margin: 10px 0;
+  font-size: 13px;
+}
+.md-details-preview summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--text-1);
+}
+.md-details-content {
+  margin-top: 8px;
+  padding: 10px 12px;
+  border-left: 2px solid var(--border);
+  color: var(--text-2);
+  white-space: pre-wrap;
+}
 .raw-html-preview {
   max-width: 100%;
   overflow-x: auto;

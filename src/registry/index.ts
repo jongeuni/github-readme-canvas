@@ -12,6 +12,8 @@ import { tableDefinition } from '../components/widgets/table/definition';
 import { tablePresets } from '../components/widgets/table/presets';
 import { tocDefinition } from '../components/widgets/toc/definition';
 import { tocPresets } from '../components/widgets/toc/presets';
+import { detailsDefinition } from '../components/widgets/details/definition';
+import { detailsPresets } from '../components/widgets/details/presets';
 import { CATEGORIES_SEED } from '../data/categories';
 import { flattenLibrary } from './presets';
 
@@ -37,12 +39,12 @@ import { flattenLibrary } from './presets';
  * fetching), so adding either kind is purely additive: create the file or
  * directory and it's live, nothing here needs editing.
  *
- * heading/divider/codeBlock/table/toc are NOT here — they're core editor
- * primitives (they emit raw markdown directly, e.g. `# text` or `---`),
- * not services a community would contribute variants of, so they stay
- * hand-wired below like url-component itself. toc specifically also needs
- * direct canvas access (to scan headings) that a normal SettingsForm never
- * gets — see the "Regenerate from headings" button in SettingsPanel.
+ * heading/divider/codeBlock/table/toc/details are NOT here — they're core
+ * editor primitives (they emit raw markdown directly, e.g. `# text` or
+ * `---`), not services a community would contribute variants of, so they
+ * stay hand-wired below like url-component itself. toc specifically also
+ * needs direct canvas access (to scan headings) that a normal SettingsForm
+ * never gets — see the "Regenerate from headings" button in SettingsPanel.
  */
 const jsonModules = import.meta.glob<{ default: LibraryEntry }>('../data/community-components/*.json', { eager: true });
 const dirModules = import.meta.glob<{ module: ComponentModule }>('../data/community-components/*/component.ts', { eager: true });
@@ -57,6 +59,7 @@ export const COMPONENT_TYPES: ComponentTypeDefinition[] = [
   codeBlockDefinition,
   tableDefinition,
   tocDefinition,
+  detailsDefinition,
   ...componentModules.map((m) => m.definition),
 ];
 
@@ -74,6 +77,7 @@ export const LIBRARY_COMPONENTS: LibraryEntry[] = [
   ...codeBlockPresets,
   ...tablePresets,
   ...tocPresets,
+  ...detailsPresets,
   ...componentModules.flatMap((m) => m.entries),
   ...jsonComponents,
 ];
