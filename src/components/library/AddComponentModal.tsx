@@ -5,6 +5,7 @@ import type { LibraryEntry } from '../../types/library';
 import type { UrlFieldDef, UrlFieldOption, UrlFieldType } from '../../types/urlComponent';
 import { fillUrlTemplate, parseUrlInput } from '../../types/urlComponent';
 import { useOverlayDismiss } from '../../hooks/useOverlayDismiss';
+import { categoryToTag, slugify } from '../../lib/slugify';
 
 interface FieldDraft {
   key: string;
@@ -31,7 +32,7 @@ export function AddComponentModal({
 }: {
   open: boolean;
   onCancel: () => void;
-  onCreate: (entry: Omit<LibraryEntry, 'id'>) => void;
+  onCreate: (entry: Omit<LibraryEntry, 'id'>, desiredId: string) => void;
 }) {
   const [step, setStep] = useState<1 | 2>(1);
   const [name, setName] = useState('');
@@ -41,7 +42,21 @@ export function AddComponentModal({
   const [fields, setFields] = useState<FieldDraft[]>([]);
   const [linkable, setLinkable] = useState(true);
   const [linkDefault, setLinkDefault] = useState('');
+  // Who actually built the external service/project this component wraps —
+  // NOT necessarily the person filling out this form, so this is never
+  // pre-filled from the connected GitHub account. Blank is a fine, expected
+  // answer for a generic service like shields.io (see community-components/
+  // README.md's `author` field doc). Both feed the filename this component
+  // ships as: {tag}-{devUsername}-{projectSlug}.json (tag segment omitted
+  // when devUsername is blank).
+  const [devUsername, setDevUsername] = useState('');
+  const [projectUrl, setProjectUrl] = useState('');
+  const [projectSlug, setProjectSlug] = useState('');
   const [error, setError] = useState<string | null>(null);
+
+  const tag = categoryToTag(category);
+  const effectiveSlug = slugify(projectSlug.trim() || name);
+  const filenamePreview = `${[tag, devUsername.trim() ? slugify(devUsername) : '', effectiveSlug].filter(Boolean).join('-')}.json`;
 
   // Lets people paste a plain, already-working URL (no {} needed) — query
   // params like ?style=flat&color=blue are auto-detected as fields. Typing
@@ -57,6 +72,9 @@ export function AddComponentModal({
     setFields([]);
     setLinkable(true);
     setLinkDefault('');
+    setDevUsername('');
+    setProjectUrl('');
+    setProjectSlug('');
     setError(null);
   };
 
@@ -133,15 +151,22 @@ export function AddComponentModal({
       options: f.type === 'text' ? undefined : f.options.filter((o) => o.value.trim() && o.label.trim()),
     }));
 
-    onCreate({
-      type: 'url-component',
-      name: name.trim(),
-      description: description.trim() || name.trim(),
-      category,
-      tags: [category],
-      defaultSettings,
-      meta: { urlTemplate: parsed.template, linkable, fields: fieldDefs },
-    });
+    const desiredId = [tag, devUsername.trim() ? slugify(devUsername) : '', effectiveSlug].filter(Boolean).join('-');
+    onCreate(
+      {
+        type: 'url-component',
+        name: name.trim(),
+        description: description.trim() || name.trim(),
+        category,
+        tags: [category],
+        status: 'active',
+        author: devUsername.trim(),
+        projectUrl: projectUrl.trim(),
+        defaultSettings,
+        meta: { urlTemplate: parsed.template, linkable, fields: fieldDefs },
+      },
+      desiredId,
+    );
     reset();
   };
 
@@ -187,6 +212,40 @@ export function AddComponentModal({
                 placeholder="A custom badge with your own label and color"
                 onChange={(e) => setDescription(e.target.value)}
               />
+            </div>
+            <div className="field-row">
+              <div className="field">
+                <label>Developer's GitHub username (optional)</label>
+                <input
+                  type="text"
+                  value={devUsername}
+                  placeholder="Leave blank if you don't know / it's a generic service"
+                  onChange={(e) => setDevUsername(e.target.value)}
+                />
+                <p className="field-hint">Whoever actually built the service this wraps — usually not you. Blank is fine.</p>
+              </div>
+              <div className="field">
+                <label>Project URL (optional)</label>
+                <input
+                  type="url"
+                  value={projectUrl}
+                  placeholder="https://github.com/owner/repo"
+                  onChange={(e) => setProjectUrl(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="field">
+              <label>Project slug for the filename</label>
+              <input
+                type="text"
+                className="mono"
+                value={projectSlug}
+                placeholder={slugify(name)}
+                onChange={(e) => setProjectSlug(e.target.value)}
+              />
+              <p className="field-hint">
+                Submitting proposes this as a new file: <code>{filenamePreview}</code>
+              </p>
             </div>
             <div className="field">
               <label>URL</label>

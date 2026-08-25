@@ -22,6 +22,9 @@ const entries: LibraryEntry<RawHtmlSettings>[] = [
     description: 'Arbitrary HTML, preserved and rendered as-is — used automatically when pasting raw HTML from a README.',
     category: '✨ decoration',
     tags: ['✨ decoration', 'HTML'],
+    status: 'active',
+    author: 'jongeuni',
+    projectUrl: 'https://github.com/jongeuni/github-readme-canvas',
     defaultSettings: { html: '' },
   },
 ];

@@ -1,5 +1,5 @@
 {
-  "id": "status-github-snake",
+  "id": "status-platane-github-snake",
   "type": "url-component",
   "name": "GitHub Contribution Snake",
   "description": "An animated snake eating your contribution graph. GitHub Only, and needs one-time setup — the Platane/snk GitHub Action must already be publishing this SVG to your profile repo's `output` branch.",
@@ -9,6 +9,9 @@
     "Animation",
     "GitHub Only"
   ],
+  "status": "active",
+  "author": "Platane",
+  "projectUrl": "https://github.com/Platane/snk",
   "defaultSettings": {
     "username": "platane"
   },

@@ -9,6 +9,7 @@ import {
   putFileContent,
   setIssueLabelsAndAssignees,
 } from '../../lib/github';
+import { slugify } from '../../lib/slugify';
 import type { LibraryEntry } from '../../types/library';
 
 const OWNER = 'jongeuni';
@@ -16,16 +17,6 @@ const REPO = 'github-readme-canvas';
 const DATA_DIR = 'src/data/community-components';
 const PR_LABELS = ['new component'];
 const PR_ASSIGNEES = ['jongeuni'];
-
-function slugify(name: string): string {
-  return (
-    name
-      .trim()
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/(^-|-$)/g, '') || 'component'
-  );
-}
 
 type Result = { kind: 'success'; url: string; number: number } | { kind: 'error'; message: string };
 
@@ -53,12 +44,18 @@ export function SubmitComponentPrModal({
       const branch = `add-component-${slugify(entry.name)}-${Date.now()}`;
       await createBranch(token, OWNER, REPO, branch, baseSha);
 
-      // One file per component (filename = its id) — find a free id/path
-      // instead of every contributor's PR racing to edit one shared array.
-      let id = entry.id;
+      // One file per component (filename = its id, {tag}-{username}-projectname
+      // per community-components/README.md) — find a free id/path instead of
+      // every contributor's PR racing to edit one shared array. entry.id is
+      // still "custom-" prefixed (see useCustomComponents) purely so the app
+      // can tell local pending components apart from registry ones; strip
+      // that back off to get the real filename the user previewed in
+      // AddComponentModal.
+      const desiredId = entry.id.replace(/^custom-/, '');
+      let id = desiredId;
       let n = 2;
       while (await getFileContent(token, OWNER, REPO, `${DATA_DIR}/${id}.json`, branch)) {
-        id = `${entry.id}-${n}`;
+        id = `${desiredId}-${n}`;
         n += 1;
       }
 

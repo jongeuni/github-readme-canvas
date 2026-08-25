@@ -6,7 +6,7 @@
 
 두 가지 형태가 있고, **압도적으로 대부분의 경우 첫 번째만으로 충분합니다:**
 
-- **`<id>.json` 한 파일** — shields.io 같은 서비스의 URL에 값 몇 개만 채워 넣으면 끝나는 컴포넌트. 프리셋(변형)이 있어도 코드 없이 이 파일 안에서 다 됩니다. `lang-badge.json`, `social-github.json`, `stats-github.json`을 포함해 이 디렉터리의 거의 전부가 여기 해당합니다.
+- **`<파일명>.json` 한 파일** — shields.io 같은 서비스의 URL에 값 몇 개만 채워 넣으면 끝나는 컴포넌트. 프리셋(변형)이 있어도 코드 없이 이 파일 안에서 다 됩니다. `tech-lang-badge.json`, `social-github.json`, `status-anuraghazra-github-stats.json`을 포함해 이 디렉터리의 거의 전부가 여기 해당합니다.
 - **`<type>/` 디렉터리** — 순수 URL 템플릿으로는 표현이 안 되는 커스텀 UI/렌더링이 정말로 필요할 때만 (예: `tech-icon/`은 크기 슬라이더가 필요해서 코드로 되어 있습니다).
 
 아래는 실제로 겪게 되는 상황별 레시피입니다.
@@ -15,9 +15,17 @@
 
 ## 1. 새 컴포넌트 추가하기
 
+> 앱 안의 **"+ Add Component" → Submit PR** 플로우([AddComponentModal.tsx](../../components/library/AddComponentModal.tsx))를 쓰면 아래 파일명 규칙·`status`/`author`/`projectUrl` 필드를 사용자가 직접 신경 쓸 필요 없이 폼 입력값(개발자 GitHub 아이디, Project URL, 파일명용 slug)으로부터 자동으로 채워서 PR을 엽니다 — 미리보기로 실제 생성될 파일명을 보여줍니다. 이 섹션은 그 대신 저장소에 직접 파일을 추가/편집하는 경우의 규칙입니다.
+
 ### 대부분의 경우 — JSON 파일 하나
 
-`src/data/community-components/<id>.json` 파일 하나를 만드세요:
+`src/data/community-components/<파일명>.json` 파일 하나를 만드세요. **파일명 규칙은 `{tag}-{username}-projectname.json`** 입니다:
+
+- `tag` — 카테고리를 나타내는 영문 소문자 단어(`decoration`, `emotion`, `social`, `status`, `tech` ...). `category`/`tags`에 쓰는 이모지+한글 값이 아니라, 그 카테고리를 가리키는 접두어입니다.
+- `username` — 이 컴포넌트가 감싸는 **외부 서비스/프로젝트를 실제로 개발한 사람의 GitHub 아이디** (아래 `author` 필드와 동일한 값). shields.io처럼 특정 개발자 한 명으로 귀속시킬 수 없는 범용 서비스가 백엔드라면 이 자리를 통째로 생략하고 **`{tag}-projectname.json`** (2단 구성)으로 씁니다.
+- `projectname` — 컴포넌트가 무엇인지 알아볼 수 있는 짧은 이름.
+
+예: `decoration-kyechan99-capsule-render.json` (kyechan99가 만든 capsule-render를 감싼 컴포넌트), `social-github.json` (shields.io 뱃지라 개발자 귀속이 없음).
 
 ```json
 {
@@ -27,6 +35,9 @@
   "description": "Link to your Mastodon profile.",
   "category": "Social",
   "tags": ["Social", "Badge"],
+  "status": "active",
+  "author": "",
+  "projectUrl": "https://shields.io",
   "defaultSettings": { "username": "yourname", "link": "" },
   "meta": {
     "urlTemplate": "https://img.shields.io/badge/Mastodon-{username}-6364FF?logo=mastodon&logoColor=white",
@@ -39,6 +50,10 @@
 - `urlTemplate`의 `{fieldName}` 부분이 `fields`에 정의한 값으로 채워집니다.
 - `fields[].type` — `"text"` / `"color"` / `"select"` / `"number"`(슬라이더, `min`/`max`/`step`) / `"checkbox-group"`(체크박스 여러 개를 콤마로 합쳐 한 필드에 — `hide=issues,prs`처럼). `"number"`를 뺀 나머지는 `options: [{ value, label }]` 필요.
 - `linkable: true` — "Link" 입력창 추가, `defaultSettings`에 `"link": ""`도 필요. 링크가 사용자 입력이 아니라 다른 필드로 계산되어야 한다면(예: username으로 만든 프로필 URL) `linkable` 대신 **`linkTemplate`**을 쓰세요 — `urlTemplate`과 같은 문법이고, 읽기 전용 계산값으로 보여집니다.
+- `status` — `"active"`(기본값, 생략 가능) 또는 `"inactive"`. `"inactive"`인 카드는 라이브러리 목록/검색에서 완전히 숨겨집니다 (이미 캔버스에 놓인 위젯이나 저장된 문서는 계속 정상 렌더링/내보내기됩니다 — 숨겨지는 건 새로 추가할 때 보이는 목록뿐). 백엔드로 쓰는 서비스가 배포 중단되었거나 더는 응답하지 않을 때 `"active"` → `"inactive"`로 바꾸고 `statusReason`을 반드시 같이 적어주세요.
+- `statusReason` — `status`가 `"inactive"`일 때만 의미가 있는, 왜 비활성인지 설명하는 문자열 (예: `"백엔드(markdown-box-generator.vercel.app)가 2026-08부로 응답하지 않음"`). `active`일 때는 생략하세요.
+- `author` — 위 파일명의 `username`과 동일한, 이 컴포넌트가 감싸는 서비스의 실제 개발자 GitHub 아이디. **특정 개발자가 없는 범용 서비스라면 빈 문자열 `""`** 로 둡니다 (임의로 추측해서 채우지 마세요).
+- `projectUrl` — 그 서비스/프로젝트의 GitHub 저장소 또는 홈페이지 URL. `author`가 빈 문자열이면 보통 그 서비스 자체의 홈페이지(예: shields.io 뱃지는 `"https://shields.io"`)를 넣습니다.
 
 파일을 저장하는 순간 끝입니다.
 
@@ -89,6 +104,8 @@ export const module: ComponentModule<MyWidgetSettings> = { definition, entries }
 
 저장하면 끝 — `registry/index.ts`가 `community-components/*/component.ts`를 전부 자동으로 찾아 등록합니다.
 
+디렉터리 컴포넌트의 `entries` 항목도 JSON 컴포넌트와 똑같이 `status`/`statusReason`/`author`/`projectUrl`을 받습니다 (파일명 규칙만 해당 없음 — 디렉터리명은 여전히 `type`과 동일해야 합니다). 예: `tech-icon/component.ts`의 `tech-icon-picker`는 `skillicons.dev`를 감싸므로 `author: 'tandpfun'`, `projectUrl: 'https://github.com/tandpfun/skill-icons'`; 반대로 `image/`, `raw-html/`, `text-art/`처럼 외부 서비스 없이 이 프로젝트가 직접 만든 에디터 기본 요소는 `author: 'jongeuni'`, `projectUrl: 'https://github.com/jongeuni/github-readme-canvas'`를 씁니다.
+
 ---
 
 ## 2. 프리셋이 있는 컴포넌트 새로 추가하기
@@ -112,7 +129,7 @@ export const module: ComponentModule<MyWidgetSettings> = { definition, entries }
 }
 ```
 
-실제 예시: [`lang-badge.json`](lang-badge.json) — C++/Python/TypeScript/Java/Go/Rust 6개가 전부 이 방식으로 `presets` 배열 안에 들어있습니다.
+실제 예시: [`tech-lang-badge.json`](tech-lang-badge.json) — C++/Python/TypeScript/Java/Go/Rust 6개가 전부 이 방식으로 `presets` 배열 안에 들어있습니다.
 
 **코드 디렉터리라면** (드묾 — 위 "디렉터리" 방식으로 만든 경우) `presets.ts` 파일 하나를 추가하고 `component.ts`의 `entries`에서 `presets: yourPresets`로 연결합니다. 실제 예시: [`tech-icon/presets.ts`](tech-icon/presets.ts).
 
@@ -124,7 +141,7 @@ export const module: ComponentModule<MyWidgetSettings> = { definition, entries }
 
 가장 자주 있을 일입니다 — 예를 들어 Language Badge에 "Kotlin"을 추가하고 싶은 경우.
 
-**JSON 컴포넌트라면** — `lang-badge.json`을 열어서 `presets` 배열에 항목 하나만 추가하면 끝입니다:
+**JSON 컴포넌트라면** — `tech-lang-badge.json`을 열어서 `presets` 배열에 항목 하나만 추가하면 끝입니다:
 
 ```json
 { "id": "lang-kotlin", "name": "Kotlin", "settings": { "label": "Kotlin", "color": "purple", "link": "https://kotlinlang.org" } }
@@ -149,4 +166,4 @@ export const module: ComponentModule<MyWidgetSettings> = { definition, entries }
 - 텍스트/색상/링크 같은 **데이터만 다르고** 설정 구조·렌더링·마크다운 로직이 완전히 같다 → 기존 Component의 새 **Preset** (위 3번)
 - 설정 구조가 다르거나, 렌더링 방식이 다르거나, 애초에 목적이 다르다 → 새 **Component** (위 1번 또는 2번)
 
-헷갈리면 가장 가까운 기존 파일을 그대로 따라 하는 게 제일 빠릅니다 — `lang-badge.json`이 JSON+프리셋 예시, `tech-icon/`이 코드 디렉터리 예시입니다.
+헷갈리면 가장 가까운 기존 파일을 그대로 따라 하는 게 제일 빠릅니다 — `tech-lang-badge.json`이 JSON+프리셋 예시, `tech-icon/`이 코드 디렉터리 예시입니다.

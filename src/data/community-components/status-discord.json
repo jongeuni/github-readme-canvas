@@ -8,6 +8,9 @@
     "📊 status",
     "Badge"
   ],
+  "status": "active",
+  "author": "",
+  "projectUrl": "https://shields.io",
   "defaultSettings": {
     "serverId": "81384788765712384",
     "link": ""

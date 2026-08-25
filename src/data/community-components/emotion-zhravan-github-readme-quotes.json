@@ -1,5 +1,5 @@
 {
-  "id": "zhravan-emotion-github-readme-quotes",
+  "id": "emotion-zhravan-github-readme-quotes",
   "type": "url-component",
   "name": "Random Quote",
   "description": "A card showing a different quote every time it's rendered. Works anywhere — not GitHub-specific.",
@@ -8,6 +8,9 @@
     "💭 emotion",
     "Card"
   ],
+  "status": "active",
+  "author": "zhravan",
+  "projectUrl": "https://github.com/zhravan/github-readme-quotes",
   "defaultSettings": {
     "theme": "dark",
     "quoteCategory": "general"

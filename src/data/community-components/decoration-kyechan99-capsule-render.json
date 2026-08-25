@@ -1,5 +1,5 @@
 {
-  "id": "kyechan99-decoration-capsule-render",
+  "id": "decoration-kyechan99-capsule-render",
   "type": "url-component",
   "name": "Capsule Render Banner",
   "description": "An animated header/footer capsule banner for your README. Works anywhere — self-contained generated SVG.",
@@ -9,6 +9,9 @@
     "Animation",
     "Banner"
   ],
+  "status": "active",
+  "author": "kyechan99",
+  "projectUrl": "https://github.com/kyechan99/capsule-render",
   "defaultSettings": {
     "text": "Welcome to my profile",
     "type": "waving",

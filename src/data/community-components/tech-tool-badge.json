@@ -8,6 +8,9 @@
     "🧑‍💻 tech",
     "Badge"
   ],
+  "status": "active",
+  "author": "",
+  "projectUrl": "https://shields.io",
   "defaultSettings": {
     "label": "Docker",
     "color": "blue",

@@ -9,6 +9,9 @@
     "Badge",
     "GitHub Only"
   ],
+  "status": "active",
+  "author": "",
+  "projectUrl": "https://shields.io",
   "defaultSettings": {
     "username": "octocat",
     "link": ""

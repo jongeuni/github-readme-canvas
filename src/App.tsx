@@ -141,8 +141,8 @@ function App() {
   // the same PR flow — still requires the user's own confirm click inside
   // SubmitComponentPrModal, this just removes the extra navigation before it.
   const handleCreateComponent = useCallback(
-    (entry: Parameters<typeof customComponents.addCustomComponent>[0]) => {
-      const created = customComponents.addCustomComponent(entry);
+    (entry: Parameters<typeof customComponents.addCustomComponent>[0], desiredId: string) => {
+      const created = customComponents.addCustomComponent(entry, desiredId);
       editor.addCustomEntry(created);
       setAddComponentOpen(false);
       if (github.user) showToast('Component added · Preparing PR');

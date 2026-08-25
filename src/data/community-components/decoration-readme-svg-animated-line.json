@@ -1,5 +1,5 @@
 {
-  "id": "readme-svg-decoration-animated-line",
+  "id": "decoration-readme-svg-animated-line",
   "type": "url-component",
   "name": "Animated Line",
   "description": "A thin animated divider line for your README. Works anywhere — self-contained generated SVG.",
@@ -8,6 +8,9 @@
     "✨ decoration",
     "Animation"
   ],
+  "status": "active",
+  "author": "readme-SVG",
+  "projectUrl": "https://github.com/readme-SVG/animated-line",
   "defaultSettings": {
     "color": "3E80ED"
   },

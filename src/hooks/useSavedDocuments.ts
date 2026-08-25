@@ -1,13 +1,23 @@
 import { useCallback, useState } from 'react';
 import type { SavedDocument, SerializedBlock } from '../types/document';
+import { LEGACY_ID_REMAP } from '../data/legacyIdRemap';
 
 const STORAGE_KEY = 'readmeCanvas:documents';
+
+/** Remap a saved widget block's `libId` through LEGACY_ID_REMAP so a doc
+ *  saved before an id rename still resolves to the renamed catalog entry
+ *  (matters for the Settings panel's category label — rendering/export
+ *  work either way since they read `type`/`settings`, not `libId`). */
+function migrateBlocks(blocks: SerializedBlock[]): SerializedBlock[] {
+  return blocks.map((b) => (b.kind === 'widget' && LEGACY_ID_REMAP[b.libId] ? { ...b, libId: LEGACY_ID_REMAP[b.libId] } : b));
+}
 
 function loadDocuments(): SavedDocument[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     const arr = raw ? JSON.parse(raw) : [];
-    return Array.isArray(arr) ? arr : [];
+    const docs: SavedDocument[] = Array.isArray(arr) ? arr : [];
+    return docs.map((d) => ({ ...d, blocks: migrateBlocks(d.blocks) }));
   } catch {
     return [];
   }

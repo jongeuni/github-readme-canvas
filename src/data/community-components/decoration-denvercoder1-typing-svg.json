@@ -1,5 +1,5 @@
 {
-  "id": "decoration-typing-svg",
+  "id": "decoration-denvercoder1-typing-svg",
   "type": "url-component",
   "name": "Typing SVG Animation",
   "description": "An animated typewriter-effect line of text. Works anywhere — it's a self-contained generated SVG, not tied to GitHub.",
@@ -8,6 +8,9 @@
     "✨ decoration",
     "Animation"
   ],
+  "status": "active",
+  "author": "DenverCoder1",
+  "projectUrl": "https://github.com/DenverCoder1/readme-typing-svg",
   "defaultSettings": {
     "lines": "Hi there, I'm Alex;Welcome to my GitHub profile!",
     "color": "36BCF7"

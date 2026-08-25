@@ -8,6 +8,9 @@
     "🧑‍💻 tech",
     "Badge"
   ],
+  "status": "active",
+  "author": "",
+  "projectUrl": "https://shields.io",
   "defaultSettings": {
     "label": "C++",
     "color": "blue",

@@ -1,5 +1,5 @@
 {
-  "id": "naereen-emotion-ask-me-anything",
+  "id": "emotion-naereen-ask-me-anything",
   "type": "url-component",
   "name": "Ask Me Anything",
   "description": "A playful \"Ask me anything\" call-to-action badge. Not GitHub-specific.",
@@ -8,6 +8,9 @@
     "💭 emotion",
     "Badge"
   ],
+  "status": "active",
+  "author": "Naereen",
+  "projectUrl": "https://github.com/Naereen/ama",
   "defaultSettings": {},
   "meta": {
     "urlTemplate": "https://img.shields.io/badge/Ask%20me-anything-1abc9c.svg",

@@ -59,6 +59,7 @@ export function LibraryPanel({
     const combined = [...base, ...customComponents];
     const q = search.trim().toLowerCase();
     return combined.filter((item) => {
+      if (item.status === 'inactive') return false;
       if (category !== 'All' && item.category !== category) return false;
       if (favoritesOnly && !favorites.has(item.id)) return false;
       if (!q) return true;

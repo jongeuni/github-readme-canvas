@@ -1,5 +1,5 @@
 {
-  "id": "status-profile-views",
+  "id": "status-antonkomarev-profile-views",
   "type": "url-component",
   "name": "Profile Views Counter",
   "description": "A badge that counts and displays how many times your README has been viewed. Works anywhere — it just counts image loads, not GitHub-specific.",
@@ -8,6 +8,9 @@
     "📊 status",
     "Badge"
   ],
+  "status": "active",
+  "author": "antonkomarev",
+  "projectUrl": "https://github.com/antonkomarev/github-profile-views-counter",
   "defaultSettings": {
     "username": "alex123",
     "label": "Profile views",

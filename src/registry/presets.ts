@@ -22,6 +22,10 @@ export function flattenLibrary(components: LibraryEntry[]): LibraryEntry[] {
       defaultSettings: { ...c.defaultSettings, ...p.settings },
       meta: p.meta ? { ...c.meta, ...p.meta } : c.meta,
       defaultAlign: c.defaultAlign,
+      status: c.status,
+      statusReason: c.statusReason,
+      author: c.author,
+      projectUrl: c.projectUrl,
     }));
   });
 }

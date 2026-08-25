@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 import type { LibraryEntry } from '../types/library';
 import { LIBRARY_MAP } from '../registry';
+import { slugify } from '../lib/slugify';
 
 const STORAGE_KEY = 'readmeCanvas:customComponents';
 
@@ -22,27 +23,24 @@ function persistCustomComponents(entries: LibraryEntry[]) {
   }
 }
 
-function slugify(name: string): string {
-  const base = name
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '');
-  return base || 'component';
-}
-
 /**
  * Community/custom components — added via the "Add Component" flow, kept
  * local (localStorage) until the user submits them as a PR (see the GitHub
- * PR flow). Ids are namespaced ("custom-...") so they never collide with the
- * hand-authored presets in the static registry.
+ * PR flow). Ids are namespaced ("custom-" + `desiredId`) so they never
+ * collide with the hand-authored presets in the static registry, and so
+ * `libId.startsWith('custom-')` keeps working everywhere it's checked
+ * (App.tsx, LibraryPanel/ComponentCard's "Submit PR" gating). `desiredId`
+ * is the {tag}-{username}-projectname slug AddComponentModal already built
+ * and previewed to the user as the eventual filename — SubmitComponentPrModal
+ * strips the "custom-" prefix back off to get that exact filename back, so
+ * what the user saw in the modal is what ships, no re-deriving.
  */
 export function useCustomComponents() {
   const [customComponents, setCustomComponents] = useState<LibraryEntry[]>(() => loadCustomComponents());
 
   const makeUniqueId = useCallback(
-    (name: string) => {
-      const base = 'custom-' + slugify(name);
+    (desiredId: string) => {
+      const base = 'custom-' + slugify(desiredId);
       let id = base;
       let n = 2;
       const taken = (candidate: string) => LIBRARY_MAP.has(candidate) || customComponents.some((c) => c.id === candidate);
@@ -56,8 +54,8 @@ export function useCustomComponents() {
   );
 
   const addCustomComponent = useCallback(
-    (entry: Omit<LibraryEntry, 'id'>): LibraryEntry => {
-      const id = makeUniqueId(entry.name);
+    (entry: Omit<LibraryEntry, 'id'>, desiredId: string): LibraryEntry => {
+      const id = makeUniqueId(desiredId);
       const full: LibraryEntry = { ...entry, id };
       setCustomComponents((prev) => {
         const next = [...prev, full];

@@ -60,6 +60,25 @@ export interface LibraryEntry<TSettings = any> {
    *  setting when a Component's whole visual purpose assumes centering
    *  (e.g. a decorative separator line). */
   defaultAlign?: 'left' | 'center' | 'right';
+  /** Unset/'active' (the default) shows this entry in the Library like
+   *  today. 'inactive' hides it from browsing/search (see LibraryPanel's
+   *  `visible` filter) without removing it from LIBRARY/LIBRARY_MAP, so a
+   *  widget already placed from it keeps resolving/rendering/exporting
+   *  fine — only new placements are blocked. Use when the backing
+   *  service/URL this entry depends on has gone down or been discontinued;
+   *  pair with `statusReason` explaining why. */
+  status?: 'active' | 'inactive';
+  /** Required when `status` is 'inactive' — shown to explain why this entry
+   *  is hidden (e.g. "backing service shut down in 2026-03"). */
+  statusReason?: string;
+  /** GitHub username of the developer/maintainer of the external
+   *  service/project this entry's urlTemplate wraps (e.g. "kyechan99" for
+   *  Capsule Render). Empty string when the backend is a generic multi-use
+   *  service with no single attributable developer (e.g. shields.io). */
+  author?: string;
+  /** Homepage or GitHub URL of the project/service this entry wraps (e.g.
+   *  the upstream repo, or "https://shields.io" for a generic badge). */
+  projectUrl?: string;
 }
 
 /** A live instance of a component placed on the canvas. */

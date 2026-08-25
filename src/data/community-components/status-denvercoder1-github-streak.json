@@ -1,26 +1,28 @@
 {
-  "id": "status-github-stats",
+  "id": "status-denvercoder1-github-streak",
   "type": "url-component",
-  "name": "GitHub Stats",
-  "description": "A live card of your GitHub statistics.",
+  "name": "GitHub Streak Stats",
+  "description": "Shows current and longest GitHub contribution streak. GitHub Only — reads commit history from the GitHub API, so it only works for GitHub accounts.",
   "category": "📊 status",
   "tags": [
     "📊 status",
-    "Card"
+    "Card",
+    "GitHub Only"
   ],
+  "status": "active",
+  "author": "DenverCoder1",
+  "projectUrl": "https://github.com/DenverCoder1/github-readme-streak-stats",
   "defaultSettings": {
-    "username": "alex123",
-    "theme": "default",
-    "hide": ""
+    "username": "octocat",
+    "theme": "default"
   },
   "meta": {
-    "urlTemplate": "https://github-readme-stats.vercel.app/api?username={username}&show_icons=true&theme={theme}&hide={hide}",
-    "altTemplate": "{username}'s GitHub stats",
+    "urlTemplate": "https://streak-stats.demolab.com?user={username}&theme={theme}&hide_border=true",
     "linkable": false,
     "fields": [
       {
         "key": "username",
-        "label": "Username",
+        "label": "GitHub Username",
         "type": "text"
       },
       {
@@ -43,25 +45,14 @@
           {
             "value": "merko",
             "label": "Merko"
-          }
-        ]
-      },
-      {
-        "key": "hide",
-        "label": "Hide",
-        "type": "checkbox-group",
-        "options": [
-          {
-            "value": "issues",
-            "label": "Issues"
           },
           {
-            "value": "prs",
-            "label": "Pull Requests"
+            "value": "gruvbox",
+            "label": "Gruvbox"
           },
           {
-            "value": "contrib",
-            "label": "Contributions"
+            "value": "tokyonight",
+            "label": "Tokyo Night"
           }
         ]
       }

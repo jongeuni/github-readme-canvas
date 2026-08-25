@@ -71,7 +71,7 @@ _[English](CONTRIBUTING.md)로 보기._
 
 새로 추가하는 뱃지/아이콘/링크 대부분은 새 Component가 아니라 이 경우예요 — 위 판단 기준을 참고하세요.
 
-- **Component가 `.json` 파일이라면** (기본 제공 뱃지들 — `lang-badge.json`, `social-github.json` 등을 포함해 대부분이 여기 해당) — 그 파일을 열어서 `presets` 배열에 항목 하나를 추가하세요 (배열이 아직 없다면 새로 만들면 됩니다). 다른 건 전혀 건드릴 필요 없어요.
+- **Component가 `.json` 파일이라면** (기본 제공 뱃지들 — `tech-lang-badge.json`, `social-github.json` 등을 포함해 대부분이 여기 해당) — 그 파일을 열어서 `presets` 배열에 항목 하나를 추가하세요 (배열이 아직 없다면 새로 만들면 됩니다). 다른 건 전혀 건드릴 필요 없어요.
 - **Component가 코드 디렉터리라면** (예: `tech-icon/` — 크기 슬라이더처럼 순수 URL 템플릿으로는 표현 안 되는 UI가 필요해서 코드로 만들어진 경우) — 그 디렉터리의 `presets.ts`를 열어서 해당 배열에 항목 하나를 추가하세요. `component.ts`는 건드릴 필요 없어요.
 
 ## 완전히 새로운 Component 추가하기 (코드 필요)

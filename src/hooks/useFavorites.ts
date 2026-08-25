@@ -1,19 +1,7 @@
 import { useCallback, useState } from 'react';
+import { LEGACY_ID_REMAP } from '../data/legacyIdRemap';
 
 const FAVORITES_STORAGE_KEY = 'readmeComponents:favorites';
-
-/** Old standalone-card ids -> the grouped Component id they became a preset
- *  of, so a favorite from before the Component/Preset migration still shows
- *  up (favorited on the grouped card) instead of silently disappearing. */
-const LEGACY_ID_REMAP: Record<string, string> = {
-  'lang-cpp': 'tech-lang-badge',
-  'lang-python': 'tech-lang-badge',
-  'lang-ts': 'tech-lang-badge',
-  'lang-java': 'tech-lang-badge',
-  'fw-react': 'tech-icon-picker',
-  'fw-node': 'tech-icon-picker',
-  'fw-spring': 'tech-icon-picker',
-};
 
 function loadFavorites(): Set<string> {
   try {

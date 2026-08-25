@@ -1,0 +1,73 @@
+{
+  "id": "status-anuraghazra-github-stats",
+  "type": "url-component",
+  "name": "GitHub Stats",
+  "description": "A live card of your GitHub statistics.",
+  "category": "📊 status",
+  "tags": [
+    "📊 status",
+    "Card"
+  ],
+  "status": "active",
+  "author": "anuraghazra",
+  "projectUrl": "https://github.com/anuraghazra/github-readme-stats",
+  "defaultSettings": {
+    "username": "alex123",
+    "theme": "default",
+    "hide": ""
+  },
+  "meta": {
+    "urlTemplate": "https://github-readme-stats.vercel.app/api?username={username}&show_icons=true&theme={theme}&hide={hide}",
+    "altTemplate": "{username}'s GitHub stats",
+    "linkable": false,
+    "fields": [
+      {
+        "key": "username",
+        "label": "Username",
+        "type": "text"
+      },
+      {
+        "key": "theme",
+        "label": "Theme",
+        "type": "select",
+        "options": [
+          {
+            "value": "default",
+            "label": "Default"
+          },
+          {
+            "value": "dark",
+            "label": "Dark"
+          },
+          {
+            "value": "radical",
+            "label": "Radical"
+          },
+          {
+            "value": "merko",
+            "label": "Merko"
+          }
+        ]
+      },
+      {
+        "key": "hide",
+        "label": "Hide",
+        "type": "checkbox-group",
+        "options": [
+          {
+            "value": "issues",
+            "label": "Issues"
+          },
+          {
+            "value": "prs",
+            "label": "Pull Requests"
+          },
+          {
+            "value": "contrib",
+            "label": "Contributions"
+          }
+        ]
+      }
+    ]
+  }
+}

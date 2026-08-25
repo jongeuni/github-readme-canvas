@@ -71,7 +71,7 @@ Community components live one-per-file under `src/data/community-components/` �
 
 Most new badges/icons/links are this, not a new Component — see the rule above.
 
-- **If the Component is a `.json` file** (true for the vast majority, including all the built-in badges — `lang-badge.json`, `social-github.json`, etc.): open that file and add one entry to its `presets` array (create the array if it doesn't exist yet). Nothing else changes.
+- **If the Component is a `.json` file** (true for the vast majority, including all the built-in badges — `tech-lang-badge.json`, `social-github.json`, etc.): open that file and add one entry to its `presets` array (create the array if it doesn't exist yet). Nothing else changes.
 - **If the Component is a coded directory** (e.g. `tech-icon/`, because it needs UI a plain URL template can't express — a size slider, in that case): open that directory's `presets.ts` and add one entry to the relevant array. `component.ts` doesn't need to change.
 
 ## Adding a brand-new Component (needs code)

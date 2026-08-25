@@ -1,5 +1,5 @@
 {
-  "id": "decoration-markdown-box",
+  "id": "decoration-jongeuni-markdown-box",
   "type": "url-component",
   "name": "Markdown Box",
   "description": "A styled info box showing a title, author, and date. Not GitHub-specific.",
@@ -7,6 +7,9 @@
   "tags": [
     "✨ decoration"
   ],
+  "status": "active",
+  "author": "jongeuni",
+  "projectUrl": "https://github.com/jongeuni/markdown-box-generator",
   "defaultSettings": {
     "title": "Default_Title",
     "author": "Author",
