@@ -1112,28 +1112,67 @@ export function useCanvasEditor() {
     setSelectionToolbar({ top: rect.top - 42, left: rect.left + rect.width / 2 });
   }, []);
 
+  // A drag-selection's Range only ever has ONE startContainer/endContainer
+  // pair, but those can sit in two entirely different top-level line divs
+  // (dragging across several paragraphs) — Bold/Italic/Strike/Link/Center
+  // below all need to act on every line in between, not just wherever the
+  // Range happens to start or end. Returns the spanned lines in document
+  // order regardless of which direction the drag went.
+  const getSpannedTextLines = (range: Range): HTMLElement[] => {
+    const canvas = canvasRef.current;
+    if (!canvas) return [];
+    const walkToLine = (node: Node): HTMLElement | null => {
+      let el: Node | null = node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
+      while (el && (el as HTMLElement).parentElement !== canvas) el = (el as HTMLElement).parentElement;
+      return el && (el as HTMLElement).parentElement === canvas && !(el as HTMLElement).dataset.uid ? (el as HTMLElement) : null;
+    };
+    const startLine = walkToLine(range.startContainer);
+    const endLine = walkToLine(range.endContainer);
+    if (!startLine || !endLine) return [];
+    const children = Array.from(canvas.children) as HTMLElement[];
+    const startIdx = children.indexOf(startLine);
+    const endIdx = children.indexOf(endLine);
+    if (startIdx === -1 || endIdx === -1) return [];
+    const [lo, hi] = startIdx <= endIdx ? [startIdx, endIdx] : [endIdx, startIdx];
+    return children.slice(lo, hi + 1).filter((el) => !el.dataset.uid);
+  };
+
+  // The portion of a multi-line Range that falls within one specific
+  // spanned line — the original start/end where that line is actually the
+  // boundary container, the line's entire contents otherwise (a line fully
+  // between the drag's start and end line has none of its own boundary).
+  const rangeWithinLine = (range: Range, line: HTMLElement): Range => {
+    const r = document.createRange();
+    r.selectNodeContents(line);
+    if (line.contains(range.startContainer)) r.setStart(range.startContainer, range.startOffset);
+    if (line.contains(range.endContainer)) r.setEnd(range.endContainer, range.endOffset);
+    return r;
+  };
+
   // Wraps the current selection in <strong>/<em>/<del> via
   // Range.surroundContents (not document.execCommand — its output tag/markup
   // varies across browsers, and textWithSoftBreaks needs to know exactly
   // which tag to expect to round-trip it back into **bold**/*italic*/
-  // ~~strike~~ on export).
+  // ~~strike~~ on export). Applied per spanned line — surroundContents
+  // itself can only ever wrap content within a single parent, so a
+  // multi-line Range has to be split first (see getSpannedTextLines).
   const applyInlineFormat = useCallback(
     (tag: 'strong' | 'em' | 'del') => {
       const sel = window.getSelection();
       if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return;
       const range = sel.getRangeAt(0);
-      try {
-        const wrapper = document.createElement(tag);
-        range.surroundContents(wrapper);
-        const newRange = document.createRange();
-        newRange.selectNodeContents(wrapper);
-        sel.removeAllRanges();
-        sel.addRange(newRange);
-      } catch {
-        // The range straddles a partial element boundary (e.g. half-overlaps
-        // an existing <strong>/<em>) — surroundContents refuses rather than
-        // produce broken markup. Just skip; nothing was corrupted.
+      for (const line of getSpannedTextLines(range)) {
+        const lineRange = rangeWithinLine(range, line);
+        if (lineRange.collapsed) continue;
+        try {
+          lineRange.surroundContents(document.createElement(tag));
+        } catch {
+          // The range straddles a partial element boundary (e.g. half-overlaps
+          // an existing <strong>/<em>) — surroundContents refuses rather than
+          // produce broken markup. Just skip this line; nothing was corrupted.
+        }
       }
+      sel.removeAllRanges();
       setSelectionToolbar(null);
       const line = currentTextLine();
       if (line && selectedTextEl === line) bump();
@@ -1159,26 +1198,27 @@ export function useCanvasEditor() {
     setSelectionToolbar(null);
   }, []);
 
-  // Wraps the captured Range in <a href>, same surroundContents technique
-  // and export path as applyInlineFormat — textWithSoftBreaks already turns
-  // a real <a> back into [text](url) on export, no separate handling needed.
+  // Wraps the captured Range in <a href>, same per-line surroundContents
+  // technique and export path as applyInlineFormat — textWithSoftBreaks
+  // already turns a real <a> back into [text](url) on export, no separate
+  // handling needed.
   const applyLink = useCallback(
     (url: string) => {
       const range = pendingLinkRangeRef.current;
       const trimmedUrl = url.trim();
       if (range && trimmedUrl) {
-        try {
-          const wrapper = document.createElement('a');
-          wrapper.setAttribute('href', trimmedUrl);
-          range.surroundContents(wrapper);
-          const newRange = document.createRange();
-          newRange.selectNodeContents(wrapper);
-          const sel = window.getSelection();
-          sel?.removeAllRanges();
-          sel?.addRange(newRange);
-        } catch {
-          // Same partial-boundary case applyInlineFormat guards against.
+        for (const line of getSpannedTextLines(range)) {
+          const lineRange = rangeWithinLine(range, line);
+          if (lineRange.collapsed) continue;
+          try {
+            const wrapper = document.createElement('a');
+            wrapper.setAttribute('href', trimmedUrl);
+            lineRange.surroundContents(wrapper);
+          } catch {
+            // Same partial-boundary case applyInlineFormat guards against.
+          }
         }
+        window.getSelection()?.removeAllRanges();
       }
       pendingLinkRangeRef.current = null;
       setLinkInputOpen(false);
@@ -1196,13 +1236,22 @@ export function useCanvasEditor() {
   // the Settings panel's AlignField (see setSelectedTextAlign), so opening
   // Settings afterward shows "Center" active too; a non-alignable line style
   // (Quote/List/Task) just doesn't affect export, same as via Settings.
+  // Applies to every line the drag-selection spans (see
+  // getSpannedTextLines), toggled as one group off the FIRST line's current
+  // state — same "act on the whole run" convention updateSelectedWidgetAlign
+  // already uses for a row of inline widgets.
   const toggleSelectionCenterAlign = useCallback(() => {
-    const line = currentTextLine();
-    if (!line) return;
-    if (line.dataset.align === 'center') delete line.dataset.align;
-    else line.dataset.align = 'center';
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0) return;
+    const lines = getSpannedTextLines(sel.getRangeAt(0));
+    if (lines.length === 0) return;
+    const shouldCenter = lines[0].dataset.align !== 'center';
+    for (const line of lines) {
+      if (shouldCenter) line.dataset.align = 'center';
+      else delete line.dataset.align;
+    }
     setSelectionToolbar(null);
-    if (selectedTextEl === line) bump();
+    if (selectedTextEl && lines.includes(selectedTextEl)) bump();
     pushHistorySnapshot();
   }, [selectedTextEl, pushHistorySnapshot]);
 
