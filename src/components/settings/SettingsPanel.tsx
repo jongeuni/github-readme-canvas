@@ -5,6 +5,7 @@ import { getComponentType, LIBRARY_MAP, PRESET_PARENT_MAP } from '../../registry
 import { Icon } from '../Icon';
 import { AlignField, SelectField, TextField } from './fields';
 import { kaomojiPresets } from '../../data/community-components/text-art/presets';
+import { generateTocSource } from '../widgets/toc/generateToc';
 
 /** Align is only offered for these text-line styles — Quote/List/Task markdown
  *  prefixes (`>`/`-`/`1.`) don't combine cleanly with an HTML align wrapper,
@@ -22,6 +23,7 @@ const TYPE_LABELS: Record<string, string> = {
   divider: 'Divider',
   'code-block': 'Code Block',
   table: 'Table',
+  toc: 'Table of Contents',
 };
 
 /**
@@ -34,6 +36,7 @@ const TYPE_LABELS: Record<string, string> = {
  */
 export function SettingsPanel({ editor }: { editor: UseCanvasEditor }) {
   const {
+    canvasRef,
     selectedTextEl,
     selectedUid,
     getSelectedWidget,
@@ -140,6 +143,19 @@ export function SettingsPanel({ editor }: { editor: UseCanvasEditor }) {
             }}
             options={presetGroup.presets.map((p) => ({ value: p.id, label: p.name }))}
           />
+        )}
+        {widget.type === 'toc' && (
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm"
+            style={{ marginBottom: 12 }}
+            onClick={() => {
+              const canvas = canvasRef.current;
+              if (canvas) updateSelectedWidgetSettings({ source: generateTocSource(canvas) });
+            }}
+          >
+            Regenerate from headings
+          </button>
         )}
         {createElement(def.SettingsForm, { settings: widget.settings, meta: widget.meta, onChange: updateSelectedWidgetSettings })}
         <AlignField value={widget.align ?? 'left'} onChange={updateSelectedWidgetAlign} />
