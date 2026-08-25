@@ -776,6 +776,21 @@ pre {
 .canvas-paper > [data-align='right']:not([data-uid]) {
   text-align: right;
 }
+/* A block-layout widget (Image/GIF, Table, Code Block, TOC, ...) has no
+   siblings sharing its line, unlike inline ones — see the badge-only
+   comment above — so centering it is just flexing its own full-width
+   container. Harmless no-op for inline widgets too: their `inline-flex`
+   is set as an inline style (wins over this `display: flex`), and their
+   shrink-to-fit width makes `justify-content` invisible either way, so
+   this doesn't need to exclude them. */
+.block[data-align='center'] {
+  display: flex;
+  justify-content: center;
+}
+.block[data-align='right'] {
+  display: flex;
+  justify-content: flex-end;
+}
 @keyframes flashIn {
   0% {
     background: var(--accent-bg);
