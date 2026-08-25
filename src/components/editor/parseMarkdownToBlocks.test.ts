@@ -273,7 +273,7 @@ describe('parseMarkdownToBlocks', () => {
       expect(widget(blocks[1]).align).toBe('center');
     });
 
-    it('does not let the new <h>/<p> align cases interfere with an unrelated raw-html <div>', () => {
+    it('does not let the aligned <div> case interfere with an unrelated raw-html <div> with no blank line after its opening tag', () => {
       const md = ['<div align="center">', '<img src="https://example.com/a.png">', '</div>'].join('\n');
       const blocks = parseMarkdownToBlocks(md);
       expect(blocks).toHaveLength(1);
@@ -285,11 +285,18 @@ describe('parseMarkdownToBlocks', () => {
       const md = [
         '<h1 align="center">Welcome</h1>',
         '',
-        '<p align="center">![C++](https://img.shields.io/badge/c%2B%2B-blue) ![Python](https://img.shields.io/badge/python-green)</p>',
+        // Joined with a single '\n' as one array element — the outer
+        // '\n\n' join only needs to add the ONE blank-line gap before and
+        // after this whole chunk; its own internal opener/blank/content/
+        // blank/closer shape must stay exactly one blank line each, or the
+        // "clean shape" align-wrapper detection below won't recognize it.
+        ['<div align="center">', '', '![C++](https://img.shields.io/badge/c%2B%2B-blue) ![Python](https://img.shields.io/badge/python-green)', '', '</div>'].join('\n'),
         '',
-        '<div align="center">',
-        '<img src="https://example.com/a.png">',
-        '</div>',
+        // Joined with a single '\n', unlike the rest of this array — no
+        // blank line after the opening tag, same shape the other
+        // "unrelated raw div" test above uses, so this one stays raw-html
+        // even sitting right next to two real align wrappers.
+        ['<div align="center">', '<img src="https://example.com/a.png">', '</div>'].join('\n'),
         '',
         'Some text here.',
       ].join('\n\n');

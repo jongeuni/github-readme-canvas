@@ -320,12 +320,23 @@ function textWithSoftBreaks(node: Node): string {
 // this: the opening tag becomes a one-line HTML block that ends the moment
 // the blank line after it is hit, the content is an ordinary paragraph (or
 // widget row) that gets full markdown treatment, and the closing tag is its
-// own trailing HTML block. `<p>`, not `<div>` — `<div align="...">` is
-// reserved for the user's OWN raw HTML (see parseMarkdownToBlocks' raw-html
-// tests), which must keep round-tripping untouched.
+// own trailing HTML block.
+//
+// `<div>`, not `<p>` — a second, more fundamental problem than the
+// same-line one above: GFM wraps a plain paragraph or a standalone image in
+// its OWN `<p>` tag, and HTML flatly disallows a `<p>` inside a `<p>` — the
+// browser auto-closes the OUTER one the instant it meets the inner one, so
+// `<p align="center">` around a paragraph/image ends up empty (immediately
+// self-closed) with the real content landing as an unaligned sibling right
+// after it (confirmed against real GitHub rendering — this is why some
+// centered blocks worked, like a heading's own `<h# align>`, while others
+// silently didn't). `<div>` has no such conflict. It's ALSO what the user's
+// own hand-written raw HTML uses for the same purpose, so the parser only
+// ever treats a `<div align>` as one of these if its shape is unambiguous —
+// see parseMarkdownToBlocks' own comment on that branch.
 function wrapAlign(align: 'left' | 'center' | 'right' | undefined, content: string): string {
   if (!align || align === 'left') return content;
-  return `<p align="${align}">\n\n${content}\n\n</p>`;
+  return `<div align="${align}">\n\n${content}\n\n</div>`;
 }
 
 // ---------- bulk markdown paste → blocks ----------
@@ -396,14 +407,51 @@ export function parseMarkdownToBlocks(text: string): SerializedBlock[] {
     }
 
     // buildFullMarkdown's own align-wrapper convention (see wrapAlign) is
-    // `<p align>` / `<h# align>` — deliberately NOT `<div align>`, which is
-    // reserved for the user's own raw HTML (see the "does not let the new
-    // <h>/<p> align cases interfere with an unrelated raw-html <div>" test)
-    // and must keep round-tripping through the generic HTML-block detector
-    // below, untouched, verbatim. Special-cased ahead of that detector:
-    // otherwise a round-tripped aligned heading/paragraph/widget would get
-    // swallowed whole into an opaque raw-html block instead of being
-    // restored as the real block it was.
+    // `<div align>` for everything except headings (`<h# align>`, below) —
+    // `<p align>` turned out to be unsafe as a wrapper (see wrapAlign's own
+    // comment for why) and `<div align>` is also what the user's own
+    // hand-written raw HTML uses for the exact same purpose, so this can't
+    // just be special-cased unconditionally the way `<p>`/`<h#>` are: an
+    // arbitrary raw div must still round-trip verbatim through the generic
+    // HTML-block detector below (see the raw-html tests). Only committed to
+    // as OUR wrapper when the shape is unambiguous — opening tag alone on
+    // its line, one blank line, ONE contiguous run of content with no
+    // blank line inside it, one blank line, closing tag alone on its line
+    // — which is exactly what wrapAlign itself always produces and not
+    // something a hand-written raw div reasonably looks like. Anything
+    // else (no blank line after the opening tag, multiple content blocks
+    // separated by their own blank lines, ...) falls through untouched.
+    const alignedDivOpenMatch = /^<div align="(left|center|right)">$/.exec(trimmed);
+    if (alignedDivOpenMatch && lines[i + 1]?.trim() === '') {
+      const align = alignedDivOpenMatch[1] as 'left' | 'center' | 'right';
+      let j = i + 2;
+      const contentLines: string[] = [];
+      while (j < lines.length && lines[j].trim() !== '' && lines[j].trim() !== '</div>') {
+        contentLines.push(lines[j]);
+        j++;
+      }
+      const cleanShape = contentLines.length > 0 && lines[j]?.trim() === '' && lines[j + 1]?.trim() === '</div>';
+      if (cleanShape) {
+        // Recurse rather than duplicate classification logic — whatever
+        // the wrapper held (a paragraph, a badge row, a widget, a heading)
+        // gets reconstructed by the very same branches below, then align
+        // is layered on top.
+        const innerBlocks = parseMarkdownToBlocks(contentLines.join('\n').trim());
+        blocks.push(...(align === 'left' ? innerBlocks : innerBlocks.map((b) => ({ ...b, align }))));
+        i = j + 2; // past the blank line and the closing </div> line
+        continue;
+      }
+      // Not our shape — leave `i` untouched and fall through to the
+      // generic HTML-block detector below, same as any other raw div.
+    }
+
+    // `<h# align>` is safe as a single-line wrapper the way `<p>` wasn't —
+    // heading content becomes a real `<h#>` element, never a nested `<p>`,
+    // so there's no HTML auto-closing conflict to blank-line-separate
+    // around. Special-cased ahead of the generic HTML-block detector below:
+    // otherwise a round-tripped aligned heading would get swallowed whole
+    // into an opaque raw-html block instead of being restored as the real
+    // block it was.
     const alignedHeadingMatch = /^<h([1-6]) align="(left|center|right)">(.*)<\/h\1>$/.exec(trimmed);
     if (alignedHeadingMatch) {
       const [, level, align, innerText] = alignedHeadingMatch;
