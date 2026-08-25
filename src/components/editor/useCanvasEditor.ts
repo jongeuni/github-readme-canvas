@@ -142,7 +142,7 @@ function htmlTagDepthDelta(line: string, tagName: string): number {
   return delta;
 }
 
-export type TextLineStyle = 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'quote' | 'ul' | 'ol' | 'task' | 'text';
+export type TextLineStyle = 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'quote' | 'ul' | 'ol' | 'task' | 'text' | 'kaomoji';
 
 const STYLE_CLASS: Record<TextLineStyle, string> = {
   h1: 'md-h1',
@@ -156,6 +156,13 @@ const STYLE_CLASS: Record<TextLineStyle, string> = {
   ol: 'md-ol-item',
   task: 'md-task',
   text: 'md-text',
+  // A plain text line in every way that matters (export, editing, Enter/
+  // Backspace, Style-switchable) — not in LINE_PREFIX/HEADING_LEVEL below,
+  // so buildFullMarkdown exports it exactly like 'text'. Kaomoji stays its
+  // own recognizable Style choice (with its own glyph picker in
+  // SettingsPanel) purely so the user can tell "this is a kaomoji" apart
+  // from a plain paragraph, without it being a separate tracked widget.
+  kaomoji: 'md-kaomoji',
 };
 
 /** Every class handleInput's live-conversion can assign to a top-level line
@@ -175,6 +182,7 @@ export const TEXT_LINE_STYLE_OPTIONS: { value: TextLineStyle; label: string }[] 
   { value: 'ol', label: 'Numbered List' },
   { value: 'task', label: 'To-do List' },
   { value: 'text', label: 'Paragraph' },
+  { value: 'kaomoji', label: 'Kaomoji' },
 ];
 
 export function textLineStyle(el: HTMLElement): TextLineStyle {
@@ -1528,18 +1536,46 @@ export function useCanvasEditor() {
       const canvas = canvasRef.current;
       if (!canvas) return;
       const anchor = getInsertionAnchor();
+      // Nothing selected falls back to canvas.appendChild, i.e. right after
+      // whatever the canvas's current last child is — so THAT'S the line
+      // insertion is effectively anchored to, for cleanup purposes, even
+      // though insert() below never explicitly touches it.
+      const effectiveAnchor = anchor ?? (canvas.lastElementChild as HTMLElement | null);
       const insert = (node: HTMLElement) => (anchor ? anchor.insertAdjacentElement('afterend', node) : canvas.appendChild(node));
+      // Inserting right after an empty placeholder line should replace it,
+      // not leave it sitting above the new content — same cleanup
+      // insertParsedBlocks already does for paste. For a widget specifically,
+      // a stray near-zero-height empty line right next to a draggable one
+      // also throws off drag/drop's before/after math.
+      const removeEmptyAnchor = () => {
+        // textContent, not innerHTML.trim() — a line that went through a
+        // native "delete everything" often keeps a lone <br> for cursor
+        // visibility, which reads as non-empty innerHTML but is still an
+        // empty line in every way that matters here.
+        if (effectiveAnchor && !effectiveAnchor.dataset.uid && (effectiveAnchor.textContent ?? '') === '') {
+          effectiveAnchor.remove();
+        }
+      };
 
-      if (lib.type === 'heading') {
+      const isKaomoji = lib.type === 'text-art' && (lib.meta as { family?: string } | undefined)?.family === 'kaomoji';
+      if (lib.type === 'heading' || isKaomoji) {
         // Inserted as plain free text, not a tracked widget — becomes exactly
-        // the same kind of editable line as anything typed by hand.
-        const level = (lib.defaultSettings as { level: HeadingLevel }).level;
-        const cls = level === 'h1' ? 'md-h1' : level === 'h2' ? 'md-h2' : 'md-text';
+        // the same kind of editable line as anything typed by hand. Kaomoji
+        // is still its own Library type/card AND its own Style choice (see
+        // TextLineStyle/STYLE_CLASS above, and SettingsPanel's glyph picker)
+        // — only *placement* mirrors Heading's, since the user wants to keep
+        // freely editing/re-styling it as text afterward (turn it into a
+        // heading, add more text around it, ...), same as anything else
+        // they'd typed. Decorative Line stays a widget — no such "keep
+        // typing around it" use case.
+        const level = lib.type === 'heading' ? (lib.defaultSettings as { level: HeadingLevel }).level : undefined;
+        const cls = isKaomoji ? 'md-kaomoji' : level === 'h1' ? 'md-h1' : level === 'h2' ? 'md-h2' : 'md-text';
         const div = document.createElement('div');
         div.className = cls;
         div.textContent = (lib.defaultSettings as { text: string }).text;
         if (cls !== 'md-text') div.dataset.keepClass = '1'; // exempt from the observer's downgrade
         insert(div);
+        removeEmptyAnchor();
         div.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         placeCaretAtEnd(div);
         selectTextBlock(div);
@@ -1550,6 +1586,7 @@ export function useCanvasEditor() {
       const instance = mkInstanceFromEntry(lib);
       const el = widgetHTMLContainer(instance);
       insert(el);
+      removeEmptyAnchor();
       const root = createRoot(el);
       const record: WidgetRecord = { instance, el, root };
       widgetsRef.current.set(instance.uid, record);

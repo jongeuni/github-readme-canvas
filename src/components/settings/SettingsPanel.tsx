@@ -4,11 +4,12 @@ import { TEXT_LINE_STYLE_OPTIONS, textLineStyle, textLineStyleLabel } from '../e
 import { getComponentType, LIBRARY_MAP, PRESET_PARENT_MAP } from '../../registry';
 import { Icon } from '../Icon';
 import { AlignField, SelectField, TextField } from './fields';
+import { kaomojiPresets } from '../../data/community-components/text-art/presets';
 
 /** Align is only offered for these text-line styles — Quote/List/Task markdown
  *  prefixes (`>`/`-`/`1.`) don't combine cleanly with an HTML align wrapper,
  *  and centering a bullet list isn't a real use case. See buildFullMarkdown. */
-const ALIGNABLE_TEXT_STYLES = new Set(['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'text']);
+const ALIGNABLE_TEXT_STYLES = new Set(['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'text', 'kaomoji']);
 
 /** Types with their own bespoke rendering code get a fixed label. Anything
  *  else (every 'url-component' entry — badges, stats, social links, ...)
@@ -57,6 +58,18 @@ export function SettingsPanel({ editor }: { editor: UseCanvasEditor }) {
         <form onSubmit={(e) => e.preventDefault()}>
           <TextField label="Text" value={selectedTextEl.textContent ?? ''} onChange={setSelectedTextValue} />
           <SelectField label="Style" value={style} onChange={setSelectedTextLevel} options={TEXT_LINE_STYLE_OPTIONS} />
+          {style === 'kaomoji' && (
+            // Picking a look, not reading a label — same as the Library
+            // card's own picker (see text-art/SettingsForm.tsx). Just
+            // writes into the line's text directly, same as the Text field
+            // above — there's no separate widget settings object here.
+            <SelectField
+              label="Kaomoji"
+              value={selectedTextEl.textContent ?? ''}
+              onChange={setSelectedTextValue}
+              options={kaomojiPresets.map((p) => ({ value: p.settings!.text!, label: p.settings!.text! }))}
+            />
+          )}
           {ALIGNABLE_TEXT_STYLES.has(style) && (
             <AlignField value={(selectedTextEl.dataset.align as 'left' | 'center' | 'right') ?? 'left'} onChange={setSelectedTextAlign} />
           )}
