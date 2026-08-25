@@ -2,7 +2,7 @@ import type { SettingsFormProps } from '../../../types/component';
 import type { UrlComponentMeta } from '../../../types/urlComponent';
 import { fillUrlTemplate } from '../../../types/urlComponent';
 import type { UrlComponentSettings } from './types';
-import { CheckboxRow, ReadOnlyField, SelectField, TextField, UrlField } from '../../settings/fields';
+import { CheckboxRow, ReadOnlyField, SearchableSelectField, SelectField, TextField, UrlField } from '../../settings/fields';
 
 function toggleInList(list: string, value: string, checked: boolean): string {
   const values = list ? list.split(',') : [];
@@ -26,6 +26,18 @@ export function UrlComponentSettingsForm({ settings, meta, onChange }: SettingsF
               value={settings[f.key] ?? ''}
               onChange={(v) => onChange({ [f.key]: v })}
               options={(f.options ?? []).map((o) => ({ value: o.value, label: o.label }))}
+            />
+          );
+        }
+        if (f.type === 'combo') {
+          return (
+            <SearchableSelectField
+              key={f.key}
+              label={f.label}
+              value={settings[f.key] ?? ''}
+              onChange={(v) => onChange({ [f.key]: v })}
+              options={(f.options ?? []).map((o) => ({ value: o.value, label: o.label }))}
+              allowCustom
             />
           );
         }

@@ -1,0 +1,111 @@
+{
+  "id": "social-badge",
+  "type": "url-component",
+  "name": "Social Badge",
+  "description": "A profile-link badge for a social/blogging platform. Pick a platform, enter your username — the badge and profile link are generated automatically.",
+  "category": "🌐 social",
+  "tags": [
+    "🌐 social",
+    "Badge",
+    "Link"
+  ],
+  "status": "active",
+  "author": "",
+  "projectUrl": "https://shields.io",
+  "defaultSettings": {
+    "label": "GitHub",
+    "username": "alex123"
+  },
+  "meta": {
+    "urlTemplate": "https://img.shields.io/badge/{label}-18181b?logo=github&logoColor=white",
+    "linkTemplate": "https://github.com/{username}",
+    "linkable": false,
+    "fields": [
+      {
+        "key": "label",
+        "label": "Label",
+        "type": "text"
+      },
+      {
+        "key": "username",
+        "label": "Username",
+        "type": "text"
+      }
+    ]
+  },
+  "presetsLabel": "platforms",
+  "presets": [
+    {
+      "id": "social-github",
+      "name": "GitHub",
+      "settings": {
+        "label": "GitHub",
+        "username": "alex123"
+      },
+      "meta": {
+        "urlTemplate": "https://img.shields.io/badge/{label}-18181b?logo=github&logoColor=white",
+        "linkTemplate": "https://github.com/{username}"
+      }
+    },
+    {
+      "id": "social-linkedin",
+      "name": "LinkedIn",
+      "settings": {
+        "label": "LinkedIn",
+        "username": "alex123"
+      },
+      "meta": {
+        "urlTemplate": "https://img.shields.io/badge/{label}-0a66c2?logo=linkedin&logoColor=white",
+        "linkTemplate": "https://linkedin.com/in/{username}"
+      }
+    },
+    {
+      "id": "social-twitter",
+      "name": "X (Twitter)",
+      "settings": {
+        "label": "X",
+        "username": "alex123"
+      },
+      "meta": {
+        "urlTemplate": "https://img.shields.io/badge/{label}-18181b?logo=twitter&logoColor=white",
+        "linkTemplate": "https://x.com/{username}"
+      }
+    },
+    {
+      "id": "social-medium",
+      "name": "Medium",
+      "settings": {
+        "label": "Medium",
+        "username": "alex123"
+      },
+      "meta": {
+        "urlTemplate": "https://img.shields.io/badge/{label}-12100E?style=flat&logo=medium&logoColor=white",
+        "linkTemplate": "https://medium.com/@{username}"
+      }
+    },
+    {
+      "id": "social-devto",
+      "name": "Dev.to",
+      "settings": {
+        "label": "Dev.to",
+        "username": "alex123"
+      },
+      "meta": {
+        "urlTemplate": "https://img.shields.io/badge/{label}-0A0A0A?style=flat&logo=devdotto&logoColor=white",
+        "linkTemplate": "https://dev.to/{username}"
+      }
+    },
+    {
+      "id": "social-buymeacoffee",
+      "name": "Buy Me a Coffee",
+      "settings": {
+        "label": "Buy Me a Coffee",
+        "username": "alex123"
+      },
+      "meta": {
+        "urlTemplate": "https://img.shields.io/badge/{label}-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black",
+        "linkTemplate": "https://buymeacoffee.com/{username}"
+      }
+    }
+  ]
+}

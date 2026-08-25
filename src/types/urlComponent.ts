@@ -1,4 +1,4 @@
-export type UrlFieldType = 'text' | 'color' | 'select' | 'number' | 'checkbox-group';
+export type UrlFieldType = 'text' | 'color' | 'select' | 'number' | 'checkbox-group' | 'combo';
 
 export interface UrlFieldOption {
   value: string;
@@ -8,15 +8,20 @@ export interface UrlFieldOption {
 }
 
 export interface UrlFieldDef {
-  /** Must match a `{key}` placeholder in the owning component's urlTemplate. */
+  /** Must match a `{key}` placeholder (or `{-key}`, see fillUrlTemplate) in
+   *  the owning component's urlTemplate. */
   key: string;
   label: string;
   type: UrlFieldType;
-  /** Required for 'color', 'select', and 'checkbox-group' types — for
-   *  'checkbox-group' each option is one checkbox, and the field's stored
-   *  value is the comma-joined list of checked option values (e.g.
+  /** Required for 'color', 'select', 'combo', and 'checkbox-group' types —
+   *  for 'checkbox-group' each option is one checkbox, and the field's
+   *  stored value is the comma-joined list of checked option values (e.g.
    *  "issues,prs"), ready to substitute straight into a `{key}` — the
-   *  target API/service must accept a comma-separated list at that param. */
+   *  target API/service must accept a comma-separated list at that param.
+   *  'combo' renders a searchable dropdown of these options that ALSO
+   *  accepts any typed value not in the list (see SearchableSelectField) —
+   *  for fields with a handful of common picks but no fixed universe (badge
+   *  color name/hex, shields logo slug). */
   options?: UrlFieldOption[];
   /** 'number' only — rendered as a range slider. */
   min?: number;
@@ -46,8 +51,23 @@ export interface UrlComponentMeta {
   [key: string]: unknown;
 }
 
+/**
+ * `{key}` substitutes the field's value directly (empty string if unset).
+ * `{-key}` is an OPTIONAL dash-prefixed segment — shields.io's static badge
+ * path is `<LABEL>-<MESSAGE>-<COLOR>` when a message is given, or the
+ * shorter `<LABEL>-<COLOR>` when it isn't (a genuinely different 2-segment
+ * badge shape, not just a blank middle segment). Writing a template as
+ * `{label}{-message}-{color}` collapses to the right shape either way: the
+ * field itself stores a clean value ("Passing", no leading dash) and this
+ * marker supplies the dash only when there's something to attach it to.
+ */
 export function fillUrlTemplate(template: string, values: Record<string, string>): string {
-  return template.replace(/\{(\w+)\}/g, (_, key: string) => encodeURIComponent(values[key] ?? ''));
+  return template
+    .replace(/\{-(\w+)\}/g, (_, key: string) => {
+      const v = values[key];
+      return v ? `-${encodeURIComponent(v)}` : '';
+    })
+    .replace(/\{(\w+)\}/g, (_, key: string) => encodeURIComponent(values[key] ?? ''));
 }
 
 /** `{label}`, `{color}`, ... in order of first appearance — used to auto-detect fields from a pasted URL template. */

@@ -9,28 +9,38 @@
     "Badge",
     "GitHub Only"
   ],
+  "status": "active",
+  "author": "",
+  "projectUrl": "https://shields.io",
   "defaultSettings": {
     "owner": "octocat",
     "repo": "Hello-World",
-    "workflow": "ci.yml"
+    "workflow": "ci.yml",
+    "branch": ""
   },
   "meta": {
-    "urlTemplate": "https://img.shields.io/github/actions/workflow/status/{owner}/{repo}/{workflow}?style=flat",
+    "urlTemplate": "https://img.shields.io/github/actions/workflow/status/{owner}/{repo}/{workflow}?branch={branch}&style=flat",
+    "linkTemplate": "https://github.com/{owner}/{repo}/actions",
     "linkable": false,
     "fields": [
       {
         "key": "owner",
-        "label": "Repo Owner",
+        "label": "Repository Owner",
         "type": "text"
       },
       {
         "key": "repo",
-        "label": "Repo Name",
+        "label": "Repository Name",
         "type": "text"
       },
       {
         "key": "workflow",
         "label": "Workflow File (e.g. ci.yml)",
+        "type": "text"
+      },
+      {
+        "key": "branch",
+        "label": "Branch (optional — default branch if empty)",
         "type": "text"
       }
     ]

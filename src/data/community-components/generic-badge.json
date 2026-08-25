@@ -1,0 +1,96 @@
+{
+  "id": "generic-badge",
+  "type": "url-component",
+  "name": "Custom Badge",
+  "description": "Build any badge from scratch — label, message, color, logo. Use this when a specific service isn't already covered by its own component.",
+  "category": "🎨 custom",
+  "tags": [
+    "🎨 custom",
+    "Badge"
+  ],
+  "status": "active",
+  "author": "",
+  "projectUrl": "https://shields.io",
+  "defaultSettings": {
+    "label": "Build",
+    "message": "Passing",
+    "color": "green",
+    "style": "flat",
+    "logo": "",
+    "logoColor": "",
+    "link": ""
+  },
+  "meta": {
+    "urlTemplate": "https://img.shields.io/badge/{label}{-message}-{color}?style={style}&logo={logo}&logoColor={logoColor}",
+    "linkable": true,
+    "fields": [
+      {
+        "key": "label",
+        "label": "Label",
+        "type": "text"
+      },
+      {
+        "key": "message",
+        "label": "Message (optional — leave empty for a one-part badge)",
+        "type": "text"
+      },
+      {
+        "key": "color",
+        "label": "Color (pick one, or type your own name/hex)",
+        "type": "combo",
+        "options": [
+          { "value": "blue", "label": "blue" },
+          { "value": "green", "label": "green" },
+          { "value": "red", "label": "red" },
+          { "value": "orange", "label": "orange" },
+          { "value": "purple", "label": "purple" },
+          { "value": "black", "label": "black" },
+          { "value": "gray", "label": "gray" }
+        ]
+      },
+      {
+        "key": "style",
+        "label": "Style",
+        "type": "select",
+        "options": [
+          { "value": "flat", "label": "Flat" },
+          { "value": "flat-square", "label": "Flat Square" },
+          { "value": "for-the-badge", "label": "For The Badge" },
+          { "value": "plastic", "label": "Plastic" }
+        ]
+      },
+      {
+        "key": "logo",
+        "label": "Logo (pick one, or type any simple-icons name)",
+        "type": "combo",
+        "options": [
+          { "value": "github", "label": "github" },
+          { "value": "gitlab", "label": "gitlab" },
+          { "value": "docker", "label": "docker" },
+          { "value": "kubernetes", "label": "kubernetes" },
+          { "value": "python", "label": "python" },
+          { "value": "javascript", "label": "javascript" },
+          { "value": "typescript", "label": "typescript" },
+          { "value": "react", "label": "react" },
+          { "value": "nodedotjs", "label": "nodedotjs" },
+          { "value": "npm", "label": "npm" },
+          { "value": "discord", "label": "discord" },
+          { "value": "youtube", "label": "youtube" },
+          { "value": "x", "label": "x" },
+          { "value": "linkedin", "label": "linkedin" },
+          { "value": "gmail", "label": "gmail" },
+          { "value": "firebase", "label": "firebase" },
+          { "value": "vercel", "label": "vercel" },
+          { "value": "amazonaws", "label": "amazonaws" },
+          { "value": "postgresql", "label": "postgresql" },
+          { "value": "mongodb", "label": "mongodb" }
+        ]
+      },
+      {
+        "key": "logoColor",
+        "label": "Logo Color (hex or name, optional)",
+        "type": "text"
+      }
+    ]
+  }
+}

@@ -1,0 +1,94 @@
+{
+  "id": "github-repo-badge",
+  "type": "url-component",
+  "name": "GitHub Repository Badge",
+  "description": "A live status badge for a GitHub repository. Pick a metric, enter the repo owner/name — the badge and repo link are generated automatically.",
+  "category": "📊 status",
+  "tags": [
+    "📊 status",
+    "Badge",
+    "GitHub Only"
+  ],
+  "status": "active",
+  "author": "",
+  "projectUrl": "https://shields.io",
+  "defaultSettings": {
+    "owner": "octocat",
+    "repo": "Hello-World"
+  },
+  "meta": {
+    "urlTemplate": "https://img.shields.io/github/stars/{owner}/{repo}?style=social",
+    "linkTemplate": "https://github.com/{owner}/{repo}",
+    "linkable": false,
+    "fields": [
+      {
+        "key": "owner",
+        "label": "Repository Owner",
+        "type": "text"
+      },
+      {
+        "key": "repo",
+        "label": "Repository Name",
+        "type": "text"
+      }
+    ]
+  },
+  "presetsLabel": "metrics",
+  "presets": [
+    {
+      "id": "status-github-stars",
+      "name": "Stars",
+      "settings": {
+        "owner": "octocat",
+        "repo": "Hello-World"
+      },
+      "meta": {
+        "urlTemplate": "https://img.shields.io/github/stars/{owner}/{repo}?style=social"
+      }
+    },
+    {
+      "id": "status-github-forks",
+      "name": "Forks",
+      "settings": {
+        "owner": "octocat",
+        "repo": "Hello-World"
+      },
+      "meta": {
+        "urlTemplate": "https://img.shields.io/github/forks/{owner}/{repo}?style=social"
+      }
+    },
+    {
+      "id": "status-github-issues",
+      "name": "Open Issues",
+      "settings": {
+        "owner": "octocat",
+        "repo": "Hello-World"
+      },
+      "meta": {
+        "urlTemplate": "https://img.shields.io/github/issues/{owner}/{repo}?style=flat"
+      }
+    },
+    {
+      "id": "status-github-license",
+      "name": "License",
+      "settings": {
+        "owner": "octocat",
+        "repo": "Hello-World"
+      },
+      "meta": {
+        "urlTemplate": "https://img.shields.io/github/license/{owner}/{repo}?style=flat"
+      }
+    },
+    {
+      "id": "status-github-last-commit",
+      "name": "Last Commit",
+      "settings": {
+        "owner": "octocat",
+        "repo": "Hello-World"
+      },
+      "meta": {
+        "urlTemplate": "https://img.shields.io/github/last-commit/{owner}/{repo}?style=flat"
+      }
+    }
+  ]
+}
