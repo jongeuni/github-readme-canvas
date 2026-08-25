@@ -1167,6 +1167,47 @@ export function useCanvasEditor() {
     // Placed early so every branch below (heading/list/task/image/hr/code-
     // fence/table conversions, plain typing) is covered by one call.
     pushHistorySnapshotDebounced();
+    // Defensive: if every line was just deleted (select-all + delete, or
+    // backspacing the last one away), the canvas can end up with zero
+    // element children — contentEditable then drops whatever's typed next
+    // in as a bare text node directly under the canvas instead of inside a
+    // line div. currentTextLine()'s walk-up never finds a div in that case
+    // and bails upward past the canvas entirely, so none of the conversion
+    // rules below ever see it — this is what "markdown on the very first
+    // line doesn't get caught" turned out to be. Re-wrap before that walk.
+    const canvas = canvasRef.current;
+    if (canvas && canvas.children.length === 0) {
+      const div = document.createElement('div');
+      div.className = 'md-text';
+      // The conversion rules below may switch this div's class to a heading
+      // (etc.) *within this same call*, before the safety-net observer's
+      // queued microtask below gets a chance to run — without this flag it'd
+      // see a "brand-new" line already carrying a heading class and wrongly
+      // downgrade it right back, same as appendTextLine/insertParsedBlocks
+      // already guard against for the same reason.
+      div.dataset.keepClass = '1';
+      while (canvas.firstChild) div.appendChild(canvas.firstChild);
+      canvas.appendChild(div);
+      placeCaretAtEnd(div);
+    }
+    // Defensive, related case: deleting everything can instead leave exactly
+    // ONE child behind that keeps whatever heading/quote/list class it had
+    // (a native contentEditable quirk — the browser collapses the deletion
+    // onto one of the original elements instead of clearing the canvas
+    // outright). An empty line has no business staying styled as a heading;
+    // left alone, it sits there as a stale insertion anchor that pushes the
+    // next-inserted component to line 2 instead of line 1, and — since
+    // widgets are draggable — an adjacent near-zero-height empty line makes
+    // drag/drop's before-vs-after math flip on tiny mouse movement. Only for
+    // an actual delete (never for a fresh "# " conversion, which also
+    // legitimately produces an empty heading awaiting more typing).
+    if (canvas && canvas.children.length <= 1 && (e.nativeEvent as InputEvent).inputType?.startsWith('delete')) {
+      const only = canvas.children[0] as HTMLElement | undefined;
+      if (only && !only.dataset.uid && only.textContent === '' && only.className !== 'md-text') {
+        only.className = 'md-text';
+        delete only.dataset.keepClass;
+      }
+    }
     const el = currentTextLine();
     if (!el) return;
     if (!CUSTOM_LINE_CLASSES.concat('md-text').some((cls) => el.classList.contains(cls))) {
