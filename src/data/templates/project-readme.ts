@@ -1,5 +1,5 @@
 import type { Template } from '../../types/document';
-import { BADGE_META, CAPSULE_FOOTER_META } from './meta';
+import { BADGE_META, CAPSULE_FOOTER_META, MADE_WITH_FOOTER } from './meta';
 
 /** An ad-hoc, non-editable-field badge — same shape parseMarkdownToBlocks
  *  reconstructs for a plain pasted badge: a fixed literal URL in
@@ -255,5 +255,8 @@ export const projectReadmeTemplate: Template = {
       meta: CAPSULE_FOOTER_META,
       align: 'center',
     },
+
+    // Freely removable — see MADE_WITH_FOOTER's own doc comment.
+    MADE_WITH_FOOTER,
   ],
 };

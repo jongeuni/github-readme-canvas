@@ -1,5 +1,5 @@
 import type { Template } from '../../types/document';
-import { BADGE_META } from './meta';
+import { BADGE_META, MADE_WITH_FOOTER } from './meta';
 
 /**
  * A frontend-developer profile README — bio, a "design → experience" flow
@@ -72,5 +72,8 @@ export const frontendDeveloperTemplate: Template = {
 
     { kind: 'widget', libId: 'dec-divider', type: 'divider', name: 'Divider', settings: { style: 'line' } },
     { kind: 'text', className: 'md-text', html: "🌼 Let's build something delightful.", align: 'center' },
+
+    // Freely removable — see MADE_WITH_FOOTER's own doc comment.
+    MADE_WITH_FOOTER,
   ],
 };

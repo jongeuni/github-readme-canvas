@@ -1,4 +1,5 @@
 import type { UrlComponentMeta } from '../../types/urlComponent';
+import type { SerializedTextBlock } from '../../types/document';
 
 /**
  * Shared `url-component` meta shapes reused across template files — kept in
@@ -128,4 +129,16 @@ export const CAPSULE_FOOTER_META: UrlComponentMeta = {
     { key: 'height', label: 'Height', type: 'number', min: 60, max: 300, step: 10 },
     { key: 'fontSize', label: 'Font Size', type: 'number', min: 12, max: 80, step: 2 },
   ],
+};
+
+/** A small "made with" attribution line, same idea as most site/README
+ *  builders' own default footer — just a plain text line like anything
+ *  else on the canvas, so it's exactly as removable as any other line
+ *  (click it, "Remove line"). Appended last in every template and the
+ *  initial seed content. */
+export const MADE_WITH_FOOTER: SerializedTextBlock = {
+  kind: 'text',
+  className: 'md-text',
+  html: 'Made with <a href="https://readme-canvas.com">Readme Canvas</a>',
+  align: 'center',
 };

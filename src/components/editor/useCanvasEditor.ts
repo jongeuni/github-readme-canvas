@@ -887,6 +887,10 @@ export function useCanvasEditor() {
     appendTextLine('md-h2', 'Connect with me');
     appendWidgetInstance(mkInstance('social-github'));
     appendWidgetInstance(mkInstance('social-linkedin'));
+    // Freely removable — click it, "Remove line" — same as MADE_WITH_FOOTER
+    // in the real templates (this initial seed doesn't share that file, so
+    // it's spelled out directly here instead).
+    appendTextLine('md-text', 'Made with <a href="https://readme-canvas.com">Readme Canvas</a>', 'center');
 
     ensureTrailingTextLine();
     const first = canvas.querySelector<HTMLElement>('[data-uid]');
