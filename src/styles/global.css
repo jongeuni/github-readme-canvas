@@ -818,6 +818,15 @@ pre {
   line-height: 1.6;
   margin: 0;
 }
+/* An inline `<img>` produced by typing `![alt](url)` mid-paragraph — see
+   convertInlineEmphasis. Caps oversized images to the text column's own
+   width and keeps them baseline-aligned with the surrounding text, same as
+   any other inline replaced element. */
+.inline-image {
+  max-width: 100%;
+  height: auto;
+  vertical-align: middle;
+}
 .md-h3 {
   font-size: 14px;
   font-weight: 700;

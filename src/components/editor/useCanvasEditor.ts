@@ -73,10 +73,17 @@ const BOLD_INLINE_RE = /\*\*([^*\n]+)\*\*$/;
 const ITALIC_INLINE_RE = /(?<!\*)\*([^*\n]+)\*$/;
 const STRIKE_INLINE_RE = /~~([^~\n]+)~~$/;
 const CODE_INLINE_RE = /`([^`\n]+)`$/;
-// (?<!!) excludes `![alt](url)` — that's the image syntax handled as a whole
-// line above; without the lookbehind this would misfire on the "[alt](url)"
-// tail of an inline image and turn it into a link instead.
+// (?<!!) excludes `![alt](url)` — that's IMAGE_INLINE_RE's own job (checked
+// first, see convertInlineEmphasis); without the lookbehind this would
+// misfire on the "[alt](url)" tail of an inline image and turn it into a
+// link instead.
 const LINK_INLINE_RE = /(?<!!)\[([^\]\n]+)\]\((\S+)\)$/;
+// Unlike IMAGE_LINE_RE above (a whole line, nothing else — becomes its own
+// block widget), this matches `![alt](url)` anywhere mid-paragraph, right
+// after other text — becomes a real inline <img> in the text flow instead,
+// same live-conversion idea as LINK_INLINE_RE. Alt may be empty (`![]()`),
+// unlike link text, since that's valid Markdown for an image.
+const IMAGE_INLINE_RE = /!\[([^\]\n]*)\]\((\S+)\)$/;
 
 /** A line consisting of just `---`, `***`, or `___` (3+) is a thematic break
  *  (GFM horizontal rule) — same live-conversion idea as the image-line rule
@@ -282,6 +289,7 @@ function textWithSoftBreaks(node: Node): string {
     else if (child.nodeName === 'DEL' || child.nodeName === 'S') out += `~~${inner}~~`;
     else if (child.nodeName === 'CODE') out += `\`${inner}\``;
     else if (child.nodeName === 'A') out += `[${inner}](${(child as HTMLAnchorElement).getAttribute('href') ?? ''})`;
+    else if (child.nodeName === 'IMG') out += `![${(child as HTMLImageElement).getAttribute('alt') ?? ''}](${(child as HTMLImageElement).getAttribute('src') ?? ''})`;
     else out += inner;
   });
   return out;
@@ -306,13 +314,15 @@ function escapeHtml(s: string): string {
 // alternation: a single left-to-right regex scan finds one non-overlapping
 // match per position, so there's no risk of a later pass re-matching text a
 // previous pass already substituted.
-const INLINE_EMPHASIS_RE = /\*\*([^*\n]+)\*\*|~~([^~\n]+)~~|`([^`\n]+)`|(?<!!)\[([^\]\n]+)\]\((\S+?)\)|(?<!\*)\*([^*\n]+)\*(?!\*)/g;
+const INLINE_EMPHASIS_RE =
+  /\*\*([^*\n]+)\*\*|~~([^~\n]+)~~|`([^`\n]+)`|!\[([^\]\n]*)\]\((\S+?)\)|(?<!!)\[([^\]\n]+)\]\((\S+?)\)|(?<!\*)\*([^*\n]+)\*(?!\*)/g;
 
 function applyInlineEmphasis(escaped: string): string {
-  return escaped.replace(INLINE_EMPHASIS_RE, (match, bold, strike, code, linkText, linkUrl, italic) => {
+  return escaped.replace(INLINE_EMPHASIS_RE, (match, bold, strike, code, imgAlt, imgUrl, linkText, linkUrl, italic) => {
     if (bold !== undefined) return `<strong>${bold}</strong>`;
     if (strike !== undefined) return `<del>${strike}</del>`;
     if (code !== undefined) return `<code>${code}</code>`;
+    if (imgUrl !== undefined) return `<img src="${imgUrl}" alt="${imgAlt}">`;
     if (linkText !== undefined) return `<a href="${linkUrl}">${linkText}</a>`;
     if (italic !== undefined) return `<em>${italic}</em>`;
     return match;
@@ -1014,9 +1024,10 @@ export function useCanvasEditor() {
     const boldMatch = BOLD_INLINE_RE.exec(prefix);
     const strikeMatch = !boldMatch && STRIKE_INLINE_RE.exec(prefix);
     const codeMatch = !boldMatch && !strikeMatch && CODE_INLINE_RE.exec(prefix);
-    const linkMatch = !boldMatch && !strikeMatch && !codeMatch && LINK_INLINE_RE.exec(prefix);
-    const italicMatch = !boldMatch && !strikeMatch && !codeMatch && !linkMatch && ITALIC_INLINE_RE.exec(prefix);
-    const match = boldMatch ?? strikeMatch ?? codeMatch ?? linkMatch ?? italicMatch;
+    const imageMatch = !boldMatch && !strikeMatch && !codeMatch && IMAGE_INLINE_RE.exec(prefix);
+    const linkMatch = !boldMatch && !strikeMatch && !codeMatch && !imageMatch && LINK_INLINE_RE.exec(prefix);
+    const italicMatch = !boldMatch && !strikeMatch && !codeMatch && !imageMatch && !linkMatch && ITALIC_INLINE_RE.exec(prefix);
+    const match = boldMatch ?? strikeMatch ?? codeMatch ?? imageMatch ?? linkMatch ?? italicMatch;
     if (!match) return false;
 
     const parent = node.parentNode;
@@ -1026,9 +1037,15 @@ export function useCanvasEditor() {
     const before = text.slice(0, matchStart);
     const after = text.slice(caretOffset);
 
-    const tag = boldMatch ? 'strong' : strikeMatch ? 'del' : codeMatch ? 'code' : linkMatch ? 'a' : 'em';
+    const tag = boldMatch ? 'strong' : strikeMatch ? 'del' : codeMatch ? 'code' : imageMatch ? 'img' : linkMatch ? 'a' : 'em';
     const wrapper = document.createElement(tag);
-    wrapper.textContent = match[1];
+    if (imageMatch) {
+      (wrapper as HTMLImageElement).src = imageMatch[2];
+      (wrapper as HTMLImageElement).alt = imageMatch[1];
+      wrapper.className = 'inline-image';
+    } else {
+      wrapper.textContent = match[1];
+    }
     if (linkMatch) (wrapper as HTMLAnchorElement).href = linkMatch[2];
 
     node.textContent = before;
