@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useOverlayDismiss } from '../../hooks/useOverlayDismiss';
 import {
   GitHubApiError,
   createBranch,
@@ -41,6 +42,7 @@ export function SubmitComponentPrModal({
 }) {
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
+  const overlayDismiss = useOverlayDismiss(onCancel);
 
   const submit = async () => {
     if (!token || !entry) return;
@@ -91,7 +93,7 @@ export function SubmitComponentPrModal({
   if (!open || !entry) return <div className="modal-overlay" />;
 
   return (
-    <div className="modal-overlay open" onClick={(e) => e.target === e.currentTarget && onCancel()}>
+    <div className="modal-overlay open" {...overlayDismiss}>
       <div className="modal-card">
         <h4>Submit PR to GitHub</h4>
         <p className="field-hint" style={{ marginTop: 0 }}>

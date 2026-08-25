@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { useOverlayDismiss } from '../../hooks/useOverlayDismiss';
 
 export function SaveAsModal({
   open,
@@ -12,6 +13,7 @@ export function SaveAsModal({
   const [name, setName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const overlayDismiss = useOverlayDismiss(onCancel);
 
   useEffect(() => {
     if (open) {
@@ -36,7 +38,7 @@ export function SaveAsModal({
   };
 
   return (
-    <div className={`modal-overlay ${open ? 'open' : ''}`} onClick={(e) => e.target === e.currentTarget && onCancel()}>
+    <div className={`modal-overlay ${open ? 'open' : ''}`} {...overlayDismiss}>
       {open && (
         <div className="modal-card">
           <h4>Save As</h4>

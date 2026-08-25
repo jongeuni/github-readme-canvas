@@ -9,6 +9,7 @@ import {
   type GitHubRepo,
 } from '../../lib/github';
 import { track } from '../../lib/analytics';
+import { useOverlayDismiss } from '../../hooks/useOverlayDismiss';
 
 type Result = { kind: 'success'; message: string; url: string } | { kind: 'conflict'; message: string } | { kind: 'error'; message: string };
 
@@ -39,6 +40,7 @@ export function CommitToGithubModal({
   const [message, setMessage] = useState('Update README via GitHub Readme Canvas');
   const [busy, setBusy] = useState<'branch' | 'direct' | null>(null);
   const [result, setResult] = useState<Result | null>(null);
+  const overlayDismiss = useOverlayDismiss(onCancel);
 
   useEffect(() => {
     if (!open || !token) return;
@@ -125,7 +127,7 @@ export function CommitToGithubModal({
   if (!open) return <div className="modal-overlay" />;
 
   return (
-    <div className="modal-overlay open" onClick={(e) => e.target === e.currentTarget && onCancel()}>
+    <div className="modal-overlay open" {...overlayDismiss}>
       <div className="modal-card wide">
         <h4>Commit to GitHub</h4>
 

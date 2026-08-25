@@ -4,6 +4,7 @@ import type { ComponentCategory } from '../../types/component';
 import type { LibraryEntry } from '../../types/library';
 import type { UrlFieldDef, UrlFieldOption, UrlFieldType } from '../../types/urlComponent';
 import { fillUrlTemplate, parseUrlInput } from '../../types/urlComponent';
+import { useOverlayDismiss } from '../../hooks/useOverlayDismiss';
 
 interface FieldDraft {
   key: string;
@@ -63,6 +64,8 @@ export function AddComponentModal({
     reset();
     onCancel();
   };
+
+  const overlayDismiss = useOverlayDismiss(handleCancel);
 
   const goToStep2 = () => {
     if (!name.trim()) {
@@ -145,7 +148,7 @@ export function AddComponentModal({
   if (!open) return <div className="modal-overlay" />;
 
   return (
-    <div className="modal-overlay open" onClick={(e) => e.target === e.currentTarget && handleCancel()}>
+    <div className="modal-overlay open" {...overlayDismiss}>
       <div className="modal-card wide">
         {step === 1 ? (
           <>

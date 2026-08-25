@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { Icon } from '../Icon';
+import { useOverlayDismiss } from '../../hooks/useOverlayDismiss';
 
 const NEW_TOKEN_URL = 'https://github.com/settings/tokens/new?scopes=repo&description=GitHub%20Readme%20Canvas';
 
@@ -20,6 +21,7 @@ export function ConnectGitHubModal({
 }) {
   const [token, setToken] = useState('');
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const overlayDismiss = useOverlayDismiss(onCancel);
 
   useEffect(() => {
     if (open) {
@@ -41,7 +43,7 @@ export function ConnectGitHubModal({
   if (!open) return <div className="modal-overlay" />;
 
   return (
-    <div className="modal-overlay open" onClick={(e) => e.target === e.currentTarget && onCancel()}>
+    <div className="modal-overlay open" {...overlayDismiss}>
       <div className="modal-card">
         <h4>Connect GitHub</h4>
         <div className="field">
