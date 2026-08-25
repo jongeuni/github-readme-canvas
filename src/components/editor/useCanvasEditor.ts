@@ -565,6 +565,23 @@ export function useCanvasEditor() {
     record.root.render(createElement(def.Preview, { settings: record.instance.settings, meta: record.instance.meta }));
   }, []);
 
+  // An inline-layout widget's container has no width of its own by default
+  // — it shrink-wraps to its content (see widgetHTMLContainer's own
+  // `display: inline-flex`). A percentage `settings.width` on the *image*
+  // alone can't shrink that container (it'd resolve against a size that
+  // depends on the image's own unshrunk size — circular), so the container
+  // itself needs the real width instead; the image then just fills it via
+  // its own existing `max-width: 100%` (see UrlComponentPreview). A
+  // block-layout widget's container is already full-width by design (its
+  // own align/centering CSS depends on that), so this only ever touches
+  // inline ones.
+  const syncInlineWidgetWidth = (el: HTMLElement, instance: WidgetInstance) => {
+    if (getComponentType(instance.type).layout !== 'inline') return;
+    const width = (instance.settings as Record<string, string>).width;
+    if (width) el.style.width = width;
+    else el.style.removeProperty('width');
+  };
+
   const widgetHTMLContainer = useCallback((instance: WidgetInstance): HTMLDivElement => {
     const def = getComponentType(instance.type);
     const div = document.createElement('div');
@@ -574,6 +591,7 @@ export function useCanvasEditor() {
     div.draggable = true;
     if (def.layout === 'inline') div.style.display = 'inline-flex';
     if (instance.align && instance.align !== 'left') div.dataset.align = instance.align;
+    syncInlineWidgetWidth(div, instance);
     return div;
   }, []);
 
@@ -1706,6 +1724,7 @@ export function useCanvasEditor() {
       const record = widgetsRef.current.get(selectedUid);
       if (!record) return;
       record.instance.settings = { ...record.instance.settings, ...patch };
+      syncInlineWidgetWidth(record.el, record.instance);
       renderWidgetRoot(record);
       bump();
       pushHistorySnapshotDebounced(); // settings-form fields fire onChange per keystroke
@@ -1728,6 +1747,7 @@ export function useCanvasEditor() {
       record.instance.name = preset.name;
       record.instance.settings = { ...record.instance.settings, ...preset.settings };
       if (preset.meta) record.instance.meta = { ...record.instance.meta, ...preset.meta };
+      syncInlineWidgetWidth(record.el, record.instance);
       renderWidgetRoot(record);
       bump();
       pushHistorySnapshot();

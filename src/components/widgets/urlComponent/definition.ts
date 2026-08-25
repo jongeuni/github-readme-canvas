@@ -22,7 +22,11 @@ export const urlComponentDefinition: ComponentTypeDefinition<UrlComponentSetting
     const m = meta as UrlComponentMeta;
     const url = fillUrlTemplate(m.urlTemplate, s);
     const alt = m.altTemplate ? fillUrlTemplate(m.altTemplate, s) : (s[m.fields[0]?.key] ?? 'badge');
-    const img = `![${alt}](${url})`;
+    // Plain `![alt](url)` markdown has no width control at all — same
+    // problem, same fix as Image/GIF's own toMarkdown: an explicit width
+    // switches to a real `<img>` tag (which GitHub does render inline in
+    // markdown) instead of the image-token syntax.
+    const img = s.width ? `<img src="${url}" width="${s.width}" alt="${alt}">` : `![${alt}](${url})`;
     const link = m.linkTemplate ? fillUrlTemplate(m.linkTemplate, s) : m.linkable ? s.link : undefined;
     return link ? `[${img}](${link})` : img;
   },

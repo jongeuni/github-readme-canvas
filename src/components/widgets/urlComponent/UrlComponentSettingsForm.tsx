@@ -81,6 +81,12 @@ export function UrlComponentSettingsForm({ settings, meta, onChange }: SettingsF
           </div>
         );
       })}
+      <TextField
+        label="Display width"
+        value={settings.width ?? ''}
+        onChange={(width) => onChange({ width })}
+        placeholder="Natural size — try 300px, 50%…"
+      />
       {m.linkTemplate ? (
         <ReadOnlyField label="Link" value={fillUrlTemplate(m.linkTemplate, settings)} hint="Auto-generated" />
       ) : (

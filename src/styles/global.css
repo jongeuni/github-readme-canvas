@@ -791,6 +791,17 @@ pre {
   display: flex;
   justify-content: flex-end;
 }
+/* A text line immediately followed by an inline-layout widget (one placed
+   or dropped right after it — see getInsertionAnchor/placeLibraryEntry)
+   shares that widget's row instead of forcing a line break before it.
+   `inline-block` still fills/wraps at the canvas width for anything longer
+   than one line, same as `block` does, but — unlike `block` — doesn't force
+   a fresh line box after itself, so a short widget can share the tail end
+   of its last line. The widget itself is untouched by this: still a
+   perfectly normal top-level sibling, independently clickable/draggable. */
+.canvas-paper > *:not(.block):has(+ .block[style*='inline-flex']) {
+  display: inline-block;
+}
 @keyframes flashIn {
   0% {
     background: var(--accent-bg);
