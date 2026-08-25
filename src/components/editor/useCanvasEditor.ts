@@ -1699,6 +1699,14 @@ export function useCanvasEditor() {
         return;
       }
       if (e.target === canvas) {
+        // A drag-selection across several lines ending in empty canvas
+        // space (easy to do — dragging down past the last line, or through
+        // one of the gaps between lines) still fires this same click event
+        // on mouseup. Without this check, a real multi-line selection the
+        // user just made gets silently replaced by a fresh empty line
+        // instead of staying selected for the floating Bold/Center toolbar.
+        const activeSelection = window.getSelection();
+        if (activeSelection && !activeSelection.isCollapsed && canvas.contains(activeSelection.anchorNode)) return;
         // Genuinely empty canvas space — the thin margin gap between two
         // stacked components, or blank padding below/beside all content.
         // Insert a fresh line at the click's vertical position instead of
