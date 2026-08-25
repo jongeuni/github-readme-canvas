@@ -952,27 +952,22 @@ pre {
 }
 /* A truly empty line (no placeholder text either) has no inline content at
    all, so the browser collapses its line box to ~0 height — happens right
-   after pressing Enter, or after a line converts into a widget. A
-   zero-width space in ::after gives every empty line a real inline box at
-   that class's own font metrics, so it holds full line height like any
-   other line, without being visible or affecting :empty matching. */
-.canvas-paper[contenteditable] > div:empty:not([data-placeholder])::after {
-  content: '\200b';
+   after pressing Enter, or after a line converts into a widget. `min-height:
+   1lh` (one line-height, whatever THIS class's own font-size/line-height
+   computes to) fixes that without adding any real content, so it doesn't
+   affect `:empty` matching the way a zero-width-space content string used
+   to. That used to live on `::after` specifically, which is why it kept
+   colliding with whatever ELSE also wanted `::after` on the same element
+   (the selected-line accent bar below, twice now — see that rule's own
+   comment) — a min-height needs no pseudo-element at all, so `::before` and
+   `::after` are now used by exactly one rule each, nothing left to collide. */
+.canvas-paper[contenteditable] > div:empty {
+  min-height: 1lh;
 }
 .canvas-paper[contenteditable] > div.text-selected {
   background: var(--accent-bg);
   position: relative;
 }
-/* `::after`, not `::before` — the placeholder rule above also owns
-   `::before` on this same element when a line is both selected AND empty
-   (clicking the trailing "Click to keep writing…" line does both at once),
-   and CSS cascades a pseudo-element's properties individually per rule, not
-   as a whole block: this rule's `position/width/left/...` were winning
-   alongside the placeholder rule's higher-specificity `content`, leaving a
-   real `content: attr(data-placeholder)` text node squeezed into this
-   rule's 2.5px accent-bar width — one character per line. `::after` is
-   free on every selected line (the only other `::after` user excludes
-   itself via `:not([data-placeholder])`), so this can't collide again. */
 .canvas-paper[contenteditable] > div.text-selected::after {
   content: '';
   position: absolute;
