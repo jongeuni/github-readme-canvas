@@ -171,7 +171,9 @@ export function SearchableSelectField({
   allowCustom = false,
   hint,
 }: {
-  label: string;
+  /** Omit when a heading already sits above this field elsewhere (e.g.
+   *  ComponentCard's own "Choose a ..." label) — no <label> renders. */
+  label?: string;
   value: string;
   /** What the closed input shows — falls back to `value` itself if omitted. */
   displayLabel?: string;
@@ -213,7 +215,7 @@ export function SearchableSelectField({
 
   return (
     <div className="field combobox-field" ref={rootRef}>
-      <label>{label}</label>
+      {label && <label>{label}</label>}
       <div className="search-box">
         <Icon name="search" />
         <input

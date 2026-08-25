@@ -340,6 +340,14 @@ pre {
 .combobox-field {
   position: relative;
 }
+/* `.field input[type='text']` (see that rule above) outspecifies plain
+   `.search-box input` — 2 class/attribute selectors beat 1 — and would
+   otherwise win back the 9px left padding, sitting the typed text directly
+   under the search icon. Match its specificity with the same [type='text']
+   attribute added here so the icon gets its room back. */
+.combobox-field .search-box input[type='text'] {
+  padding-left: 29px;
+}
 .combobox-panel {
   position: absolute;
   left: 0;

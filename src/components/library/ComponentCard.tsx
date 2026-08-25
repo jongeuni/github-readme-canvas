@@ -2,6 +2,7 @@ import { createElement, useEffect, useMemo, useState } from 'react';
 import { getComponentType } from '../../registry';
 import type { LibraryEntry, PresetDefinition } from '../../types/library';
 import { Icon } from '../Icon';
+import { SearchableSelectField } from '../settings/fields';
 
 /** "6 languages · C++ · Python · TypeScript + 3 more" — never lists every
  *  preset, just enough to signal "there's a picker in here". */
@@ -16,7 +17,7 @@ function presetSummary(entry: LibraryEntry): string {
 /** Only render a filter box once a preset list is long enough to need one —
  *  keeps small groups (today: 6 languages, 3 icons) exactly as simple as a
  *  preset-less card. */
-const PRESET_SEARCH_THRESHOLD = 8;
+export const PRESET_SEARCH_THRESHOLD = 8;
 
 /** "languages" -> "a language", "icons" -> "an icon" — good enough for the
  *  simple English plurals presetsLabel actually uses. */
@@ -59,14 +60,10 @@ export function ComponentCard({
   const hasPresets = !!entry.presets?.length;
 
   const [selectedPresetId, setSelectedPresetId] = useState<string | undefined>(entry.presets?.[0]?.id);
-  const [presetFilter, setPresetFilter] = useState('');
   // Every time the card is (re-)expanded, start from the first preset again
   // — simplest behavior, no "remember my last pick" state to carry around.
   useEffect(() => {
-    if (expanded) {
-      setSelectedPresetId(entry.presets?.[0]?.id);
-      setPresetFilter('');
-    }
+    if (expanded) setSelectedPresetId(entry.presets?.[0]?.id);
   }, [expanded, entry.presets]);
 
   const selectedPreset = entry.presets?.find((p) => p.id === selectedPresetId);
@@ -75,12 +72,6 @@ export function ComponentCard({
   const resolvedDescription = selectedPreset?.description ?? entry.description;
 
   const usage = useMemo(() => def.toMarkdown(resolvedSettings, resolvedMeta), [def, resolvedSettings, resolvedMeta]);
-
-  const filteredPresets = useMemo(() => {
-    const presets = entry.presets ?? [];
-    const q = presetFilter.trim().toLowerCase();
-    return q ? presets.filter((p) => p.name.toLowerCase().includes(q)) : presets;
-  }, [entry.presets, presetFilter]);
 
   const handleUse = () => onUse(selectedPreset?.id ?? entry.id);
 
@@ -139,35 +130,34 @@ export function ComponentCard({
                     </option>
                   ))}
                 </select>
+              ) : (entry.presets?.length ?? 0) > PRESET_SEARCH_THRESHOLD ? (
+                // A long preset list (135 tech icons, 40+ languages, ...) as
+                // always-expanded chips would be a wall of buttons — a
+                // closed-until-clicked combobox with search stays exactly as
+                // compact as a plain <select> until the user actually wants
+                // to browse/search it.
+                <SearchableSelectField
+                  value={selectedPresetId ?? ''}
+                  displayLabel={selectedPreset?.name}
+                  options={(entry.presets ?? []).map((p: PresetDefinition) => ({ value: p.id, label: p.name }))}
+                  onChange={(id) => setSelectedPresetId(id)}
+                  placeholder={`Search ${entry.presetsLabel ?? 'presets'}...`}
+                />
               ) : (
-                <>
-                  {(entry.presets?.length ?? 0) > PRESET_SEARCH_THRESHOLD && (
-                    <div className="search-box">
-                      <Icon name="search" />
-                      <input
-                        type="text"
-                        placeholder={`Search ${entry.presetsLabel ?? 'presets'}...`}
-                        value={presetFilter}
-                        onChange={(e) => setPresetFilter(e.target.value)}
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                    </div>
-                  )}
-                  <div className="preset-list">
-                    {filteredPresets.map((p: PresetDefinition) => (
-                      <span
-                        key={p.id}
-                        className={`preset-row ${p.id === selectedPresetId ? 'selected' : ''}`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedPresetId(p.id);
-                        }}
-                      >
-                        {p.name}
-                      </span>
-                    ))}
-                  </div>
-                </>
+                <div className="preset-list">
+                  {(entry.presets ?? []).map((p: PresetDefinition) => (
+                    <span
+                      key={p.id}
+                      className={`preset-row ${p.id === selectedPresetId ? 'selected' : ''}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedPresetId(p.id);
+                      }}
+                    >
+                      {p.name}
+                    </span>
+                  ))}
+                </div>
               )}
             </>
           )}

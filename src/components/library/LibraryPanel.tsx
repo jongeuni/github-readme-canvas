@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { CATEGORIES, LIBRARY, LIBRARY_COMPONENTS } from '../../registry';
 import { useFavorites } from '../../hooks/useFavorites';
 import { Icon } from '../Icon';
-import { ComponentCard } from './ComponentCard';
+import { ComponentCard, PRESET_SEARCH_THRESHOLD } from './ComponentCard';
 import type { LibraryEntry } from '../../types/library';
 
 type ViewMode = 'all' | 'components';
@@ -39,19 +39,23 @@ export function LibraryPanel({
   const { favorites, toggleFavorite } = useFavorites();
 
   const visible = useMemo(() => {
-    // text-art (Kaomoji / Decorative Line) and tech-icon stay grouped as
-    // their own single card even in "All" view — flattening either would
-    // mean one list row per preset (46 / 135 of them), when picking a look
-    // belongs in the card's own picker (see ComponentCard and Tech Icon's
-    // own SettingsForm), not a wall of near-identical cards.
-    const GROUPED_EVEN_IN_ALL_VIEW = new Set(['text-art', 'tech-icon']);
+    // Any Component whose preset list is long enough to need its own search
+    // (tech-icon's 135 icons, the badge Components' 20-35 presets each)
+    // stays grouped as one card even in "All" view — flattening it would
+    // mean one list row per preset, when picking one belongs in the card's
+    // own combobox (see ComponentCard), not a wall of near-identical cards.
+    // text-art (Kaomoji / Decorative Line) is kept grouped unconditionally
+    // for the same reason even though Kaomoji alone sits just under the
+    // threshold — the two read as one family, not two.
+    const staysGrouped = (item: LibraryEntry) => item.type === 'text-art' || (item.presets?.length ?? 0) > PRESET_SEARCH_THRESHOLD;
+    const groupedComponents = LIBRARY_COMPONENTS.filter(staysGrouped);
+    // LIBRARY (flattened) has one row per preset with no `.presets` of its
+    // own — excluding by id, not by re-checking staysGrouped, is what keeps
+    // every one of those rows out of "All" view once its parent Component
+    // is grouped.
+    const groupedPresetIds = new Set(groupedComponents.flatMap((c) => (c.presets ?? []).map((p) => p.id)));
     const base =
-      viewMode === 'all'
-        ? [
-            ...LIBRARY.filter((item) => !GROUPED_EVEN_IN_ALL_VIEW.has(item.type)),
-            ...LIBRARY_COMPONENTS.filter((item) => GROUPED_EVEN_IN_ALL_VIEW.has(item.type)),
-          ]
-        : LIBRARY_COMPONENTS;
+      viewMode === 'all' ? [...LIBRARY.filter((item) => !groupedPresetIds.has(item.id)), ...groupedComponents] : LIBRARY_COMPONENTS;
     const combined = [...base, ...customComponents];
     const q = search.trim().toLowerCase();
     return combined.filter((item) => {
