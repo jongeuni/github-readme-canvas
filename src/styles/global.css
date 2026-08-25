@@ -963,7 +963,17 @@ pre {
   background: var(--accent-bg);
   position: relative;
 }
-.canvas-paper[contenteditable] > div.text-selected::before {
+/* `::after`, not `::before` — the placeholder rule above also owns
+   `::before` on this same element when a line is both selected AND empty
+   (clicking the trailing "Click to keep writing…" line does both at once),
+   and CSS cascades a pseudo-element's properties individually per rule, not
+   as a whole block: this rule's `position/width/left/...` were winning
+   alongside the placeholder rule's higher-specificity `content`, leaving a
+   real `content: attr(data-placeholder)` text node squeezed into this
+   rule's 2.5px accent-bar width — one character per line. `::after` is
+   free on every selected line (the only other `::after` user excludes
+   itself via `:not([data-placeholder])`), so this can't collide again. */
+.canvas-paper[contenteditable] > div.text-selected::after {
   content: '';
   position: absolute;
   left: -7px;
