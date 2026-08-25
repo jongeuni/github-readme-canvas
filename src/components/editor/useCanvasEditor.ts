@@ -722,6 +722,37 @@ function recomputeInlineAlignment(canvas: HTMLElement) {
   }
 }
 
+/** Which canvas child a point (x, y) lands "on", and whether that counts as
+ *  before or after it — used by drag-and-drop reordering below. A plain
+ *  vertical-range scan (checking only whether y falls within a child's
+ *  bounding rect, first match wins) is wrong here: inline-layout widgets
+ *  (badges, tech icons — see widgetHTMLContainer's `display: inline-flex`)
+ *  are separate DOM siblings that visually share one row with overlapping
+ *  top/bottom, so a y-only test picks whichever one comes first in DOM
+ *  order regardless of where x actually is, e.g. never resolving to "after
+ *  the last badge in a row". This instead finds the horizontally-nearest
+ *  child among everything vertically under the point, and decides
+ *  before/after using x for an inline-flex row (where "before"/"after" is
+ *  left/right) and y for a normal full-width block line (where it's
+ *  above/below). */
+function hitTestRow(canvas: HTMLElement, x: number, y: number, excludeUid?: string | null): { target: HTMLElement; before: boolean } | null {
+  let best: HTMLElement | null = null;
+  let bestBefore = false;
+  let bestDist = Infinity;
+  for (const child of Array.from(canvas.children) as HTMLElement[]) {
+    if (excludeUid && child.dataset.uid === excludeUid) continue;
+    const r = child.getBoundingClientRect();
+    if (y < r.top || y > r.bottom) continue;
+    const dist = x < r.left ? r.left - x : x > r.right ? x - r.right : 0;
+    if (dist < bestDist) {
+      bestDist = dist;
+      best = child;
+      bestBefore = child.style.display === 'inline-flex' ? x < r.left + r.width / 2 : y < r.top + r.height / 2;
+    }
+  }
+  return best ? { target: best, before: bestBefore } : null;
+}
+
 export function useCanvasEditor() {
   const canvasRef = useRef<HTMLDivElement | null>(null);
   const widgetsRef = useRef<Map<string, WidgetRecord>>(new Map());
@@ -2145,16 +2176,10 @@ export function useCanvasEditor() {
     if (!canvas || !dragUidRef.current) return;
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
-    const target = Array.from(canvas.children).find((child) => {
-      const el = child as HTMLElement;
-      if (el.dataset.uid === dragUidRef.current) return false;
-      const r = el.getBoundingClientRect();
-      return e.clientY >= r.top && e.clientY <= r.bottom;
-    }) as HTMLElement | undefined;
     clearDropIndicators();
-    if (!target) return;
-    const r = target.getBoundingClientRect();
-    target.classList.add(e.clientY < r.top + r.height / 2 ? 'drop-before' : 'drop-after');
+    const hit = hitTestRow(canvas, e.clientX, e.clientY, dragUidRef.current);
+    if (!hit) return;
+    hit.target.classList.add(hit.before ? 'drop-before' : 'drop-after');
   }, []);
 
   const handleDrop = useCallback((e: DragEvent<HTMLDivElement>) => {
