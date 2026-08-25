@@ -723,7 +723,8 @@ function recomputeInlineAlignment(canvas: HTMLElement) {
 }
 
 /** Which canvas child a point (x, y) lands "on", and whether that counts as
- *  before or after it — used by drag-and-drop reordering below. A plain
+ *  before or after it — shared by drag-and-drop reordering and the
+ *  click-into-empty-space insertion point below. A plain
  *  vertical-range scan (checking only whether y falls within a child's
  *  bounding rect, first match wins) is wrong here: inline-layout widgets
  *  (badges, tech icons — see widgetHTMLContainer's `display: inline-flex`)
@@ -1188,6 +1189,18 @@ export function useCanvasEditor() {
     const probe = document.createRange();
     probe.selectNodeContents(el);
     probe.setEnd(range.startContainer, range.startOffset);
+    return probe.toString().length === 0;
+  };
+  // Mirror of isCaretAtLineStart, for ArrowRight-adjacent-to-widget handling
+  // below — same Range-emptiness trick, just probing from the caret to the
+  // line's end instead of from the line's start to the caret.
+  const isCaretAtLineEnd = (el: HTMLElement): boolean => {
+    const sel = window.getSelection();
+    if (!sel || !sel.isCollapsed || sel.rangeCount === 0) return false;
+    const range = sel.getRangeAt(0);
+    const probe = document.createRange();
+    probe.selectNodeContents(el);
+    probe.setStart(range.endContainer, range.endOffset);
     return probe.toString().length === 0;
   };
 
@@ -1833,6 +1846,45 @@ export function useCanvasEditor() {
       // isWidgetFormField's own comment. Without this, Backspace here
       // deleted the whole selected widget instead of a character in it.
       if (isWidgetFormField(e.target)) return;
+      // ArrowLeft/ArrowRight next to a contentEditable=false widget: native
+      // caret placement across a non-editable island is an unreliable,
+      // well-known contentEditable quirk — the browser falls back to
+      // whatever visually-nearest editable spot it can find, which for a
+      // row of several adjacent inline widgets (badges, tech icons; see
+      // widgetHTMLContainer's `display: inline-flex`) is not necessarily
+      // the one actually next to the widget the caret is leaving/entering.
+      // Handled explicitly instead, same "widget as its own selectable
+      // stop" idea as the Backspace/Delete-while-selected rule just below:
+      // a widget becomes a deterministic, DOM-order stop for the arrow keys
+      // (selecting it, same as clicking it) rather than something the
+      // native caret tries to thread a text position around.
+      if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && !e.shiftKey && !e.altKey && !e.metaKey && !e.ctrlKey) {
+        const dir = e.key === 'ArrowLeft' ? -1 : 1;
+        if (selectedUid) {
+          const widgetEl = widgetsRef.current.get(selectedUid)?.el;
+          const sib = (dir < 0 ? widgetEl?.previousElementSibling : widgetEl?.nextElementSibling) as HTMLElement | null;
+          if (sib) {
+            e.preventDefault();
+            if (sib.dataset.uid) selectWidget(sib.dataset.uid);
+            else {
+              selectTextBlock(sib);
+              if (dir < 0) placeCaretAtEnd(sib);
+              else placeCaretAtStart(sib);
+            }
+          }
+          return;
+        }
+        const line = currentTextLine();
+        if (line && !line.dataset.uid) {
+          const atBoundary = dir < 0 ? isCaretAtLineStart(line) : isCaretAtLineEnd(line);
+          const sib = (dir < 0 ? line.previousElementSibling : line.nextElementSibling) as HTMLElement | null;
+          if (atBoundary && sib?.dataset.uid) {
+            e.preventDefault();
+            selectWidget(sib.dataset.uid);
+            return;
+          }
+        }
+      }
       // A selected widget is contentEditable=false, so clicking it never
       // moves the browser's real caret — it just stays wherever it last
       // was (often the trailing line). Without this, Backspace/Delete with
@@ -2111,15 +2163,32 @@ export function useCanvasEditor() {
         if (activeSelection && !activeSelection.isCollapsed && canvas.contains(activeSelection.anchorNode)) return;
         // Genuinely empty canvas space — the thin margin gap between two
         // stacked components, or blank padding below/beside all content.
-        // Insert a fresh line at the click's vertical position instead of
-        // doing nothing, so there's always a way to start typing between
-        // two components without precisely hitting a few-pixel sliver.
-        const children = Array.from(canvas.children) as HTMLElement[];
-        const insertBefore =
-          children.find((child) => {
-            const rect = child.getBoundingClientRect();
-            return e.clientY < rect.top + rect.height / 2;
-          }) ?? null;
+        // Insert a fresh line at the click's position instead of doing
+        // nothing, so there's always a way to start typing between two
+        // components without precisely hitting a few-pixel sliver.
+        const hit = hitTestRow(canvas, e.clientX, e.clientY);
+        if (hit?.target.dataset.uid) {
+          // Landed in blank space on the same row as an inline widget (e.g.
+          // clicking past the last badge in a row of tech icons) — reuse
+          // the adjacent text line if one already sits there instead of
+          // stacking a stray empty line right next to the widget.
+          const sib = (hit.before ? hit.target.previousElementSibling : hit.target.nextElementSibling) as HTMLElement | null;
+          if (sib && !sib.dataset.uid) {
+            selectTextBlock(sib);
+            if (hit.before) placeCaretAtEnd(sib);
+            else placeCaretAtStart(sib);
+            return;
+          }
+          const div = document.createElement('div');
+          div.className = 'md-text';
+          if (hit.before) canvas.insertBefore(div, hit.target);
+          else hit.target.insertAdjacentElement('afterend', div);
+          selectTextBlock(div);
+          placeCaretAtEnd(div);
+          pushHistorySnapshot();
+          return;
+        }
+        const insertBefore = hit?.target ?? null;
         if (!insertBefore) {
           const last = canvas.lastElementChild as HTMLElement | null;
           if (last && !last.dataset.uid) {
