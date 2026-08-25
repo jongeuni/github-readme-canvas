@@ -971,21 +971,27 @@ export function useCanvasEditor() {
     if (!canvas || canvas.dataset.mounted) return;
     canvas.dataset.mounted = '1';
 
-    appendTextLine('md-h1', "Hi, I'm Alex 👋");
-    appendTextLine('md-text', 'Backend Developer');
-    appendWidgetInstance(mkInstance('lang-cpp'));
-    appendWidgetInstance(mkInstance('lang-python'));
-    appendWidgetInstance(mkInstance('tool-docker'));
-    appendTextLine('md-h2', 'About Me');
-    appendTextLine('md-text', 'I build backend systems that scale.');
-    appendTextLine('md-h2', 'GitHub Stats');
-    appendWidgetInstance(mkInstance('status-github-stats'));
-    appendTextLine('md-h2', 'Connect with me');
-    appendWidgetInstance(mkInstance('social-github'));
-    appendWidgetInstance(mkInstance('social-linkedin'));
-    // Freely removable — click it, "Remove line" — same as MADE_WITH_FOOTER
-    // in the real templates (this initial seed doesn't share that file, so
-    // it's spelled out directly here instead).
+    // A genuine welcome/onboarding message, not a fake persona — every
+    // fresh page load lands here (there's no autosave-to-localStorage of
+    // the working canvas, so this is what a returning user sees too, not
+    // just a true first-time visitor). A prefab "Alex, Backend Developer"
+    // profile in that spot read as the app's own opinion of what a README
+    // should say, which wasn't the intent; an example profile instead
+    // lives in the Templates picker (Frontend Developer), not here. Every
+    // line here is real, freely-editable/removable canvas content, same
+    // as MADE_WITH_FOOTER in the real templates (this initial seed doesn't
+    // share that file, so it's spelled out directly here instead).
+    appendTextLine('md-h1', '👋 Welcome to Readme Canvas');
+    appendTextLine('md-quote', "A visual editor for your GitHub profile README — drag, drop, and export markdown without writing a line of it.");
+    appendTextLine('md-h2', '🎨 Try the Components panel');
+    appendTextLine('md-text', 'Browse badges, banners, stats cards, and more on the left. Click a card to preview it, then "Use Component" to add it here — drag to reorder, click to edit its settings.');
+    appendTextLine('md-h2', '🔗 Push straight to your profile');
+    appendTextLine('md-text', 'Connect GitHub above, then Export to save this straight to your profile repository — no copy-pasting.');
+    appendTextLine('md-h2', '💌 Get in touch');
+    appendTextLine('md-text', '<a href="https://github.com/jongeuni/github-readme-canvas">⭐ Star the project on GitHub</a>');
+    appendTextLine('md-text', '<a href="https://github.com/jongeuni/github-readme-canvas/issues">🐛 Found a bug? Open an issue</a>');
+    appendTextLine('md-text', 'Thanks for trying it out — happy building! 🙌');
+    appendWidgetInstance(mkInstance('dec-divider'));
     appendTextLine('md-text', 'Made with <a href="https://readme-canvas.com">Readme Canvas</a>', 'center');
 
     ensureTrailingTextLine();
