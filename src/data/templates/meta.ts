@@ -88,11 +88,68 @@ export const SOCIAL_GITHUB_META = socialMeta('github', '18181b', 'https://github
 export const SOCIAL_LINKEDIN_META = socialMeta('linkedin', '0a66c2', 'https://linkedin.com/in/');
 export const SOCIAL_TWITTER_META = socialMeta('twitter', '18181b', 'https://x.com/');
 
-/** capsule-render as a *footer* banner — same generator as the Library's
- *  "Capsule Render Banner" card, just with `section=footer` baked into the
- *  URL template instead of that preset's `section=header`. */
-export const CAPSULE_FOOTER_META: UrlComponentMeta = {
-  urlTemplate: 'https://capsule-render.vercel.app/api?type={type}&color={color}&height={height}&section=footer&text={text}&fontSize={fontSize}',
+/** Same meta as the Library's "GitHub Repository Badge" card — one metric
+ *  preset (stars/issues/license/...) per real urlTemplate, always keyed on
+ *  {owner, repo} with the repo link computed automatically. */
+function githubRepoMeta(urlTemplate: string): UrlComponentMeta {
+  return {
+    urlTemplate,
+    linkTemplate: 'https://github.com/{owner}/{repo}',
+    linkable: false,
+    fields: [
+      { key: 'owner', label: 'Repository Owner', type: 'text' },
+      { key: 'repo', label: 'Repository Name', type: 'text' },
+    ],
+  };
+}
+
+export const GITHUB_STARS_META = githubRepoMeta('https://img.shields.io/github/stars/{owner}/{repo}?style=social');
+export const GITHUB_ISSUES_META = githubRepoMeta('https://img.shields.io/github/issues/{owner}/{repo}?style=flat');
+export const GITHUB_LICENSE_META = githubRepoMeta('https://img.shields.io/github/license/{owner}/{repo}?style=flat');
+
+/** Same meta as the Library's "Custom Badge" card — label/message/color/
+ *  logo, freely combined, for a one-off badge no other component covers. */
+export const GENERIC_BADGE_META: UrlComponentMeta = {
+  urlTemplate: 'https://img.shields.io/badge/{label}{-message}-{color}?style={style}&logo={logo}&logoColor={logoColor}',
+  linkable: true,
+  fields: [
+    { key: 'label', label: 'Label', type: 'text' },
+    { key: 'message', label: 'Message', type: 'text' },
+    {
+      key: 'color',
+      label: 'Color',
+      type: 'combo',
+      options: [
+        { value: 'blue', label: 'blue' },
+        { value: 'green', label: 'green' },
+        { value: 'red', label: 'red' },
+        { value: 'orange', label: 'orange' },
+        { value: 'purple', label: 'purple' },
+        { value: 'black', label: 'black' },
+        { value: 'gray', label: 'gray' },
+      ],
+    },
+    {
+      key: 'style',
+      label: 'Style',
+      type: 'select',
+      options: [
+        { value: 'flat', label: 'Flat' },
+        { value: 'flat-square', label: 'Flat Square' },
+        { value: 'for-the-badge', label: 'For The Badge' },
+        { value: 'plastic', label: 'Plastic' },
+      ],
+    },
+    { key: 'logo', label: 'Logo', type: 'combo', options: [{ value: 'gmail', label: 'gmail' }, { value: 'github', label: 'github' }] },
+    { key: 'logoColor', label: 'Logo Color', type: 'text' },
+  ],
+};
+
+/** Same meta as the Library's "Capsule Render Banner" card (header section —
+ *  the only variant that's a real, addable component; there is no separate
+ *  footer preset, so templates that want a closing banner reuse this one). */
+export const CAPSULE_RENDER_META: UrlComponentMeta = {
+  urlTemplate: 'https://capsule-render.vercel.app/api?type={type}&color={color}&height={height}&section=header&text={text}&fontSize={fontSize}',
   altTemplate: '{text}',
   linkable: false,
   fields: [
@@ -126,8 +183,8 @@ export const CAPSULE_FOOTER_META: UrlComponentMeta = {
         { value: 'ff6666', label: 'Pink' },
       ],
     },
-    { key: 'height', label: 'Height', type: 'number', min: 60, max: 300, step: 10 },
-    { key: 'fontSize', label: 'Font Size', type: 'number', min: 12, max: 80, step: 2 },
+    { key: 'height', label: 'Height', type: 'number', min: 100, max: 400, step: 10 },
+    { key: 'fontSize', label: 'Font Size', type: 'number', min: 20, max: 120, step: 5 },
   ],
 };
 

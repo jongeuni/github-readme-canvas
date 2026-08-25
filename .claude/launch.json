@@ -1,0 +1,18 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "readme-canvas-dev",
+      "runtimeExecutable": "/Users/lje/.nvm/versions/node/v20.20.2/bin/node",
+      "runtimeArgs": ["node_modules/vite/bin/vite.js"],
+      "port": 5173,
+      "autoPort": true
+    },
+    {
+      "name": "readme-canvas-preview",
+      "runtimeExecutable": "/Users/lje/.nvm/versions/node/v20.20.2/bin/node",
+      "runtimeArgs": ["node_modules/vite/bin/vite.js", "preview", "--port", "4173"],
+      "port": 4173
+    }
+  ]
+}

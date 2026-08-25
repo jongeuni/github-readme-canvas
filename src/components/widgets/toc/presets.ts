@@ -5,7 +5,7 @@ export const tocPresets: LibraryEntry<TocSettings>[] = [
   {
     id: 'dec-toc',
     type: 'toc',
-    name: 'Table of Contents (목차)',
+    name: 'Table of Contents',
     description: 'An auto-generated list of links to your H1-H3 headings.',
     category: '🏷️ markdown',
     tags: ['🏷️ markdown', 'Text', 'Navigation'],

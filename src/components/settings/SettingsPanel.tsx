@@ -24,7 +24,7 @@ const TYPE_LABELS: Record<string, string> = {
   divider: 'Divider',
   'code-block': 'Code Block',
   table: 'Table',
-  toc: 'Table of Contents (목차)',
+  toc: 'Table of Contents',
   details: 'Collapsible Section',
 };
 
