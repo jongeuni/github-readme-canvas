@@ -1,4 +1,5 @@
 import type { Template } from '../../types/document';
+import { emptyCanvasTemplate } from './empty-canvas';
 import { frontendDeveloperTemplate } from './frontend-developer';
 import { projectReadmeTemplate } from './project-readme';
 
@@ -16,4 +17,4 @@ import { projectReadmeTemplate } from './project-readme';
  * To add a new template: add a new file exporting one `Template`, then list
  * it here — nothing else needs to change.
  */
-export const TEMPLATES: Template[] = [frontendDeveloperTemplate, projectReadmeTemplate];
+export const TEMPLATES: Template[] = [emptyCanvasTemplate, frontendDeveloperTemplate, projectReadmeTemplate];

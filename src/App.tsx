@@ -76,16 +76,6 @@ function App() {
     [editor, showToast],
   );
 
-  // Same "replace the canvas, forget the active doc" shape as
-  // handleUseTemplate above, just with zero blocks — the only way to get
-  // back to a blank canvas without reloading the whole page (which would
-  // also lose any saved documents' in-memory list until they're re-read).
-  const handleNewCanvas = useCallback(() => {
-    editor.loadFromBlocks([]);
-    setActiveDoc(null);
-    showToast('New canvas');
-  }, [editor, showToast]);
-
   const handleRename = useCallback(
     (id: string, name: string) => {
       documents.rename(id, name);
@@ -237,10 +227,6 @@ function App() {
                 Connect GitHub
               </button>
             )}
-            <button type="button" className="btn btn-secondary btn-sm" onClick={handleNewCanvas} title="Start a new blank canvas">
-              <Icon name="plus" />
-              New
-            </button>
             <TemplatesMenu onUse={handleUseTemplate} />
             <SaveMenu
               documents={documents.documents}
