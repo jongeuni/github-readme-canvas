@@ -284,12 +284,27 @@ function textWithSoftBreaks(node: Node): string {
       return;
     }
     const inner = textWithSoftBreaks(child);
-    if (child.nodeName === 'STRONG' || child.nodeName === 'B') out += `**${inner}**`;
+    // An empty STRONG/EM/DEL/CODE — e.g. a leftover from a formatting
+    // button applied to a since-collapsed selection — contributes nothing
+    // either way, but wrapping *nothing* in its markdown syntax (`~~**~~`)
+    // is actively wrong: it's live syntax next to whatever real text
+    // follows, silently corrupting it. Drop the empty wrapper entirely
+    // instead of emitting its markers.
+    const isEmptyFormatting = !inner && (child.nodeName === 'STRONG' || child.nodeName === 'B' || child.nodeName === 'EM' || child.nodeName === 'I' || child.nodeName === 'DEL' || child.nodeName === 'S' || child.nodeName === 'CODE');
+    if (isEmptyFormatting) {
+      // contributes nothing
+    } else if (child.nodeName === 'STRONG' || child.nodeName === 'B') out += `**${inner}**`;
     else if (child.nodeName === 'EM' || child.nodeName === 'I') out += `*${inner}*`;
     else if (child.nodeName === 'DEL' || child.nodeName === 'S') out += `~~${inner}~~`;
     else if (child.nodeName === 'CODE') out += `\`${inner}\``;
     else if (child.nodeName === 'A') out += `[${inner}](${(child as HTMLAnchorElement).getAttribute('href') ?? ''})`;
     else if (child.nodeName === 'IMG') out += `![${(child as HTMLImageElement).getAttribute('alt') ?? ''}](${(child as HTMLImageElement).getAttribute('src') ?? ''})`;
+    // A nested top-level line div only ever shows up here when this is
+    // called on a cloned copy/paste selection fragment (see handleCopy) —
+    // a normal single line is always flat, just inline children, so this
+    // never fires for that case. Each one is its own line in the copied
+    // text, same as selecting multiple paragraphs in any other editor.
+    else if (child.nodeName === 'DIV') out += (out ? '\n' : '') + inner;
     else out += inner;
   });
   return out;
@@ -1621,6 +1636,24 @@ export function useCanvasEditor() {
     [widgetHTMLContainer, renderWidgetRoot, ensureTrailingTextLine, selectTextBlock, selectWidget, pushHistorySnapshot],
   );
 
+  // Native copy hands back whatever the browser thinks a `<strong>`/`<a>`
+  // "looks like" as plain text — bold text with no asterisks, a link with
+  // no visible URL — so pasting it anywhere outside this app silently
+  // drops all the formatting. Overrides the clipboard with the real
+  // markdown source instead, same conversions buildFullMarkdown's own
+  // textWithSoftBreaks already does for export.
+  const handleCopy = useCallback((e: ClipboardEvent<HTMLDivElement>) => {
+    const sel = window.getSelection();
+    const canvas = canvasRef.current;
+    if (!sel || sel.rangeCount === 0 || sel.isCollapsed || !canvas || !canvas.contains(sel.anchorNode)) return;
+    const container = document.createElement('div');
+    container.appendChild(sel.getRangeAt(0).cloneContents());
+    const md = textWithSoftBreaks(container);
+    if (!md) return;
+    e.preventDefault();
+    e.clipboardData.setData('text/plain', md);
+  }, []);
+
   // Force plain-text paste so pasted content always matches the design
   // system instead of pulling in foreign fonts/colors/markup. Multi-line
   // paste is the exception — parsed into real blocks/widgets (see
@@ -2092,6 +2125,7 @@ export function useCanvasEditor() {
       onClick: handleClick,
       onInput: handleInput,
       onKeyDown: handleKeyDown,
+      onCopy: handleCopy,
       onPaste: handlePaste,
       onDragStart: handleDragStart,
       onDragEnd: handleDragEnd,
