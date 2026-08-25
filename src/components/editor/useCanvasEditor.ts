@@ -1085,6 +1085,17 @@ export function useCanvasEditor() {
           if (node.nodeType !== 1) return;
           const el = node as HTMLElement;
           if (el.parentElement !== canvas) return;
+          // ensureTrailingTextLine's "Click to keep writing…" hint (shown via
+          // CSS on an empty line's data-placeholder attribute) is only ever
+          // meant for canvas's actual last child. A new sibling landing right
+          // after one means it can't be that any more — same reasoning as
+          // splitLineAtCaret's own cleanup, but needed here too since Enter
+          // while composing IME text (Korean/Japanese/Chinese) skips that
+          // custom split entirely and falls back to the browser's native
+          // one, which never runs our cleanup and can leave the previous,
+          // now-abandoned line stuck showing the hint forever.
+          const prev = el.previousElementSibling as HTMLElement | null;
+          if (prev?.dataset.placeholder) delete prev.dataset.placeholder;
           if (el.dataset.uid) return; // widget, leave alone
           if (el.dataset.keepClass) {
             delete el.dataset.keepClass;
@@ -1819,6 +1830,16 @@ export function useCanvasEditor() {
     const sel = window.getSelection();
     if (!sel || sel.rangeCount === 0) return;
     const range = sel.getRangeAt(0);
+
+    // ensureTrailingTextLine tags ONLY the canvas's actual last child with
+    // this "Click to keep writing…" hint (shown via CSS's `:empty:before`
+    // whenever the line has no content). Splitting always gives `el` a new
+    // sibling right after it, so it can never be that trailing line again —
+    // without clearing this, an Enter press on an empty placeholder line
+    // (nothing typed first) splits it into two empty divs, and the original
+    // one keeps the attribute and keeps showing the hint text forever, even
+    // though the caret has moved on to the new line below it.
+    delete el.dataset.placeholder;
 
     const postRange = document.createRange();
     postRange.selectNodeContents(el);
