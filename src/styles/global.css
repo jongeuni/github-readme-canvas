@@ -938,7 +938,14 @@ pre {
 .canvas-paper[contenteditable] > .md-ol-item {
   padding-left: 20px;
 }
-.canvas-paper[contenteditable] > div:empty:before {
+/* Excludes list items — a fresh empty `.md-ol-item`/`.md-ul-item` needs its
+   OWN `::before` for the number/bullet (see above); a `::before` can only
+   ever be one thing, and this placeholder rule's higher specificity
+   ([contenteditable] + :empty) would otherwise win and hide the counter
+   until real text made the line stop matching `:empty`. Not needed for
+   `.md-task` either — its checkbox child means it's never actually
+   `:empty` to begin with. */
+.canvas-paper[contenteditable] > div:empty:not(.md-ul-item):not(.md-ol-item):before {
   content: attr(data-placeholder);
   color: var(--text-3);
   font-weight: 400;
