@@ -94,21 +94,12 @@
   "presetsLabel": "languages",
   "presets": [
     {
-      "id": "lang-cpp",
-      "name": "C++",
+      "id": "lang-javascript",
+      "name": "JavaScript",
       "settings": {
-        "label": "C++",
+        "label": "JavaScript",
         "color": "blue",
-        "link": "https://isocpp.org"
-      }
-    },
-    {
-      "id": "lang-python",
-      "name": "Python",
-      "settings": {
-        "label": "Python",
-        "color": "green",
-        "link": "https://python.org"
+        "link": "https://developer.mozilla.org/docs/Web/JavaScript"
       }
     },
     {
@@ -116,8 +107,17 @@
       "name": "TypeScript",
       "settings": {
         "label": "TypeScript",
-        "color": "blue",
+        "color": "green",
         "link": "https://typescriptlang.org"
+      }
+    },
+    {
+      "id": "lang-python",
+      "name": "Python",
+      "settings": {
+        "label": "Python",
+        "color": "red",
+        "link": "https://python.org"
       }
     },
     {
@@ -127,6 +127,33 @@
         "label": "Java",
         "color": "orange",
         "link": "https://java.com"
+      }
+    },
+    {
+      "id": "lang-c",
+      "name": "C",
+      "settings": {
+        "label": "C",
+        "color": "purple",
+        "link": "https://en.wikipedia.org/wiki/C_(programming_language)"
+      }
+    },
+    {
+      "id": "lang-cpp",
+      "name": "C++",
+      "settings": {
+        "label": "C++",
+        "color": "black",
+        "link": "https://isocpp.org"
+      }
+    },
+    {
+      "id": "lang-csharp",
+      "name": "C#",
+      "settings": {
+        "label": "C#",
+        "color": "gray",
+        "link": "https://learn.microsoft.com/dotnet/csharp"
       }
     },
     {
@@ -143,8 +170,242 @@
       "name": "Rust",
       "settings": {
         "label": "Rust",
-        "color": "orange",
+        "color": "green",
         "link": "https://rust-lang.org"
+      }
+    },
+    {
+      "id": "lang-php",
+      "name": "PHP",
+      "settings": {
+        "label": "PHP",
+        "color": "red",
+        "link": "https://php.net"
+      }
+    },
+    {
+      "id": "lang-ruby",
+      "name": "Ruby",
+      "settings": {
+        "label": "Ruby",
+        "color": "orange",
+        "link": "https://ruby-lang.org"
+      }
+    },
+    {
+      "id": "lang-swift",
+      "name": "Swift",
+      "settings": {
+        "label": "Swift",
+        "color": "purple",
+        "link": "https://swift.org"
+      }
+    },
+    {
+      "id": "lang-kotlin",
+      "name": "Kotlin",
+      "settings": {
+        "label": "Kotlin",
+        "color": "black",
+        "link": "https://kotlinlang.org"
+      }
+    },
+    {
+      "id": "lang-dart",
+      "name": "Dart",
+      "settings": {
+        "label": "Dart",
+        "color": "gray",
+        "link": "https://dart.dev"
+      }
+    },
+    {
+      "id": "lang-scala",
+      "name": "Scala",
+      "settings": {
+        "label": "Scala",
+        "color": "blue",
+        "link": "https://scala-lang.org"
+      }
+    },
+    {
+      "id": "lang-r",
+      "name": "R",
+      "settings": {
+        "label": "R",
+        "color": "green",
+        "link": "https://r-project.org"
+      }
+    },
+    {
+      "id": "lang-matlab",
+      "name": "MATLAB",
+      "settings": {
+        "label": "MATLAB",
+        "color": "red",
+        "link": "https://mathworks.com/products/matlab.html"
+      }
+    },
+    {
+      "id": "lang-perl",
+      "name": "Perl",
+      "settings": {
+        "label": "Perl",
+        "color": "orange",
+        "link": "https://perl.org"
+      }
+    },
+    {
+      "id": "lang-lua",
+      "name": "Lua",
+      "settings": {
+        "label": "Lua",
+        "color": "purple",
+        "link": "https://lua.org"
+      }
+    },
+    {
+      "id": "lang-elixir",
+      "name": "Elixir",
+      "settings": {
+        "label": "Elixir",
+        "color": "black",
+        "link": "https://elixir-lang.org"
+      }
+    },
+    {
+      "id": "lang-haskell",
+      "name": "Haskell",
+      "settings": {
+        "label": "Haskell",
+        "color": "gray",
+        "link": "https://haskell.org"
+      }
+    },
+    {
+      "id": "lang-clojure",
+      "name": "Clojure",
+      "settings": {
+        "label": "Clojure",
+        "color": "blue",
+        "link": "https://clojure.org"
+      }
+    },
+    {
+      "id": "lang-julia",
+      "name": "Julia",
+      "settings": {
+        "label": "Julia",
+        "color": "green",
+        "link": "https://julialang.org"
+      }
+    },
+    {
+      "id": "lang-solidity",
+      "name": "Solidity",
+      "settings": {
+        "label": "Solidity",
+        "color": "red",
+        "link": "https://soliditylang.org"
+      }
+    },
+    {
+      "id": "lang-html5",
+      "name": "HTML5",
+      "settings": {
+        "label": "HTML5",
+        "color": "orange",
+        "link": "https://developer.mozilla.org/docs/Web/HTML"
+      }
+    },
+    {
+      "id": "lang-css3",
+      "name": "CSS3",
+      "settings": {
+        "label": "CSS3",
+        "color": "purple",
+        "link": "https://developer.mozilla.org/docs/Web/CSS"
+      }
+    },
+    {
+      "id": "lang-bash",
+      "name": "Bash",
+      "settings": {
+        "label": "Bash",
+        "color": "black",
+        "link": "https://gnu.org/software/bash"
+      }
+    },
+    {
+      "id": "lang-powershell",
+      "name": "PowerShell",
+      "settings": {
+        "label": "PowerShell",
+        "color": "gray",
+        "link": "https://learn.microsoft.com/powershell"
+      }
+    },
+    {
+      "id": "lang-sql",
+      "name": "SQL",
+      "settings": {
+        "label": "SQL",
+        "color": "blue",
+        "link": "https://en.wikipedia.org/wiki/SQL"
+      }
+    },
+    {
+      "id": "lang-objectivec",
+      "name": "Objective-C",
+      "settings": {
+        "label": "Objective-C",
+        "color": "green",
+        "link": "https://developer.apple.com/documentation/objectivec"
+      }
+    },
+    {
+      "id": "lang-groovy",
+      "name": "Groovy",
+      "settings": {
+        "label": "Groovy",
+        "color": "red",
+        "link": "https://groovy-lang.org"
+      }
+    },
+    {
+      "id": "lang-f",
+      "name": "F#",
+      "settings": {
+        "label": "F#",
+        "color": "orange",
+        "link": "https://fsharp.org"
+      }
+    },
+    {
+      "id": "lang-erlang",
+      "name": "Erlang",
+      "settings": {
+        "label": "Erlang",
+        "color": "purple",
+        "link": "https://erlang.org"
+      }
+    },
+    {
+      "id": "lang-fortran",
+      "name": "Fortran",
+      "settings": {
+        "label": "Fortran",
+        "color": "black",
+        "link": "https://fortran-lang.org"
+      }
+    },
+    {
+      "id": "lang-assembly",
+      "name": "Assembly",
+      "settings": {
+        "label": "Assembly",
+        "color": "gray",
+        "link": "https://en.wikipedia.org/wiki/Assembly_language"
       }
     }
   ]

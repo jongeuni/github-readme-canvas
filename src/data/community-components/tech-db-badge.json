@@ -103,12 +103,174 @@
       }
     },
     {
+      "id": "db-mysql",
+      "name": "MySQL",
+      "settings": {
+        "label": "MySQL",
+        "color": "green",
+        "link": "https://mysql.com"
+      }
+    },
+    {
       "id": "db-mongo",
       "name": "MongoDB",
       "settings": {
         "label": "MongoDB",
-        "color": "green",
+        "color": "red",
         "link": "https://mongodb.com"
+      }
+    },
+    {
+      "id": "db-sqlite",
+      "name": "SQLite",
+      "settings": {
+        "label": "SQLite",
+        "color": "orange",
+        "link": "https://sqlite.org"
+      }
+    },
+    {
+      "id": "db-redis",
+      "name": "Redis",
+      "settings": {
+        "label": "Redis",
+        "color": "purple",
+        "link": "https://redis.io"
+      }
+    },
+    {
+      "id": "db-mariadb",
+      "name": "MariaDB",
+      "settings": {
+        "label": "MariaDB",
+        "color": "black",
+        "link": "https://mariadb.org"
+      }
+    },
+    {
+      "id": "db-cassandra",
+      "name": "Cassandra",
+      "settings": {
+        "label": "Cassandra",
+        "color": "gray",
+        "link": "https://cassandra.apache.org"
+      }
+    },
+    {
+      "id": "db-dynamodb",
+      "name": "DynamoDB",
+      "settings": {
+        "label": "DynamoDB",
+        "color": "blue",
+        "link": "https://aws.amazon.com/dynamodb"
+      }
+    },
+    {
+      "id": "db-firebase",
+      "name": "Firebase",
+      "settings": {
+        "label": "Firebase",
+        "color": "green",
+        "link": "https://firebase.google.com"
+      }
+    },
+    {
+      "id": "db-supabase",
+      "name": "Supabase",
+      "settings": {
+        "label": "Supabase",
+        "color": "red",
+        "link": "https://supabase.com"
+      }
+    },
+    {
+      "id": "db-oracle",
+      "name": "Oracle",
+      "settings": {
+        "label": "Oracle",
+        "color": "orange",
+        "link": "https://oracle.com/database"
+      }
+    },
+    {
+      "id": "db-sqlserver",
+      "name": "SQL Server",
+      "settings": {
+        "label": "SQL Server",
+        "color": "purple",
+        "link": "https://microsoft.com/sql-server"
+      }
+    },
+    {
+      "id": "db-elasticsearch",
+      "name": "Elasticsearch",
+      "settings": {
+        "label": "Elasticsearch",
+        "color": "black",
+        "link": "https://elastic.co/elasticsearch"
+      }
+    },
+    {
+      "id": "db-neo4j",
+      "name": "Neo4j",
+      "settings": {
+        "label": "Neo4j",
+        "color": "gray",
+        "link": "https://neo4j.com"
+      }
+    },
+    {
+      "id": "db-couchdb",
+      "name": "CouchDB",
+      "settings": {
+        "label": "CouchDB",
+        "color": "blue",
+        "link": "https://couchdb.apache.org"
+      }
+    },
+    {
+      "id": "db-influxdb",
+      "name": "InfluxDB",
+      "settings": {
+        "label": "InfluxDB",
+        "color": "green",
+        "link": "https://influxdata.com"
+      }
+    },
+    {
+      "id": "db-cockroachdb",
+      "name": "CockroachDB",
+      "settings": {
+        "label": "CockroachDB",
+        "color": "red",
+        "link": "https://cockroachlabs.com"
+      }
+    },
+    {
+      "id": "db-snowflake",
+      "name": "Snowflake",
+      "settings": {
+        "label": "Snowflake",
+        "color": "orange",
+        "link": "https://snowflake.com"
+      }
+    },
+    {
+      "id": "db-bigquery",
+      "name": "BigQuery",
+      "settings": {
+        "label": "BigQuery",
+        "color": "purple",
+        "link": "https://cloud.google.com/bigquery"
+      }
+    },
+    {
+      "id": "db-realm",
+      "name": "Realm",
+      "settings": {
+        "label": "Realm",
+        "color": "black",
+        "link": "https://realm.io"
       }
     }
   ]

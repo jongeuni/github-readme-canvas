@@ -103,12 +103,264 @@
       }
     },
     {
+      "id": "tool-kubernetes",
+      "name": "Kubernetes",
+      "settings": {
+        "label": "Kubernetes",
+        "color": "green",
+        "link": "https://kubernetes.io"
+      }
+    },
+    {
       "id": "tool-git",
       "name": "Git",
       "settings": {
         "label": "Git",
-        "color": "gray",
+        "color": "red",
         "link": "https://git-scm.com"
+      }
+    },
+    {
+      "id": "tool-github",
+      "name": "GitHub",
+      "settings": {
+        "label": "GitHub",
+        "color": "orange",
+        "link": "https://github.com"
+      }
+    },
+    {
+      "id": "tool-gitlab",
+      "name": "GitLab",
+      "settings": {
+        "label": "GitLab",
+        "color": "purple",
+        "link": "https://gitlab.com"
+      }
+    },
+    {
+      "id": "tool-bitbucket",
+      "name": "Bitbucket",
+      "settings": {
+        "label": "Bitbucket",
+        "color": "black",
+        "link": "https://bitbucket.org"
+      }
+    },
+    {
+      "id": "tool-aws",
+      "name": "AWS",
+      "settings": {
+        "label": "AWS",
+        "color": "gray",
+        "link": "https://aws.amazon.com"
+      }
+    },
+    {
+      "id": "tool-googlecloud",
+      "name": "Google Cloud",
+      "settings": {
+        "label": "Google Cloud",
+        "color": "blue",
+        "link": "https://cloud.google.com"
+      }
+    },
+    {
+      "id": "tool-azure",
+      "name": "Azure",
+      "settings": {
+        "label": "Azure",
+        "color": "green",
+        "link": "https://azure.microsoft.com"
+      }
+    },
+    {
+      "id": "tool-jenkins",
+      "name": "Jenkins",
+      "settings": {
+        "label": "Jenkins",
+        "color": "red",
+        "link": "https://jenkins.io"
+      }
+    },
+    {
+      "id": "tool-terraform",
+      "name": "Terraform",
+      "settings": {
+        "label": "Terraform",
+        "color": "orange",
+        "link": "https://terraform.io"
+      }
+    },
+    {
+      "id": "tool-ansible",
+      "name": "Ansible",
+      "settings": {
+        "label": "Ansible",
+        "color": "purple",
+        "link": "https://ansible.com"
+      }
+    },
+    {
+      "id": "tool-nginx",
+      "name": "NGINX",
+      "settings": {
+        "label": "NGINX",
+        "color": "black",
+        "link": "https://nginx.org"
+      }
+    },
+    {
+      "id": "tool-linux",
+      "name": "Linux",
+      "settings": {
+        "label": "Linux",
+        "color": "gray",
+        "link": "https://kernel.org"
+      }
+    },
+    {
+      "id": "tool-postman",
+      "name": "Postman",
+      "settings": {
+        "label": "Postman",
+        "color": "blue",
+        "link": "https://postman.com"
+      }
+    },
+    {
+      "id": "tool-figma",
+      "name": "Figma",
+      "settings": {
+        "label": "Figma",
+        "color": "green",
+        "link": "https://figma.com"
+      }
+    },
+    {
+      "id": "tool-vscode",
+      "name": "VS Code",
+      "settings": {
+        "label": "VS Code",
+        "color": "red",
+        "link": "https://code.visualstudio.com"
+      }
+    },
+    {
+      "id": "tool-webpack",
+      "name": "Webpack",
+      "settings": {
+        "label": "Webpack",
+        "color": "orange",
+        "link": "https://webpack.js.org"
+      }
+    },
+    {
+      "id": "tool-vite",
+      "name": "Vite",
+      "settings": {
+        "label": "Vite",
+        "color": "purple",
+        "link": "https://vitejs.dev"
+      }
+    },
+    {
+      "id": "tool-npm",
+      "name": "npm",
+      "settings": {
+        "label": "npm",
+        "color": "black",
+        "link": "https://npmjs.com"
+      }
+    },
+    {
+      "id": "tool-yarn",
+      "name": "Yarn",
+      "settings": {
+        "label": "Yarn",
+        "color": "gray",
+        "link": "https://yarnpkg.com"
+      }
+    },
+    {
+      "id": "tool-eslint",
+      "name": "ESLint",
+      "settings": {
+        "label": "ESLint",
+        "color": "blue",
+        "link": "https://eslint.org"
+      }
+    },
+    {
+      "id": "tool-prettier",
+      "name": "Prettier",
+      "settings": {
+        "label": "Prettier",
+        "color": "green",
+        "link": "https://prettier.io"
+      }
+    },
+    {
+      "id": "tool-jira",
+      "name": "Jira",
+      "settings": {
+        "label": "Jira",
+        "color": "red",
+        "link": "https://atlassian.com/software/jira"
+      }
+    },
+    {
+      "id": "tool-slack",
+      "name": "Slack",
+      "settings": {
+        "label": "Slack",
+        "color": "orange",
+        "link": "https://slack.com"
+      }
+    },
+    {
+      "id": "tool-notion",
+      "name": "Notion",
+      "settings": {
+        "label": "Notion",
+        "color": "purple",
+        "link": "https://notion.so"
+      }
+    },
+    {
+      "id": "tool-circleci",
+      "name": "CircleCI",
+      "settings": {
+        "label": "CircleCI",
+        "color": "black",
+        "link": "https://circleci.com"
+      }
+    },
+    {
+      "id": "tool-githubactions",
+      "name": "GitHub Actions",
+      "settings": {
+        "label": "GitHub Actions",
+        "color": "gray",
+        "link": "https://github.com/features/actions"
+      }
+    },
+    {
+      "id": "tool-grafana",
+      "name": "Grafana",
+      "settings": {
+        "label": "Grafana",
+        "color": "blue",
+        "link": "https://grafana.com"
+      }
+    },
+    {
+      "id": "tool-prometheus",
+      "name": "Prometheus",
+      "settings": {
+        "label": "Prometheus",
+        "color": "green",
+        "link": "https://prometheus.io"
       }
     }
   ]
