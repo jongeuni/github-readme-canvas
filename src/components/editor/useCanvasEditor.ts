@@ -868,6 +868,22 @@ export function useCanvasEditor() {
     sel?.addRange(range);
   };
 
+  // True when the caret sits at the very first possible position inside el —
+  // built the same way as everything else here that needs to reason about
+  // caret position relative to a line (splitLineAtCaret above): a Range from
+  // the line's own start to the caret, which is empty exactly when nothing
+  // precedes the caret, correctly handling inline tags (bold/italic/link)
+  // the caret might be sitting just inside of.
+  const isCaretAtLineStart = (el: HTMLElement): boolean => {
+    const sel = window.getSelection();
+    if (!sel || !sel.isCollapsed || sel.rangeCount === 0) return false;
+    const range = sel.getRangeAt(0);
+    const probe = document.createRange();
+    probe.selectNodeContents(el);
+    probe.setEnd(range.startContainer, range.startOffset);
+    return probe.toString().length === 0;
+  };
+
   const currentTextLine = (): HTMLElement | null => {
     const canvas = canvasRef.current;
     const sel = window.getSelection();
@@ -1351,6 +1367,22 @@ export function useCanvasEditor() {
         e.preventDefault();
         removeSelectedWidget();
         return;
+      }
+      // Backspace at the very start of a styled line (heading/quote/list/
+      // task/kaomoji) strips the style back to a plain paragraph first,
+      // same text kept — same convention most rich-text editors use. Without
+      // this there was no way to remove a heading short of retyping the line
+      // via the Settings panel's Style dropdown.
+      if (e.key === 'Backspace' && !selectedUid) {
+        const line = currentTextLine();
+        if (line && !line.dataset.uid && CUSTOM_LINE_CLASSES.some((cls) => line.classList.contains(cls)) && isCaretAtLineStart(line)) {
+          e.preventDefault();
+          line.querySelector('input[type="checkbox"]')?.remove();
+          line.className = 'md-text';
+          if (selectedTextEl === line) bump();
+          pushHistorySnapshot();
+          return;
+        }
       }
       if (e.key !== 'Enter' || e.shiftKey || e.nativeEvent.isComposing) return;
       const el = currentTextLine();
