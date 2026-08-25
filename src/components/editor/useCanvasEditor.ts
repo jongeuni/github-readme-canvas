@@ -1215,6 +1215,39 @@ export function useCanvasEditor() {
     return el as HTMLElement;
   };
 
+  // getInsertionAnchor (used when placing a Library component) intentionally
+  // does NOT read window.getSelection() directly at insert time — clicking
+  // into the Library panel to hit "Use Component" can lose/move it (see that
+  // function's own comment) — so it instead trusts selectedTextEl/selectedUid,
+  // whatever was last explicitly selected in the canvas. But selectTextBlock/
+  // selectWidget are only ever called from click, Enter, paste, drag-drop —
+  // never from plain arrow-key/Home/End caret movement — so without this,
+  // navigating with the keyboard after a click leaves that stale anchor
+  // behind, and a component inserts next to wherever was last clicked
+  // instead of wherever the caret visibly is now. Mirrored onto
+  // selectedTextEl here, on keyUP rather than keydown, so the browser's own
+  // default caret movement (arrow keys, Home/End, ...) has already been
+  // applied by the time currentTextLine() reads it. Deliberately NOT a
+  // document-level `selectionchange` listener: clicking a widget (
+  // contentEditable=false) never moves the real DOM selection — see
+  // handleKeyDown's own comment on that — so a selectionchange handler can
+  // fire from that stale, unrelated selection sometime after selectWidget()
+  // runs and clobber the widget selection it just set. Scoping this to the
+  // canvas's own keyup instead sidesteps that race entirely: mouse clicks
+  // never fire it, and `selectedUid` being set (a widget one was just
+  // clicked or arrowed onto) skips it outright. The classList check makes
+  // re-entering an already-selected line (e.g. moving the caret within it)
+  // a cheap no-op.
+  const handleKeyUp = useCallback(
+    (e: KeyboardEvent<HTMLDivElement>) => {
+      if (isWidgetFormField(e.target) || selectedUid) return;
+      const line = currentTextLine();
+      if (line && !line.classList.contains('text-selected')) selectTextBlock(line);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [selectedUid, selectTextBlock],
+  );
+
   // ---------- typing/pasting a whole "![alt](url)" (optionally link-wrapped)
   // line converts it live into a real image widget, same as any other README
   // — so pasting a snippet straight from a README (or from this app's own
@@ -2615,6 +2648,7 @@ export function useCanvasEditor() {
       onClick: handleClick,
       onInput: handleInput,
       onKeyDown: handleKeyDown,
+      onKeyUp: handleKeyUp,
       onCopy: handleCopy,
       onPaste: handlePaste,
       onDragStart: handleDragStart,
