@@ -644,6 +644,54 @@ export function parseMarkdownToBlocks(text: string): SerializedBlock[] {
   return blocks;
 }
 
+// Visually centers/right-aligns a *run* of consecutive inline-layout
+// widgets (badges, tech icons, ...) sharing the same data-align, matching
+// what they'll actually look like once exported (buildFullMarkdown joins
+// such a run into one aligned line — see wrapAlign). Each widget stays a
+// direct child of the canvas with no wrapping container (drag/drop
+// reordering, getSpannedTextLines, and every other `canvas.children` walk
+// all depend on that), and `display: inline-flex` (see widgetHTMLContainer)
+// is what makes consecutive ones flow together on one line in the first
+// place — but that same shrink-to-fit box has nothing to center *within*,
+// so `.block[data-align='center']`'s `justify-content` is a no-op on it
+// (only ever fires visibly for layout:'block' widgets, which this function
+// deliberately never touches). Solved with plain measured margin-left on
+// just the first widget of each run instead: cheap, and immune to the
+// specific regression an earlier `:has()`-selector attempt at this same
+// problem caused (aligned-widget CSS bleeding into an unrelated adjacent
+// text line) since this never reads or writes anything on a text line —
+// only ever `dataset.uid` elements with `style.display === 'inline-flex'`.
+function recomputeInlineAlignment(canvas: HTMLElement) {
+  const isAlignableInlineWidget = (el: Element): el is HTMLElement =>
+    el instanceof HTMLElement && !!el.dataset.uid && el.style.display === 'inline-flex';
+
+  const children = Array.from(canvas.children) as HTMLElement[];
+  // Clear every previously-applied margin first so the measurements below
+  // reflect each widget's natural (unshifted) flow position.
+  for (const el of children) {
+    if (isAlignableInlineWidget(el)) el.style.marginLeft = '';
+  }
+
+  const canvasStyle = getComputedStyle(canvas);
+  const availableWidth = canvas.getBoundingClientRect().width - (parseFloat(canvasStyle.paddingLeft) || 0) - (parseFloat(canvasStyle.paddingRight) || 0);
+
+  let i = 0;
+  while (i < children.length) {
+    const el = children[i];
+    const align = el.dataset.align;
+    if (!isAlignableInlineWidget(el) || (align !== 'center' && align !== 'right')) {
+      i++;
+      continue;
+    }
+    let j = i + 1;
+    while (j < children.length && isAlignableInlineWidget(children[j]) && children[j].dataset.align === align) j++;
+    const runWidth = children[j - 1].getBoundingClientRect().right - el.getBoundingClientRect().left;
+    const shift = align === 'center' ? (availableWidth - runWidth) / 2 : availableWidth - runWidth;
+    if (shift > 0) el.style.marginLeft = `${shift}px`;
+    i = j;
+  }
+}
+
 export function useCanvasEditor() {
   const canvasRef = useRef<HTMLDivElement | null>(null);
   const widgetsRef = useRef<Map<string, WidgetRecord>>(new Map());
@@ -969,6 +1017,46 @@ export function useCanvasEditor() {
     observer.observe(canvas, { childList: true });
     return () => observer.disconnect();
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Keeps recomputeInlineAlignment's margins in sync with reality —
+  // triggered by anything that could change a run's membership or width
+  // (a widget added/removed/reordered, alignment changed, the canvas
+  // itself resized) rather than threading an explicit call through every
+  // one of those call sites individually, which is exactly the kind of
+  // "missed one spot" risk that would leave a stale margin behind.
+  // `attributeFilter` keeps this from firing on ordinary typing (which
+  // never touches `data-align`); `subtree: true` is only needed so that
+  // filter also catches the attribute on children, not the canvas itself.
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    // setTimeout, not requestAnimationFrame — rAF (and ResizeObserver
+    // callback delivery, which is tied to the same paint pipeline) can be
+    // starved indefinitely on a backgrounded/hidden tab, which would leave
+    // margins stale until the tab is refocused. A plain timer keeps this
+    // debounced without that dependency.
+    let timer = 0;
+    const schedule = () => {
+      clearTimeout(timer);
+      timer = window.setTimeout(() => recomputeInlineAlignment(canvas), 0);
+    };
+    const mo = new MutationObserver(schedule);
+    mo.observe(canvas, { childList: true, subtree: true, attributes: true, attributeFilter: ['data-align'] });
+    const ro = new ResizeObserver(schedule);
+    ro.observe(canvas);
+    // Belt-and-suspenders alongside the ResizeObserver above — cheap, and
+    // covers it in case some environment doesn't fire ResizeObserver for a
+    // change that's really a viewport/window resize rather than the
+    // canvas's own box being pushed around by unrelated layout.
+    window.addEventListener('resize', schedule);
+    schedule();
+    return () => {
+      clearTimeout(timer);
+      mo.disconnect();
+      ro.disconnect();
+      window.removeEventListener('resize', schedule);
+    };
   }, []);
 
   // Global (not just on the canvas) so Cmd/Ctrl+Z undoes a widget delete or
