@@ -215,7 +215,12 @@ export function SearchableSelectField({
     // A scrolling ancestor (the Library card list, the Settings sidebar)
     // moves the input out from under a `fixed` panel without ever firing a
     // window scroll event — capture:true catches that inner scroll too.
-    const onScroll = () => setOpen(false);
+    // But the panel's own option list also scrolls (it's inside rootRef,
+    // same as the input) and must NOT close itself on its own scroll.
+    const onScroll = (e: Event) => {
+      if (rootRef.current?.contains(e.target as Node)) return;
+      setOpen(false);
+    };
     document.addEventListener('mousedown', onDocClick);
     document.addEventListener('keydown', onKeyDown);
     document.addEventListener('scroll', onScroll, { capture: true });
