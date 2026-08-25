@@ -291,12 +291,26 @@ function textWithSoftBreaks(node: Node): string {
     // follows, silently corrupting it. Drop the empty wrapper entirely
     // instead of emitting its markers.
     const isEmptyFormatting = !inner && (child.nodeName === 'STRONG' || child.nodeName === 'B' || child.nodeName === 'EM' || child.nodeName === 'I' || child.nodeName === 'DEL' || child.nodeName === 'S' || child.nodeName === 'CODE');
+    const emphasisMarker =
+      child.nodeName === 'STRONG' || child.nodeName === 'B' ? '**' : child.nodeName === 'EM' || child.nodeName === 'I' ? '*' : child.nodeName === 'DEL' || child.nodeName === 'S' ? '~~' : null;
     if (isEmptyFormatting) {
       // contributes nothing
-    } else if (child.nodeName === 'STRONG' || child.nodeName === 'B') out += `**${inner}**`;
-    else if (child.nodeName === 'EM' || child.nodeName === 'I') out += `*${inner}*`;
-    else if (child.nodeName === 'DEL' || child.nodeName === 'S') out += `~~${inner}~~`;
-    else if (child.nodeName === 'CODE') out += `\`${inner}\``;
+    } else if (emphasisMarker) {
+      // GFM's emphasis rule requires the marker to sit flush against real
+      // content — `* Medium*` (a space right inside the markers, e.g. from
+      // a drag-select that also caught the space before a word) renders as
+      // a literal asterisk on GitHub instead of applying the style, even
+      // though applyInlineFormat already trims this at the source; this is
+      // the same fix applied defensively on export too, for content that
+      // reached here some other way (paste, older saved documents, ...).
+      // Moving the whitespace outside the markers looks identical either
+      // way and is always valid.
+      const leading = inner.match(/^\s+/)?.[0] ?? '';
+      const core = inner.slice(leading.length);
+      const trailing = core.match(/\s+$/)?.[0] ?? '';
+      const trimmedCore = core.slice(0, core.length - trailing.length);
+      out += trimmedCore ? `${leading}${emphasisMarker}${trimmedCore}${emphasisMarker}${trailing}` : leading + trailing;
+    } else if (child.nodeName === 'CODE') out += `\`${inner}\``;
     else if (child.nodeName === 'A') out += `[${inner}](${(child as HTMLAnchorElement).getAttribute('href') ?? ''})`;
     else if (child.nodeName === 'IMG') out += `![${(child as HTMLImageElement).getAttribute('alt') ?? ''}](${(child as HTMLImageElement).getAttribute('src') ?? ''})`;
     // A nested top-level line div only ever shows up here when this is
@@ -1363,6 +1377,35 @@ export function useCanvasEditor() {
     return r;
   };
 
+  // A drag that's off by one character easily catches the space before or
+  // after the word it meant to select — wrapping that space *inside*
+  // <strong>/<em>/<del> breaks GFM's emphasis rule on export (the marker
+  // has to sit flush against real content: `* Medium*` renders as a
+  // literal asterisk on GitHub, not italics). Nudges the boundary past any
+  // leading/trailing whitespace first so the wrap never includes it.
+  // Deliberately only ever adjusts *within* a boundary's own text node —
+  // a boundary that isn't a text node, or one made of nothing but
+  // whitespace, is rare enough here not to be worth walking into a
+  // neighboring node for.
+  const trimRangeWhitespace = (range: Range): Range => {
+    const r = range.cloneRange();
+    if (r.startContainer.nodeType === Node.TEXT_NODE) {
+      const text = r.startContainer.textContent ?? '';
+      const limit = r.startContainer === r.endContainer ? r.endOffset : text.length;
+      let start = r.startOffset;
+      while (start < limit && /\s/.test(text[start])) start++;
+      r.setStart(r.startContainer, start);
+    }
+    if (r.endContainer.nodeType === Node.TEXT_NODE) {
+      const text = r.endContainer.textContent ?? '';
+      const limit = r.endContainer === r.startContainer ? r.startOffset : 0;
+      let end = r.endOffset;
+      while (end > limit && /\s/.test(text[end - 1])) end--;
+      r.setEnd(r.endContainer, end);
+    }
+    return r;
+  };
+
   // Wraps — or, if the whole selection is already wrapped, unwraps; a
   // toggle, same convention as any rich-text editor's Bold button — the
   // current selection in <strong>/<em>/<del> via Range.surroundContents
@@ -1403,7 +1446,7 @@ export function useCanvasEditor() {
       let newStart: { node: Node; offset: number } | null = null;
       let newEnd: { node: Node; offset: number } | null = null;
       for (const line of getSpannedTextLines(range)) {
-        const lineRange = rangeWithinLine(range, line);
+        const lineRange = trimRangeWhitespace(rangeWithinLine(range, line));
         if (lineRange.collapsed) continue;
         const startWrapper = wrapperAncestor(lineRange.startContainer, line);
         const endWrapper = wrapperAncestor(lineRange.endContainer, line);
