@@ -680,7 +680,13 @@ pre {
   gap: 2px;
   background: #18181b;
   border-radius: 8px;
-  padding: 4px;
+  /* Extra bottom padding on purpose — a click that undershoots a button
+     lands in this padding (still part of this fixed, higher-z-index box)
+     instead of falling through to the canvas text just below and
+     collapsing the selection. The toolbar sits close above that text (see
+     `top: rect.top - 42` in useCanvasEditor's handleCanvasMouseUp) so
+     there isn't much natural clearance otherwise. */
+  padding: 4px 4px 10px;
   box-shadow: var(--shadow-sm);
   z-index: 60;
 }

@@ -1599,6 +1599,70 @@ export function useCanvasEditor() {
           return;
         }
       }
+      // Backspace/Delete over a genuine multi-line drag-selection — e.g.
+      // several blank lines from repeated Enter presses, dragged over and
+      // deleted in one go. Native contentEditable range-deletion across
+      // sibling block elements can't be relied on here: it's a no-op when
+      // every spanned line is truly empty (no text node, no <br> — exactly
+      // what a bare Enter produces), which is exactly the case that was
+      // reported as "doesn't do anything". Handled explicitly instead:
+      // merge whatever survives of the first/last spanned line into one,
+      // remove everything strictly in between ourselves — including
+      // unmounting any widget caught inside the range, same cleanup
+      // removeSelectedWidget does. A same-line selection (lines.length
+      // === 1) is left to the browser's own default, which is fine there.
+      if ((e.key === 'Backspace' || e.key === 'Delete') && !selectedUid) {
+        const sel = window.getSelection();
+        const canvas = canvasRef.current;
+        if (canvas && sel && sel.rangeCount > 0 && !sel.isCollapsed) {
+          const range = sel.getRangeAt(0);
+          const lines = getSpannedTextLines(range);
+          if (lines.length > 1) {
+            e.preventDefault();
+            const first = lines[0];
+            const last = lines[lines.length - 1];
+            const firstRange = rangeWithinLine(range, first);
+            const lastRange = rangeWithinLine(range, last);
+
+            const tailExtract = document.createRange();
+            tailExtract.setStart(lastRange.endContainer, lastRange.endOffset);
+            tailExtract.setEnd(last, last.childNodes.length);
+            const tail = tailExtract.extractContents();
+
+            const truncate = document.createRange();
+            truncate.setStart(firstRange.startContainer, firstRange.startOffset);
+            truncate.setEnd(first, first.childNodes.length);
+            truncate.deleteContents();
+            const caretOffset = first.childNodes.length;
+            first.appendChild(tail);
+
+            const allChildren = Array.from(canvas.children) as HTMLElement[];
+            const firstIdx = allChildren.indexOf(first);
+            const lastIdx = allChildren.indexOf(last);
+            for (let i = lastIdx; i > firstIdx; i--) {
+              const child = allChildren[i];
+              if (child.dataset.uid) {
+                const record = widgetsRef.current.get(child.dataset.uid);
+                if (record) {
+                  record.root.unmount();
+                  widgetsRef.current.delete(child.dataset.uid);
+                }
+              }
+              child.remove();
+            }
+
+            const caretRange = document.createRange();
+            caretRange.setStart(first, caretOffset);
+            caretRange.collapse(true);
+            sel.removeAllRanges();
+            sel.addRange(caretRange);
+            selectTextBlock(first);
+            setSelectionToolbar(null);
+            pushHistorySnapshot();
+            return;
+          }
+        }
+      }
       if (e.key !== 'Enter' || e.shiftKey || e.nativeEvent.isComposing) return;
       const el = currentTextLine();
       if (!el) return;
