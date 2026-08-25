@@ -348,18 +348,18 @@ pre {
 .combobox-field .search-box input[type='text'] {
   padding-left: 29px;
 }
+/* position/top/left/width/max-height are set inline (see fields.tsx) —
+   `fixed` and computed from the input's own viewport rect, not `absolute`,
+   so the panel isn't clipped by whichever scrolling sidebar it's inside
+   (the Library card list, the Settings column). */
 .combobox-panel {
-  position: absolute;
-  left: 0;
-  right: 0;
-  margin-top: 4px;
-  max-height: 220px;
+  position: fixed;
   overflow-y: auto;
   background: #fff;
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-sm);
   box-shadow: var(--shadow-sm);
-  z-index: 20;
+  z-index: 200;
 }
 .combobox-option {
   padding: 7px 10px;

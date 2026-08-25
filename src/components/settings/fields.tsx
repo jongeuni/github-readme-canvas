@@ -186,6 +186,23 @@ export function SearchableSelectField({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const rootRef = useRef<HTMLDivElement | null>(null);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  // `position: fixed`, computed from the input's own viewport rect — not
+  // `absolute` — same reasoning as the canvas's own selection-toolbar (see
+  // Canvas.tsx): both the Library card and the Settings panel scroll their
+  // own narrow columns, and an `absolute` panel gets clipped to whichever
+  // scrolling ancestor it's inside instead of overlaying the rest of the
+  // page. `fixed` escapes that; only the max-height still needs capping so
+  // it doesn't run off the bottom of the viewport.
+  const [panelPos, setPanelPos] = useState<{ top: number; left: number; width: number; maxHeight: number } | null>(null);
+
+  const openPanel = () => {
+    const rect = inputRef.current?.getBoundingClientRect();
+    if (rect) {
+      setPanelPos({ top: rect.bottom + 4, left: rect.left, width: rect.width, maxHeight: Math.max(120, Math.min(220, window.innerHeight - rect.bottom - 12)) });
+    }
+    setOpen(true);
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -195,11 +212,17 @@ export function SearchableSelectField({
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setOpen(false);
     };
+    // A scrolling ancestor (the Library card list, the Settings sidebar)
+    // moves the input out from under a `fixed` panel without ever firing a
+    // window scroll event — capture:true catches that inner scroll too.
+    const onScroll = () => setOpen(false);
     document.addEventListener('mousedown', onDocClick);
     document.addEventListener('keydown', onKeyDown);
+    document.addEventListener('scroll', onScroll, { capture: true });
     return () => {
       document.removeEventListener('mousedown', onDocClick);
       document.removeEventListener('keydown', onKeyDown);
+      document.removeEventListener('scroll', onScroll, { capture: true });
     };
   }, [open]);
 
@@ -219,22 +242,23 @@ export function SearchableSelectField({
       <div className="search-box">
         <Icon name="search" />
         <input
+          ref={inputRef}
           type="text"
           value={open ? query : (displayLabel ?? value)}
           placeholder={placeholder ?? 'Search…'}
           onFocus={() => {
-            setOpen(true);
             setQuery('');
+            openPanel();
           }}
           // Also on click, not just focus — closing the panel (Escape, or
           // picking an option) never blurs the input, so a plain onFocus
           // would only ever fire once and a second click wouldn't reopen it.
-          onClick={() => setOpen(true)}
+          onClick={openPanel}
           onChange={(e) => setQuery(e.target.value)}
         />
       </div>
-      {open && (
-        <div className="combobox-panel">
+      {open && panelPos && (
+        <div className="combobox-panel" style={{ top: panelPos.top, left: panelPos.left, width: panelPos.width, maxHeight: panelPos.maxHeight }}>
           {filtered.map((o) => (
             <div key={o.value} className={`combobox-option ${o.value === value ? 'selected' : ''}`} onMouseDown={() => pick(o.value)}>
               {o.label}
