@@ -248,6 +248,22 @@ function isEmptyText(n: ChildNode | null): boolean {
   return !!n && n.nodeType === Node.TEXT_NODE && n.textContent === '';
 }
 
+/** True when an event originated inside one of a widget's own native
+ *  <input>/<textarea> fields (Code Block/Table/Collapsible Section's inline
+ *  canvas editing) rather than the canvas's own contentEditable text flow.
+ *  Those fields are real form controls that already handle their own
+ *  typing/paste/copy/selection correctly on their own — but their native
+ *  events still bubble up through the contentEditable canvas div same as
+ *  a real text edit would, into handlers below that assume they own the
+ *  whole editing surface and read from window.getSelection()/the canvas's
+ *  own selection state. That state is stale/meaningless while a form field
+ *  has focus (focusing an input never touches document.getSelection()), so
+ *  every such handler must bail out first and leave the field's native
+ *  behavior alone. */
+function isWidgetFormField(target: EventTarget | null): boolean {
+  return target instanceof HTMLElement && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA');
+}
+
 /** Turns a line into a GFM task-list item: a real, clickable checkbox
  *  (contentEditable=false, so clicking it toggles instead of placing a text
  *  caret) followed by the item's text. Used by both the live "- [ ] "
@@ -1350,7 +1366,11 @@ export function useCanvasEditor() {
     setSelectionToolbar({ top: rect.top - 42, left: rect.left + rect.width / 2 });
   }, []);
 
-  const handleCanvasMouseUp = useCallback(() => {
+  const handleCanvasMouseUp = useCallback((e: MouseEvent<HTMLDivElement>) => {
+    // Finishing a drag-select inside a widget's own field must not pop the
+    // floating Bold/Italic toolbar over some stale canvas selection — see
+    // isWidgetFormField's comment.
+    if (isWidgetFormField(e.target)) return;
     positionToolbarFromSelection();
   }, [positionToolbarFromSelection]);
 
@@ -1592,7 +1612,10 @@ export function useCanvasEditor() {
     // bubbles up into this handler same as a real text edit would — it
     // isn't one, and handleClick's checkbox branch already pushes its own
     // history snapshot, so this would otherwise double up on that entry.
-    if ((e.target as HTMLElement).tagName === 'INPUT') return;
+    // Same bubbling applies to every keystroke in a widget's own inline
+    // field (Code Block/Table/Details) — see isWidgetFormField's comment;
+    // those already push their own history via updateWidgetSettings.
+    if (isWidgetFormField(e.target)) return;
     setSelectionToolbar(null); // typing collapses whatever selection the toolbar was anchored to
     // Debounced: fires 600ms after typing settles, not once per keystroke.
     // Placed early so every branch below (heading/list/task/image/hr/code-
@@ -1773,6 +1796,12 @@ export function useCanvasEditor() {
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent<HTMLDivElement>) => {
+      // Typing inside a widget's own inline field (e.g. Backspace deleting a
+      // character in a Table cell, Enter adding a newline in a Code Block)
+      // must never fall through to the selection-based logic below — see
+      // isWidgetFormField's own comment. Without this, Backspace here
+      // deleted the whole selected widget instead of a character in it.
+      if (isWidgetFormField(e.target)) return;
       // A selected widget is contentEditable=false, so clicking it never
       // moves the browser's real caret — it just stays wherever it last
       // was (often the trailing line). Without this, Backspace/Delete with
@@ -1980,6 +2009,10 @@ export function useCanvasEditor() {
   // markdown source instead, same conversions buildFullMarkdown's own
   // textWithSoftBreaks already does for export.
   const handleCopy = useCallback((e: ClipboardEvent<HTMLDivElement>) => {
+    // Copying from inside a widget's own field must use its native
+    // selection, not whatever stale canvas selection window.getSelection()
+    // last held — see isWidgetFormField's comment.
+    if (isWidgetFormField(e.target)) return;
     const sel = window.getSelection();
     const canvas = canvasRef.current;
     if (!sel || sel.rangeCount === 0 || sel.isCollapsed || !canvas || !canvas.contains(sel.anchorNode)) return;
@@ -1999,6 +2032,11 @@ export function useCanvasEditor() {
   // line," never a whole pasted document. Single-line paste is untouched.
   const handlePaste = useCallback(
     (e: ClipboardEvent<HTMLDivElement>) => {
+      // Pasting into a widget's own field (e.g. code into a Code Block)
+      // must reach that field's native paste, not get force-converted into
+      // canvas blocks and preventDefault()'d away — see isWidgetFormField's
+      // comment.
+      if (isWidgetFormField(e.target)) return;
       e.preventDefault();
       const text = e.clipboardData.getData('text/plain');
       if (text.includes('\n')) {
