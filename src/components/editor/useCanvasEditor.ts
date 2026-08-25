@@ -1569,7 +1569,37 @@ export function useCanvasEditor() {
         selectWidget(widgetEl.dataset.uid);
         return;
       }
-      if (e.target === canvas) return; // clicked empty padding, not a real line
+      if (e.target === canvas) {
+        // Genuinely empty canvas space — the thin margin gap between two
+        // stacked components, or blank padding below/beside all content.
+        // Insert a fresh line at the click's vertical position instead of
+        // doing nothing, so there's always a way to start typing between
+        // two components without precisely hitting a few-pixel sliver.
+        const children = Array.from(canvas.children) as HTMLElement[];
+        const insertBefore =
+          children.find((child) => {
+            const rect = child.getBoundingClientRect();
+            return e.clientY < rect.top + rect.height / 2;
+          }) ?? null;
+        if (!insertBefore) {
+          const last = canvas.lastElementChild as HTMLElement | null;
+          if (last && !last.dataset.uid) {
+            // Already ends on a plain text line (likely the trailing
+            // placeholder) — reuse it instead of stacking an empty one on top.
+            selectTextBlock(last);
+            placeCaretAtEnd(last);
+            return;
+          }
+        }
+        const div = document.createElement('div');
+        div.className = 'md-text';
+        if (insertBefore) canvas.insertBefore(div, insertBefore);
+        else canvas.appendChild(div);
+        selectTextBlock(div);
+        placeCaretAtEnd(div);
+        pushHistorySnapshot();
+        return;
+      }
       let el = e.target as HTMLElement | null;
       while (el && el.parentElement !== canvas) el = el.parentElement;
       if (el && el.parentElement === canvas && !el.dataset.uid) selectTextBlock(el);
