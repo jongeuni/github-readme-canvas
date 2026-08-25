@@ -1419,6 +1419,27 @@ export function useCanvasEditor() {
           return;
         }
       }
+      // Backspace at the start of a text line whose previous sibling is a
+      // widget — contentEditable's own native Backspace, with nothing
+      // editable to merge into, deletes that widget instead (a well-known
+      // quirk: a non-editable island right before the caret reads as "the
+      // previous character" to merge/backspace over). Block that outright;
+      // if the line is empty, also remove it — that's the one case where
+      // there's nothing else useful for Backspace to do here, and it's
+      // what the user is actually trying to accomplish.
+      if (e.key === 'Backspace' && !selectedUid) {
+        const line = currentTextLine();
+        if (line && !line.dataset.uid && isCaretAtLineStart(line) && (line.previousElementSibling as HTMLElement | null)?.dataset.uid) {
+          e.preventDefault();
+          if ((line.textContent ?? '') === '') {
+            line.remove();
+            setSelectedTextEl(null);
+            ensureTrailingTextLine();
+            pushHistorySnapshot();
+          }
+          return;
+        }
+      }
       if (e.key !== 'Enter' || e.shiftKey || e.nativeEvent.isComposing) return;
       const el = currentTextLine();
       if (!el) return;
