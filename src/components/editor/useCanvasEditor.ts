@@ -1196,7 +1196,13 @@ export function useCanvasEditor() {
   };
 
   // ---------- floating Bold/Italic toolbar on drag-selecting text ----------
-  const handleCanvasMouseUp = useCallback(() => {
+  // Shared by handleCanvasMouseUp (positions it after a fresh drag) and by
+  // applyInlineFormat/toggleSelectionCenterAlign (repositions it after
+  // applying a format instead of hiding it — see applyInlineFormat's own
+  // comment for why the selection is deliberately kept alive across a
+  // click there, so Bold then Italic on the same drag works without
+  // re-dragging in between).
+  const positionToolbarFromSelection = useCallback(() => {
     const canvas = canvasRef.current;
     const sel = window.getSelection();
     if (!canvas || !sel || sel.isCollapsed || sel.rangeCount === 0) {
@@ -1221,6 +1227,10 @@ export function useCanvasEditor() {
     // Canvas.tsx), so this can be used as-is with no ancestor-offset math.
     setSelectionToolbar({ top: rect.top - 42, left: rect.left + rect.width / 2 });
   }, []);
+
+  const handleCanvasMouseUp = useCallback(() => {
+    positionToolbarFromSelection();
+  }, [positionToolbarFromSelection]);
 
   // A drag-selection's Range only ever has ONE startContainer/endContainer
   // pair, but those can sit in two entirely different top-level line divs
@@ -1259,36 +1269,92 @@ export function useCanvasEditor() {
     return r;
   };
 
-  // Wraps the current selection in <strong>/<em>/<del> via
-  // Range.surroundContents (not document.execCommand — its output tag/markup
-  // varies across browsers, and textWithSoftBreaks needs to know exactly
-  // which tag to expect to round-trip it back into **bold**/*italic*/
-  // ~~strike~~ on export). Applied per spanned line — surroundContents
-  // itself can only ever wrap content within a single parent, so a
-  // multi-line Range has to be split first (see getSpannedTextLines).
+  // Wraps — or, if the whole selection is already wrapped, unwraps; a
+  // toggle, same convention as any rich-text editor's Bold button — the
+  // current selection in <strong>/<em>/<del> via Range.surroundContents
+  // (not document.execCommand — its output tag/markup varies across
+  // browsers, and textWithSoftBreaks needs to know exactly which tag to
+  // expect to round-trip it back into **bold**/*italic*/~~strike~~ on
+  // export). Applied per spanned line — surroundContents itself can only
+  // ever wrap content within a single parent, so a multi-line Range has to
+  // be split first (see getSpannedTextLines).
+  //
+  // Deliberately does NOT collapse the selection afterward (used to — see
+  // "click Bold and the drag/toolbar both vanish" this fixes): the
+  // now-wrapped/unwrapped Range is re-derived and re-selected instead, and
+  // the toolbar repositioned rather than hidden, so clicking Bold then
+  // Italic on the same drag-selection works without re-dragging.
   const applyInlineFormat = useCallback(
     (tag: 'strong' | 'em' | 'del') => {
       const sel = window.getSelection();
       if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return;
       const range = sel.getRangeAt(0);
+
+      // Is `node`'s line-local ancestor chain already inside a `tag`
+      // element? Walked independently for a line-range's start and end —
+      // only when BOTH land in the *same* such element is that line's
+      // whole selection uniformly already-formatted (a selection that's
+      // only partly bold, say, falls through to the wrap branch instead —
+      // same "make it all bold" convention most editors use for a mixed
+      // selection).
+      const wrapperAncestor = (node: Node, line: HTMLElement): HTMLElement | null => {
+        let el: Node | null = node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
+        while (el && el !== line) {
+          if ((el as HTMLElement).tagName?.toLowerCase() === tag) return el as HTMLElement;
+          el = (el as HTMLElement).parentElement;
+        }
+        return null;
+      };
+
+      let newStart: { node: Node; offset: number } | null = null;
+      let newEnd: { node: Node; offset: number } | null = null;
       for (const line of getSpannedTextLines(range)) {
         const lineRange = rangeWithinLine(range, line);
         if (lineRange.collapsed) continue;
-        try {
-          lineRange.surroundContents(document.createElement(tag));
-        } catch {
-          // The range straddles a partial element boundary (e.g. half-overlaps
-          // an existing <strong>/<em>) — surroundContents refuses rather than
-          // produce broken markup. Just skip this line; nothing was corrupted.
+        const startWrapper = wrapperAncestor(lineRange.startContainer, line);
+        const endWrapper = wrapperAncestor(lineRange.endContainer, line);
+        if (startWrapper && startWrapper === endWrapper) {
+          // Fully inside one existing wrapper already — toggle off: unwrap
+          // the whole run, not just the selected portion (same "select
+          // anywhere inside a bold run, click Bold, the whole run
+          // un-bolds" convention most editors use).
+          const kids = Array.from(startWrapper.childNodes);
+          if (kids.length === 0) continue;
+          startWrapper.replaceWith(...kids);
+          const first = kids[0];
+          const last = kids[kids.length - 1];
+          newStart ??= { node: first, offset: 0 };
+          newEnd = { node: last, offset: last.nodeType === Node.TEXT_NODE ? (last.textContent?.length ?? 0) : last.childNodes.length };
+        } else {
+          try {
+            const wrapper = document.createElement(tag);
+            lineRange.surroundContents(wrapper);
+            newStart ??= { node: wrapper, offset: 0 };
+            newEnd = { node: wrapper, offset: wrapper.childNodes.length };
+          } catch {
+            // The range straddles a partial element boundary (e.g. half-overlaps
+            // an existing <strong>/<em>) — surroundContents refuses rather than
+            // produce broken markup. Just skip this line; nothing was corrupted.
+          }
         }
       }
-      sel.removeAllRanges();
-      setSelectionToolbar(null);
+
+      if (newStart && newEnd) {
+        const restored = document.createRange();
+        restored.setStart(newStart.node, newStart.offset);
+        restored.setEnd(newEnd.node, newEnd.offset);
+        sel.removeAllRanges();
+        sel.addRange(restored);
+        positionToolbarFromSelection();
+      } else {
+        sel.removeAllRanges();
+        setSelectionToolbar(null);
+      }
       const line = currentTextLine();
       if (line && selectedTextEl === line) bump();
       pushHistorySnapshot();
     },
-    [selectedTextEl, pushHistorySnapshot],
+    [selectedTextEl, pushHistorySnapshot, positionToolbarFromSelection],
   );
 
   // Swaps the toolbar's button row for a URL input (see Canvas.tsx) instead
@@ -1360,10 +1426,14 @@ export function useCanvasEditor() {
       if (shouldCenter) line.dataset.align = 'center';
       else delete line.dataset.align;
     }
-    setSelectionToolbar(null);
+    // Doesn't touch the Range/Selection itself (only a data-attribute on
+    // the line elements changed) — kept alive on purpose, same as
+    // applyInlineFormat, so this can be chained with Bold/Italic/Strike on
+    // the same drag-selection without re-dragging in between.
+    positionToolbarFromSelection();
     if (selectedTextEl && lines.includes(selectedTextEl)) bump();
     pushHistorySnapshot();
-  }, [selectedTextEl, pushHistorySnapshot]);
+  }, [selectedTextEl, pushHistorySnapshot, positionToolbarFromSelection]);
 
   // ---------- "# " / "## " live heading conversion + keep Settings in sync ----------
   const handleInput = useCallback((e: FormEvent<HTMLDivElement>) => {
