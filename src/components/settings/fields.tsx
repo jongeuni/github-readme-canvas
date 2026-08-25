@@ -1,4 +1,6 @@
+import { useEffect, useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
+import { Icon } from '../Icon';
 
 export function TextAreaField({
   label,
@@ -147,6 +149,104 @@ export function AlignField({ label = 'Align', value, onChange }: { label?: strin
           </button>
         ))}
       </div>
+    </div>
+  );
+}
+
+/**
+ * A text-search combobox for an option list too long to browse comfortably
+ * as a plain <select> — filters by label as you type, click a row to pick
+ * it. If `allowCustom` is set and the typed text doesn't match anything, an
+ * extra row lets that raw text itself become the value (a curated preset
+ * list can't cover everything a user might want — see Tech Icon's own use:
+ * any skillicons.dev slug works, not just the ones with a named preset).
+ */
+export function SearchableSelectField({
+  label,
+  value,
+  displayLabel,
+  options,
+  onChange,
+  placeholder,
+  allowCustom = false,
+  hint,
+}: {
+  label: string;
+  value: string;
+  /** What the closed input shows — falls back to `value` itself if omitted. */
+  displayLabel?: string;
+  options: { value: string; label: string }[];
+  onChange: (value: string) => void;
+  placeholder?: string;
+  allowCustom?: boolean;
+  hint?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const rootRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDocClick = (e: MouseEvent) => {
+      if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
+    };
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('mousedown', onDocClick);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', onDocClick);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [open]);
+
+  const q = query.trim().toLowerCase();
+  const filtered = q ? options.filter((o) => o.label.toLowerCase().includes(q)) : options;
+  const exactMatch = options.some((o) => o.label.toLowerCase() === q || o.value.toLowerCase() === q);
+
+  const pick = (v: string) => {
+    onChange(v);
+    setQuery('');
+    setOpen(false);
+  };
+
+  return (
+    <div className="field combobox-field" ref={rootRef}>
+      <label>{label}</label>
+      <div className="search-box">
+        <Icon name="search" />
+        <input
+          type="text"
+          value={open ? query : (displayLabel ?? value)}
+          placeholder={placeholder ?? 'Search…'}
+          onFocus={() => {
+            setOpen(true);
+            setQuery('');
+          }}
+          // Also on click, not just focus — closing the panel (Escape, or
+          // picking an option) never blurs the input, so a plain onFocus
+          // would only ever fire once and a second click wouldn't reopen it.
+          onClick={() => setOpen(true)}
+          onChange={(e) => setQuery(e.target.value)}
+        />
+      </div>
+      {open && (
+        <div className="combobox-panel">
+          {filtered.map((o) => (
+            <div key={o.value} className={`combobox-option ${o.value === value ? 'selected' : ''}`} onMouseDown={() => pick(o.value)}>
+              {o.label}
+            </div>
+          ))}
+          {filtered.length === 0 && !allowCustom && <div className="combobox-empty">No matches</div>}
+          {allowCustom && q && !exactMatch && (
+            <div className="combobox-option combobox-option-custom" onMouseDown={() => pick(q.replace(/\s+/g, ''))}>
+              Use "{q}" directly
+            </div>
+          )}
+        </div>
+      )}
+      {hint && <div className="hint">{hint}</div>}
     </div>
   );
 }

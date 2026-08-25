@@ -5,6 +5,7 @@ import { getComponentType, LIBRARY_MAP, PRESET_PARENT_MAP } from '../../registry
 import { Icon } from '../Icon';
 import { AlignField, SelectField, TextField } from './fields';
 import { kaomojiPresets } from '../../data/community-components/text-art/presets';
+import { iconPresets } from '../../data/community-components/tech-icon/presets';
 import { generateTocSource } from '../widgets/toc/generateToc';
 
 /** Align is only offered for these text-line styles — Quote/List/Task markdown
@@ -112,20 +113,25 @@ export function SettingsPanel({ editor }: { editor: UseCanvasEditor }) {
   // Generic across every component type — undefined for anything without
   // presets, so this renders nothing extra for them. A new preset-bearing
   // Component gets this dropdown automatically, no change needed here.
-  // text-art is the one exception: its own SettingsForm renders a preset
-  // picker showing the actual glyphs instead of names (see its file), so
-  // this name-based dropdown would just be a confusing duplicate for it.
-  const presetGroup = widget.type === 'text-art' ? undefined : PRESET_PARENT_MAP.get(widget.libId);
+  // text-art and tech-icon are the exceptions: each already renders its own
+  // preset picker inline in its own SettingsForm (text-art shows the actual
+  // glyphs instead of names; tech-icon is a search+custom-entry combobox,
+  // see that file), so this plain name-based dropdown would just be a
+  // confusing duplicate for either.
+  const presetGroup = widget.type === 'text-art' || widget.type === 'tech-icon' ? undefined : PRESET_PARENT_MAP.get(widget.libId);
   // widget.name is fixed at placement time (whichever preset it started as,
-  // e.g. "Plus Dots") — text-art's own Style dropdown only ever changes
-  // `settings.text`, so a name-based title would go stale the moment the
-  // user picks a different look. Family-based instead, stays accurate.
+  // e.g. "Plus Dots") — text-art's own Style dropdown and tech-icon's own
+  // Icon combobox only ever change `settings`, so a name-based title would
+  // go stale the moment the user picks a different look there. Settings-
+  // derived instead, stays accurate.
   const title =
     widget.type === 'text-art'
       ? (widget.meta as { family?: string } | undefined)?.family === 'divider'
         ? 'Decorative Line'
         : 'Kaomoji'
-      : widget.name;
+      : widget.type === 'tech-icon'
+        ? (iconPresets.find((p) => p.settings?.slug === (widget.settings as { slug?: string }).slug)?.name ?? (widget.settings as { slug?: string }).slug ?? 'Tech Icon')
+        : widget.name;
   return (
     <div className="settings-col">
       <div className="settings-head">

@@ -39,13 +39,18 @@ export function LibraryPanel({
   const { favorites, toggleFavorite } = useFavorites();
 
   const visible = useMemo(() => {
-    // text-art (Kaomoji / Decorative Line) stays grouped as its own single
-    // card even in "All" view — flattening it would mean one list row per
-    // preset (46 of them), when picking a look belongs in the card's own
-    // dropdown (see ComponentCard), not a wall of near-identical cards.
+    // text-art (Kaomoji / Decorative Line) and tech-icon stay grouped as
+    // their own single card even in "All" view — flattening either would
+    // mean one list row per preset (46 / 135 of them), when picking a look
+    // belongs in the card's own picker (see ComponentCard and Tech Icon's
+    // own SettingsForm), not a wall of near-identical cards.
+    const GROUPED_EVEN_IN_ALL_VIEW = new Set(['text-art', 'tech-icon']);
     const base =
       viewMode === 'all'
-        ? [...LIBRARY.filter((item) => item.type !== 'text-art'), ...LIBRARY_COMPONENTS.filter((item) => item.type === 'text-art')]
+        ? [
+            ...LIBRARY.filter((item) => !GROUPED_EVEN_IN_ALL_VIEW.has(item.type)),
+            ...LIBRARY_COMPONENTS.filter((item) => GROUPED_EVEN_IN_ALL_VIEW.has(item.type)),
+          ]
         : LIBRARY_COMPONENTS;
     const combined = [...base, ...customComponents];
     const q = search.trim().toLowerCase();
