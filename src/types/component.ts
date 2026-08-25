@@ -16,6 +16,11 @@ export type LayoutMode = 'inline' | 'block';
 export interface PreviewProps<TSettings> {
   settings: TSettings;
   meta?: Record<string, unknown>;
+  /** Only implemented by widgets that support inline canvas editing (Code
+   *  Block, Table, Collapsible Section) — merges a partial settings patch,
+   *  same contract as SettingsFormProps.onChange. Optional so every other
+   *  Preview (badges, dividers, ...) is unaffected. */
+  onChange?: (patch: Partial<TSettings>) => void;
 }
 
 export interface SettingsFormProps<TSettings> {

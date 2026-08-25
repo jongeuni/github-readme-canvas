@@ -726,11 +726,25 @@ export function useCanvasEditor() {
   // above; this counter is bumped whenever they change so components that
   // *read* the current selection (SettingsPanel) re-render with fresh data.
   const [, bump] = useReducer((n: number) => n + 1, 0);
+  // Latest updateWidgetSettings, for renderWidgetRoot's onChange prop to call
+  // through to — updateWidgetSettings itself calls renderWidgetRoot (to
+  // re-render after a settings patch), so a direct reference either way
+  // would be circular. updateWidgetSettings is declared much later (it
+  // needs pushHistorySnapshotDebounced, defined further down) and assigns
+  // itself here every render; renderWidgetRoot, declared next, only ever
+  // reads the ref, so it doesn't care about that ordering.
+  const updateWidgetSettingsRef = useRef<(uid: string, patch: Record<string, unknown>) => void>(() => {});
 
   // ---------- rendering a widget's own React root ----------
   const renderWidgetRoot = useCallback((record: WidgetRecord) => {
     const def = getComponentType(record.instance.type);
-    record.root.render(createElement(def.Preview, { settings: record.instance.settings, meta: record.instance.meta }));
+    record.root.render(
+      createElement(def.Preview, {
+        settings: record.instance.settings,
+        meta: record.instance.meta,
+        onChange: (patch: Record<string, unknown>) => updateWidgetSettingsRef.current(record.instance.uid, patch),
+      }),
+    );
   }, []);
 
   // An inline-layout widget's container has no width of its own by default
@@ -2225,18 +2239,31 @@ export function useCanvasEditor() {
     return widgetsRef.current.get(selectedUid)?.instance ?? null;
   }, [selectedUid]);
 
-  const updateSelectedWidgetSettings = useCallback(
-    (patch: Record<string, unknown>) => {
-      if (!selectedUid) return;
-      const record = widgetsRef.current.get(selectedUid);
+  // uid-parameterized so both the Settings panel (always the selected
+  // widget) and a widget's own inline canvas fields (whichever widget's
+  // Preview the edit happened in — not necessarily the selected one, though
+  // clicking into a field does also select it via the click-delegation
+  // above) can share one update path into the same settings object.
+  const updateWidgetSettings = useCallback(
+    (uid: string, patch: Record<string, unknown>) => {
+      const record = widgetsRef.current.get(uid);
       if (!record) return;
       record.instance.settings = { ...record.instance.settings, ...patch };
       syncInlineWidgetWidth(record.el, record.instance);
       renderWidgetRoot(record);
       bump();
-      pushHistorySnapshotDebounced(); // settings-form fields fire onChange per keystroke
+      pushHistorySnapshotDebounced(); // settings-form fields (and inline canvas fields) fire onChange per keystroke
     },
-    [selectedUid, renderWidgetRoot, pushHistorySnapshotDebounced],
+    [renderWidgetRoot, pushHistorySnapshotDebounced],
+  );
+  updateWidgetSettingsRef.current = updateWidgetSettings;
+
+  const updateSelectedWidgetSettings = useCallback(
+    (patch: Record<string, unknown>) => {
+      if (!selectedUid) return;
+      updateWidgetSettings(selectedUid, patch);
+    },
+    [selectedUid, updateWidgetSettings],
   );
 
   // Swaps the placed widget to a sibling Preset (see SettingsPanel's generic

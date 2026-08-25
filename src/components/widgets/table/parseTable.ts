@@ -19,3 +19,13 @@ export function parseTableSource(source: string): { headers: string[]; rows: str
   if (lines.length === 0) return { headers: [], rows: [] };
   return { headers: splitRow(lines[0]), rows: lines.slice(2).map(splitRow) };
 }
+
+/** Inverse of parseTableSource, for the inline grid editor — rebuilds the
+ *  raw GFM source from an in-memory headers/rows grid so edits round-trip
+ *  back into TableSettings.source, still the single source of truth. */
+export function serializeTableSource(headers: string[], rows: string[][]): string {
+  const headerLine = `| ${headers.join(' | ')} |`;
+  const sepLine = `| ${headers.map(() => '---').join(' | ')} |`;
+  const rowLines = rows.map((row) => `| ${row.join(' | ')} |`);
+  return [headerLine, sepLine, ...rowLines].join('\n');
+}
