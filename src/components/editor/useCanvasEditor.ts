@@ -1919,8 +1919,24 @@ export function useCanvasEditor() {
       // a widget becomes a deterministic, DOM-order stop for the arrow keys
       // (selecting it, same as clicking it) rather than something the
       // native caret tries to thread a text position around.
-      if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && !e.shiftKey && !e.altKey && !e.metaKey && !e.ctrlKey) {
-        const dir = e.key === 'ArrowLeft' ? -1 : 1;
+      //
+      // ArrowUp/ArrowDown share the same selectedUid branch below (moving
+      // off a selected widget) for the same underlying reason: a widget is
+      // contentEditable=false, so clicking one to select it never actually
+      // moves the browser's real caret (see that same Backspace/Delete
+      // comment) — an unhandled ArrowDown/Up here would do nothing to the
+      // real DOM selection, leaving it stale wherever it was long before
+      // the widget was clicked. Left unhandled, selectedUid (and so
+      // getInsertionAnchor, used by "Use Component") stayed pinned to that
+      // widget even after the user visibly moved down/up past it, so a
+      // newly added component attached right after the widget they'd
+      // already left instead of the line they'd moved to. Only that one
+      // branch applies to Up/Down though — the caret-inside-text boundary
+      // check further down is Left/Right-specific (start/end of a line,
+      // not its visual row), so Up/Down bail out before reaching it and
+      // fall through to the browser's own native per-row caret handling.
+      if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'ArrowUp' || e.key === 'ArrowDown') && !e.shiftKey && !e.altKey && !e.metaKey && !e.ctrlKey) {
+        const dir = e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? -1 : 1;
         if (selectedUid) {
           const widgetEl = widgetsRef.current.get(selectedUid)?.el;
           const sib = (dir < 0 ? widgetEl?.previousElementSibling : widgetEl?.nextElementSibling) as HTMLElement | null;
@@ -1935,6 +1951,7 @@ export function useCanvasEditor() {
           }
           return;
         }
+        if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
         const line = currentTextLine();
         if (line && !line.dataset.uid) {
           const atBoundary = dir < 0 ? isCaretAtLineStart(line) : isCaretAtLineEnd(line);
