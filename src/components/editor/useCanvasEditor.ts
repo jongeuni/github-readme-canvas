@@ -1999,12 +1999,28 @@ export function useCanvasEditor() {
       // what the user is actually trying to accomplish.
       if (e.key === 'Backspace' && !selectedUid) {
         const line = currentTextLine();
-        if (line && !line.dataset.uid && isCaretAtLineStart(line) && (line.previousElementSibling as HTMLElement | null)?.dataset.uid) {
+        const prevWidget = line ? (line.previousElementSibling as HTMLElement | null) : null;
+        if (line && !line.dataset.uid && isCaretAtLineStart(line) && prevWidget?.dataset.uid) {
           e.preventDefault();
           if ((line.textContent ?? '') === '') {
             line.remove();
-            setSelectedTextEl(null);
+            // Removing `line` leaves the browser's real Selection collapsed
+            // on some meaningless element-index offset inside the canvas
+            // div itself (not any child) — currentTextLine() can't resolve
+            // a line from that, so every one of these Backspace guards
+            // (this one included) silently stops matching on the very next
+            // Backspace press. That let the native "delete the previous
+            // non-editable island" default described above run completely
+            // unguarded on a second press, deleting the widget the user
+            // never asked to remove. Explicitly selecting the widget here
+            // — the same "widget is a deterministic, selectable stop" model
+            // used by the arrow-key handling above — replaces that
+            // ambiguous, wandering selection with a well-defined one: a
+            // follow-up Backspace/Delete now goes through the ordinary,
+            // already-correct "widget is selected" removal path right
+            // below instead of falling through to the native quirk.
             ensureTrailingTextLine();
+            selectWidget(prevWidget.dataset.uid);
             pushHistorySnapshot();
           }
           return;
