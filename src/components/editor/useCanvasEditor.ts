@@ -248,6 +248,27 @@ function isEmptyText(n: ChildNode | null): boolean {
   return !!n && n.nodeType === Node.TEXT_NODE && n.textContent === '';
 }
 
+/** True for a node that's a leftover Range-extraction artifact rather than
+ *  real content — used by splitLineAtCaret's boundary cleanup below. When
+ *  the caret sits inside an inline element that has no content of its own
+ *  (e.g. an empty `<a href="…"></a>` link, itself already leftover from
+ *  some earlier edit), Range.extractContents() clones that element into the
+ *  split-off fragment to preserve nesting — per spec, a "partially
+ *  contained" element gets a shallow (attributes-only) clone in the result
+ *  even though nothing was actually inside it to extract. isEmptyText only
+ *  ever caught an empty *text* node; this also catches that empty *element*
+ *  clone (zero children) — void elements like `<img>`/`<hr>` are excluded
+ *  since those are meaningful with zero children by design, not artifacts. */
+function isEmptyElementClone(n: ChildNode | null): boolean {
+  return (
+    !!n &&
+    n.nodeType === Node.ELEMENT_NODE &&
+    n.nodeName !== 'BR' &&
+    (n as Element).childNodes.length === 0 &&
+    !HTML_VOID_ELEMENTS.has((n as Element).tagName.toLowerCase())
+  );
+}
+
 /** True when an event originated inside one of a widget's own native
  *  <input>/<textarea> fields (Code Block/Table/Collapsible Section's inline
  *  canvas editing) rather than the canvas's own contentEditable text flow.
@@ -1846,10 +1867,13 @@ export function useCanvasEditor() {
     postRange.setStart(range.startContainer, range.startOffset);
     const afterFragment = postRange.extractContents();
 
-    while (afterFragment.firstChild && (isEmptyText(afterFragment.firstChild) || afterFragment.firstChild.nodeName === 'BR')) {
+    while (
+      afterFragment.firstChild &&
+      (isEmptyText(afterFragment.firstChild) || afterFragment.firstChild.nodeName === 'BR' || isEmptyElementClone(afterFragment.firstChild))
+    ) {
       afterFragment.removeChild(afterFragment.firstChild);
     }
-    while (el.lastChild && (isEmptyText(el.lastChild) || el.lastChild.nodeName === 'BR')) {
+    while (el.lastChild && (isEmptyText(el.lastChild) || el.lastChild.nodeName === 'BR' || isEmptyElementClone(el.lastChild))) {
       el.removeChild(el.lastChild);
     }
 
@@ -1877,13 +1901,39 @@ export function useCanvasEditor() {
     if (!selectedUid) return;
     const record = widgetsRef.current.get(selectedUid);
     if (!record) return;
+    const canvas = canvasRef.current;
+    // Captured before removal so it's still valid afterward (removal never
+    // touches it) — used below to find whatever now sits right where the
+    // widget used to be.
+    const prev = record.el.previousElementSibling as HTMLElement | null;
     record.root.unmount();
     record.el.remove();
     widgetsRef.current.delete(selectedUid);
     setSelectedUid(null);
-    ensureTrailingTextLine();
+    // Reuse whatever already follows `prev` (Text A / Component / Text B ->
+    // Text A / Text B — no new line) if there is one; only fall back to
+    // ensureTrailingTextLine when there's genuinely nothing left (the
+    // widget was the last child). Either way, explicitly place the caret
+    // there too: ensureTrailingTextLine only ever creates the DOM node, it
+    // never moves the browser's real Selection into it, which is what left
+    // Selection stranded at a stale element/offset in canvas-paper itself
+    // right after this deletion — confirmed via window.getSelection() —
+    // and made the very next Backspace act on that stale position instead
+    // of any real line.
+    let landing = (prev ? prev.nextElementSibling : canvas?.firstElementChild) as HTMLElement | null;
+    if (!landing) {
+      ensureTrailingTextLine();
+      landing = (prev ? prev.nextElementSibling : canvas?.firstElementChild) as HTMLElement | null;
+    }
+    if (landing) {
+      if (landing.dataset.uid) selectWidget(landing.dataset.uid);
+      else {
+        selectTextBlock(landing);
+        placeCaretAtStart(landing);
+      }
+    }
     pushHistorySnapshot();
-  }, [selectedUid, ensureTrailingTextLine, pushHistorySnapshot]);
+  }, [selectedUid, ensureTrailingTextLine, selectWidget, selectTextBlock, pushHistorySnapshot]);
 
   // Removes the whole selected line (see SettingsPanel's "Remove" button in
   // its Text branch) — Backspace/Delete can't do this on their own since
@@ -1948,6 +1998,23 @@ export function useCanvasEditor() {
               if (dir < 0) placeCaretAtEnd(sib);
               else placeCaretAtStart(sib);
             }
+          } else if (dir > 0 && widgetEl) {
+            // Widgets no longer get an eager trailing line the moment
+            // they're added (see placeLibraryEntry) — so moving past the
+            // LAST widget in the document via ArrowRight/Down needs
+            // somewhere to land that may not exist yet. Created lazily
+            // right here instead, the same on-demand pattern handleClick's
+            // empty-canvas branch already uses for a mouse click past the
+            // last widget. Left-/up-only (dir < 0, no previous sibling) is
+            // intentionally not mirrored — there's no "keep writing"
+            // motivation for a blank line before the very first element.
+            e.preventDefault();
+            const div = document.createElement('div');
+            div.className = 'md-text';
+            widgetEl.insertAdjacentElement('afterend', div);
+            selectTextBlock(div);
+            placeCaretAtStart(div);
+            pushHistorySnapshot();
           }
           return;
         }
@@ -2457,14 +2524,19 @@ export function useCanvasEditor() {
       const record: WidgetRecord = { instance, el, root };
       widgetsRef.current.set(instance.uid, record);
       renderWidgetRoot(record);
-      ensureTrailingTextLine();
+      // No eager ensureTrailingTextLine() here on purpose — a trailing line
+      // isn't needed just because a widget was added; it's only needed the
+      // moment someone actually tries to move past it, which the
+      // ArrowRight/ArrowDown handling below now creates lazily (same
+      // on-demand pattern handleClick's empty-canvas branch already used
+      // for mouse clicks past the last widget).
       selectWidget(instance.uid);
       el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       el.classList.add('flash');
       setTimeout(() => el.classList.remove('flash'), 1000);
       pushHistorySnapshot();
     },
-    [ensureTrailingTextLine, renderWidgetRoot, selectTextBlock, selectWidget, selectedTextEl, selectedUid, widgetHTMLContainer, pushHistorySnapshot],
+    [renderWidgetRoot, selectTextBlock, selectWidget, selectedTextEl, selectedUid, widgetHTMLContainer, pushHistorySnapshot],
   );
 
   const addFromLibrary = useCallback((libId: string) => placeLibraryEntry(getLibraryEntry(libId)), [placeLibraryEntry]);
