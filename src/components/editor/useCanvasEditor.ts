@@ -1859,6 +1859,13 @@ export function useCanvasEditor() {
     el.insertAdjacentElement('afterend', newDiv);
     placeCaretAtStart(newDiv);
     selectTextBlock(newDiv);
+    // placeCaretAtStart moves the caret with a plain Range, not the browser's
+    // native Enter default action (preventDefault'd above in handleKeyDown)
+    // — so unlike a real, un-intercepted Enter press, nothing auto-scrolls
+    // the new line into view on its own when it lands past the bottom edge.
+    // Same pattern as every other caret-moving insert in this file (widget
+    // add, paste, ...).
+    newDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   };
 
   // IME composition (Korean/Japanese/Chinese) makes the caret position
