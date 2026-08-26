@@ -1989,40 +1989,51 @@ export function useCanvasEditor() {
           return;
         }
       }
-      // Backspace at the start of a text line whose previous sibling is a
-      // widget — contentEditable's own native Backspace, with nothing
-      // editable to merge into, deletes that widget instead (a well-known
-      // quirk: a non-editable island right before the caret reads as "the
-      // previous character" to merge/backspace over). Block that outright;
-      // if the line is empty, also remove it — that's the one case where
-      // there's nothing else useful for Backspace to do here, and it's
-      // what the user is actually trying to accomplish.
+      // Backspace at the very start of a text line: contentEditable's own
+      // native behavior for this exact boundary is unreliable in practice,
+      // in two different ways depending on what precedes the caret —
+      //  - a widget (contentEditable=false) right before it: native
+      //    Backspace deletes the WIDGET instead of doing nothing (a
+      //    well-known quirk — a non-editable island reads as "the previous
+      //    character" to merge/backspace over).
+      //  - another plain text line: merging two adjacent EMPTY lines this
+      //    way was observed to sometimes not visibly do anything on the
+      //    first press, then show what looks like a 2-line selection
+      //    instead of a clean merge on the next (an OS/engine-level
+      //    boundary quirk around adjacent block elements, not something
+      //    this app controls).
+      // Handled deterministically ourselves instead — but ONLY when the
+      // current line is completely empty, so there's never any real typed
+      // content at risk of being silently dropped by a hand-rolled merge;
+      // Backspace merging real text into the line above it is untouched,
+      // still left entirely to the browser's own (otherwise unremarkable)
+      // default behavior.
       if (e.key === 'Backspace' && !selectedUid) {
         const line = currentTextLine();
-        const prevWidget = line ? (line.previousElementSibling as HTMLElement | null) : null;
-        if (line && !line.dataset.uid && isCaretAtLineStart(line) && prevWidget?.dataset.uid) {
+        const prev = line ? (line.previousElementSibling as HTMLElement | null) : null;
+        if (line && !line.dataset.uid && isCaretAtLineStart(line) && prev?.dataset.uid) {
+          // Widget right before the caret — blocked outright either way
+          // (native default here deletes the widget); an EMPTY line has
+          // nothing else useful to do besides disappear and hand focus to
+          // the widget it was sitting after, same "widget is a
+          // deterministic, selectable stop" model the arrow-key handling
+          // above uses. A non-empty line is left as-is — there's nothing
+          // sensible to merge a widget's own content into.
           e.preventDefault();
           if ((line.textContent ?? '') === '') {
             line.remove();
-            // Removing `line` leaves the browser's real Selection collapsed
-            // on some meaningless element-index offset inside the canvas
-            // div itself (not any child) — currentTextLine() can't resolve
-            // a line from that, so every one of these Backspace guards
-            // (this one included) silently stops matching on the very next
-            // Backspace press. That let the native "delete the previous
-            // non-editable island" default described above run completely
-            // unguarded on a second press, deleting the widget the user
-            // never asked to remove. Explicitly selecting the widget here
-            // — the same "widget is a deterministic, selectable stop" model
-            // used by the arrow-key handling above — replaces that
-            // ambiguous, wandering selection with a well-defined one: a
-            // follow-up Backspace/Delete now goes through the ordinary,
-            // already-correct "widget is selected" removal path right
-            // below instead of falling through to the native quirk.
             ensureTrailingTextLine();
-            selectWidget(prevWidget.dataset.uid);
+            selectWidget(prev.dataset.uid);
             pushHistorySnapshot();
           }
+          return;
+        }
+        if (line && !line.dataset.uid && isCaretAtLineStart(line) && prev && !prev.dataset.uid && (line.textContent ?? '') === '') {
+          e.preventDefault();
+          line.remove();
+          placeCaretAtEnd(prev);
+          selectTextBlock(prev);
+          pushHistorySnapshot();
           return;
         }
       }
