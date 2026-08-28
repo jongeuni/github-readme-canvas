@@ -2069,29 +2069,36 @@ export function useCanvasEditor() {
       //    instead of a clean merge on the next (an OS/engine-level
       //    boundary quirk around adjacent block elements, not something
       //    this app controls).
-      // Handled deterministically ourselves instead — but ONLY when the
-      // current line is completely empty, so there's never any real typed
-      // content at risk of being silently dropped by a hand-rolled merge;
-      // Backspace merging real text into the line above it is untouched,
-      // still left entirely to the browser's own (otherwise unremarkable)
-      // default behavior.
+      // Handled deterministically ourselves instead of relying on either.
       if (e.key === 'Backspace' && !selectedUid) {
         const line = currentTextLine();
         const prev = line ? (line.previousElementSibling as HTMLElement | null) : null;
         if (line && !line.dataset.uid && isCaretAtLineStart(line) && prev?.dataset.uid) {
-          // Widget right before the caret — blocked outright either way
-          // (native default here deletes the widget); an EMPTY line has
-          // nothing else useful to do besides disappear and hand focus to
-          // the widget it was sitting after, same "widget is a
-          // deterministic, selectable stop" model the arrow-key handling
-          // above uses. A non-empty line is left as-is — there's nothing
-          // sensible to merge a widget's own content into.
+          // Widget right before the caret: Backspace from a text caret
+          // never selects or deletes it — that implicit "did it just get
+          // selected, or deleted?" ambiguity (one Backspace to select, a
+          // second to actually delete) was the repeated source of bugs this
+          // exact boundary caused. A widget is only ever removed via an
+          // explicit selection (click, or arrow onto it) followed by its
+          // own Backspace/Delete — the branch just above this one, entirely
+          // unrelated to this one. Here, Backspace instead just treats every
+          // widget as transparent: walk back past any number of consecutive
+          // widgets (Text A / Widget1 / Widget2 / Text B — Backspace in
+          // Text B skips both) to the nearest real editable line and land
+          // the caret there. `line` itself is left completely untouched
+          // (still there, empty or not — same for every widget skipped
+          // over), so unlike the old "select the widget" behavior, nothing
+          // is ever removed here and ensureTrailingTextLine is never
+          // needed: canvas's last child never changes as a result of this.
+          // No previous editable line at all (the widget run starts at the
+          // very top of the document) — a no-op, same as the symmetric
+          // "no previous sibling" case in the arrow-key handling above.
           e.preventDefault();
-          if ((line.textContent ?? '') === '') {
-            line.remove();
-            ensureTrailingTextLine();
-            selectWidget(prev.dataset.uid);
-            pushHistorySnapshot();
+          let target = prev as HTMLElement | null;
+          while (target && target.dataset.uid) target = target.previousElementSibling as HTMLElement | null;
+          if (target) {
+            placeCaretAtEnd(target);
+            selectTextBlock(target);
           }
           return;
         }
