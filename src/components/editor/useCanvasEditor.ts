@@ -1208,6 +1208,37 @@ export function useCanvasEditor() {
     sel?.addRange(range);
   };
 
+  // Enter's own line-into-view scroll (see splitLineAtCaret) used to be a
+  // plain `el.scrollIntoView({ block: 'nearest' })` — 'nearest' scrolls the
+  // bare minimum needed to bring the element's nearest edge just inside the
+  // viewport, so writing line after line kept leaving the caret pinned
+  // right at the bottom edge instead of any real breathing room ("조금
+  // 내려감" on every Enter). This scrolls further on purpose instead: when
+  // the line is at or past the bottom edge, it moves just enough further
+  // that a margin (a quarter of the scroll container's own height) stays
+  // clear below it, in one scroll — same idea as 'nearest', just aiming
+  // past the edge instead of stopping right at it. A line already
+  // comfortably in view (above that margin line) is left alone, same as
+  // 'nearest' — this never scrolls unnecessarily on its own.
+  const scrollLineIntoViewWithMargin = (el: HTMLElement) => {
+    const container = canvasRef.current?.parentElement;
+    if (!container) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      return;
+    }
+    const elRect = el.getBoundingClientRect();
+    const containerRect = container.getBoundingClientRect();
+    if (elRect.top < containerRect.top) {
+      container.scrollBy({ top: elRect.top - containerRect.top, behavior: 'smooth' });
+      return;
+    }
+    const margin = containerRect.height * 0.25;
+    const bottomLimit = containerRect.bottom - margin;
+    if (elRect.bottom > bottomLimit) {
+      container.scrollBy({ top: elRect.bottom - bottomLimit, behavior: 'smooth' });
+    }
+  };
+
   // True when the caret sits at the very first possible position inside el —
   // built the same way as everything else here that needs to reason about
   // caret position relative to a line (splitLineAtCaret above): a Range from
@@ -1887,9 +1918,7 @@ export function useCanvasEditor() {
     // native Enter default action (preventDefault'd above in handleKeyDown)
     // — so unlike a real, un-intercepted Enter press, nothing auto-scrolls
     // the new line into view on its own when it lands past the bottom edge.
-    // Same pattern as every other caret-moving insert in this file (widget
-    // add, paste, ...).
-    newDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    scrollLineIntoViewWithMargin(newDiv);
   };
 
   // IME composition (Korean/Japanese/Chinese) makes the caret position
@@ -1970,21 +1999,22 @@ export function useCanvasEditor() {
       // (selecting it, same as clicking it) rather than something the
       // native caret tries to thread a text position around.
       //
-      // ArrowUp/ArrowDown share the same selectedUid branch below (moving
-      // off a selected widget) for the same underlying reason: a widget is
-      // contentEditable=false, so clicking one to select it never actually
-      // moves the browser's real caret (see that same Backspace/Delete
-      // comment) — an unhandled ArrowDown/Up here would do nothing to the
-      // real DOM selection, leaving it stale wherever it was long before
-      // the widget was clicked. Left unhandled, selectedUid (and so
-      // getInsertionAnchor, used by "Use Component") stayed pinned to that
-      // widget even after the user visibly moved down/up past it, so a
-      // newly added component attached right after the widget they'd
-      // already left instead of the line they'd moved to. Only that one
-      // branch applies to Up/Down though — the caret-inside-text boundary
-      // check further down is Left/Right-specific (start/end of a line,
-      // not its visual row), so Up/Down bail out before reaching it and
-      // fall through to the browser's own native per-row caret handling.
+      // ArrowUp/ArrowDown share both branches below with Left/Right, for the
+      // same underlying reason: a widget is contentEditable=false, so
+      // clicking one to select it never actually moves the browser's real
+      // caret (see that same Backspace/Delete comment) — an unhandled
+      // ArrowDown/Up here would do nothing to the real DOM selection,
+      // leaving it stale wherever it was long before the widget was
+      // clicked. Left unhandled, selectedUid (and so getInsertionAnchor,
+      // used by "Use Component") stayed pinned to that widget even after
+      // the user visibly moved down/up past it, so a newly added component
+      // attached right after the widget they'd already left instead of the
+      // line they'd moved to. The caret-inside-text boundary check further
+      // down (moving *onto* an adjacent widget from a text caret) applies
+      // to all four directions the same way — isCaretAtLineStart/End are
+      // about the start/end of the line's own text content, not its visual
+      // row, so this never fires mid-paragraph and doesn't touch normal
+      // Up/Down caret movement through wrapped text.
       if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'ArrowUp' || e.key === 'ArrowDown') && !e.shiftKey && !e.altKey && !e.metaKey && !e.ctrlKey) {
         const dir = e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? -1 : 1;
         if (selectedUid) {
@@ -2018,7 +2048,6 @@ export function useCanvasEditor() {
           }
           return;
         }
-        if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
         const line = currentTextLine();
         if (line && !line.dataset.uid) {
           const atBoundary = dir < 0 ? isCaretAtLineStart(line) : isCaretAtLineEnd(line);
@@ -2074,6 +2103,31 @@ export function useCanvasEditor() {
         const line = currentTextLine();
         const prev = line ? (line.previousElementSibling as HTMLElement | null) : null;
         if (line && !line.dataset.uid && isCaretAtLineStart(line) && prev?.dataset.uid) {
+          const next = line.nextElementSibling as HTMLElement | null;
+          if ((line.textContent ?? '') === '' && (!next || next.dataset.uid)) {
+            // Narrow exception: this line is a pure blank spacer with a
+            // widget immediately before it and either another widget or
+            // nothing at all after it — nothing of value to preserve on
+            // either side, so unlike the general case below, delete it
+            // outright instead of just skipping past it. The widgets
+            // themselves are still never selected/deleted by this: land the
+            // caret on the nearest real text line before the widget run
+            // (same walk-back as the general case), and only fall back to
+            // selecting the widget itself when there's no such line to land
+            // on (the run starts at the very top of the document).
+            e.preventDefault();
+            let target = prev as HTMLElement | null;
+            while (target && target.dataset.uid) target = target.previousElementSibling as HTMLElement | null;
+            line.remove();
+            if (target) {
+              placeCaretAtEnd(target);
+              selectTextBlock(target);
+            } else {
+              selectWidget(prev.dataset.uid!);
+            }
+            pushHistorySnapshot();
+            return;
+          }
           // Widget right before the caret: Backspace from a text caret
           // never selects or deletes it — that implicit "did it just get
           // selected, or deleted?" ambiguity (one Backspace to select, a
@@ -2367,7 +2421,22 @@ export function useCanvasEditor() {
           pushHistorySnapshot();
           return;
         }
-        const insertBefore = hit?.target ?? null;
+        // hitTestRow only matches a child whose own rect vertically contains
+        // the click — a click landing in the thin gap between two stacked
+        // block widgets (often just 1-2px) contains neither and comes back
+        // null. Fall back to the simpler original rule for exactly that
+        // case: the first child whose vertical midpoint sits below the
+        // click, i.e. "insert right above whichever child the click was in
+        // the top half of" — this always finds something, so the click
+        // lands where the user clicked instead of silently appending to the
+        // very end of the document.
+        const insertBefore =
+          hit?.target ??
+          (Array.from(canvas.children) as HTMLElement[]).find((child) => {
+            const rect = child.getBoundingClientRect();
+            return e.clientY < rect.top + rect.height / 2;
+          }) ??
+          null;
         if (!insertBefore) {
           const last = canvas.lastElementChild as HTMLElement | null;
           if (last && !last.dataset.uid) {
@@ -2476,6 +2545,36 @@ export function useCanvasEditor() {
       const canvas = canvasRef.current;
       if (!canvas) return;
       const anchor = getInsertionAnchor();
+      // "Use Component" is a real DOM <button> in the Library panel — after
+      // its onClick runs, the browser leaves *keyboard* focus sitting right
+      // there on the button (clicking it doesn't hand focus back to the
+      // canvas on its own). A <button> that still has focus fires another
+      // click of itself on the very next Enter keypress — regardless of
+      // where the mouse happens to be — which re-ran this whole function
+      // and added a second component.
+      //
+      // canvas.focus() alone fixes that, but only safely when the browser
+      // has a real prior Selection to preserve — with none at all (e.g.
+      // this is the very first thing done in the session), it instead
+      // defaults the caret to the very START of the whole document, and a
+      // stray Enter right after would then split whatever heading sits at
+      // the top instead of doing nothing (confirmed while testing this
+      // fix). So a real, harmless Selection is set first: collapsed at the
+      // end of whatever text line is right around the insertion point
+      // (walking back past any widgets to find one, same pattern as the
+      // Backspace widget-skip logic above) — a position focus() will then
+      // just preserve instead of overriding.
+      let focusAnchor = (anchor ?? (canvas.lastElementChild as HTMLElement | null)) as HTMLElement | null;
+      while (focusAnchor && focusAnchor.dataset.uid) focusAnchor = focusAnchor.previousElementSibling as HTMLElement | null;
+      if (focusAnchor) {
+        const range = document.createRange();
+        range.selectNodeContents(focusAnchor);
+        range.collapse(false);
+        const sel = window.getSelection();
+        sel?.removeAllRanges();
+        sel?.addRange(range);
+      }
+      canvas.focus();
       // Nothing selected falls back to canvas.appendChild, i.e. right after
       // whatever the canvas's current last child is — so THAT'S the line
       // insertion is effectively anchored to, for cleanup purposes, even

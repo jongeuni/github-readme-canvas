@@ -670,6 +670,16 @@ pre {
   width: 100%;
   max-width: 560px;
   padding: 30px 34px;
+  /* Reserves real scrollable room past the last line specifically so
+     useCanvasEditor's scrollLineIntoViewWithMargin (Enter, see
+     splitLineAtCaret) has something to scroll INTO while typing brand-new
+     content at the very end of the document — without this, the scroll
+     container's scrollHeight only ever grows by however tall the
+     just-typed line is, so any scroll — no matter how the margin is
+     computed — is physically capped at that same tiny amount and the caret
+     stays glued to the bottom edge regardless. Bottom-only; this isn't
+     meant to change the padding typed content itself sits in. */
+  padding-bottom: 160px;
   min-height: 100%;
   height: fit-content;
 }
@@ -966,9 +976,20 @@ pre {
    colliding with whatever ELSE also wanted `::after` on the same element
    (the selected-line accent bar below, twice now — see that rule's own
    comment) — a min-height needs no pseudo-element at all, so `::before` and
-   `::after` are now used by exactly one rule each, nothing left to collide. */
+   `::after` are now used by exactly one rule each, nothing left to collide.
+   The `+ 2px` on top of `1lh` isn't decorative — `1lh` is the class's
+   *specified* line-height (font-size × the ratio above), but this font's
+   actually-rendered glyphs need a couple more px than that strut accounts
+   for. Measured directly (empty box vs. the same box holding real text):
+   `.md-text`/`.md-quote` (what most lines are) come out exactly 2px taller
+   once they hold real text, so sizing the empty box to the bare `1lh` made
+   typing the very first character visibly grow the line — most visibly as
+   the blue `.text-selected` background (below) shrinking by that same 2px
+   the moment you start typing on a selected empty line. `+2px` matches
+   that measured gap so the empty box already sits at its eventual
+   real-text height. */
 .canvas-paper[contenteditable] > div:empty {
-  min-height: 1lh;
+  min-height: calc(1lh + 2px);
 }
 .canvas-paper[contenteditable] > div.text-selected {
   background: var(--accent-bg);
