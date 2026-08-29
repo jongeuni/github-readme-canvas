@@ -31,6 +31,11 @@ function App() {
   const [commitOpen, setCommitOpen] = useState(false);
   const [commitMarkdown, setCommitMarkdown] = useState('');
   const [prEntry, setPrEntry] = useState<LibraryEntry | null>(null);
+  // The entry a not-yet-connected user was about to submit a PR for, so
+  // handleConnectGitHub can pick the flow back up once they log in instead
+  // of the connect modal just silently swallowing that intent — see
+  // handleRequestSubmitPr below.
+  const pendingPrEntryRef = useRef<LibraryEntry | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [markdown, setMarkdown] = useState('');
   const [toast, setToast] = useState<string | null>(null);
@@ -118,6 +123,10 @@ function App() {
       if (ok) {
         setGithubConnectOpen(false);
         showToast('Connected to GitHub');
+        if (pendingPrEntryRef.current) {
+          setPrEntry(pendingPrEntryRef.current);
+          pendingPrEntryRef.current = null;
+        }
       }
     },
     [github, showToast],
@@ -126,6 +135,7 @@ function App() {
   const handleRequestSubmitPr = useCallback(
     (entry: LibraryEntry) => {
       if (!github.user) {
+        pendingPrEntryRef.current = entry;
         showToast('Please connect to GitHub first');
         setGithubConnectOpen(true);
         return;
@@ -298,7 +308,10 @@ function App() {
         open={githubConnectOpen}
         connecting={github.connecting}
         error={github.error}
-        onCancel={() => setGithubConnectOpen(false)}
+        onCancel={() => {
+          pendingPrEntryRef.current = null;
+          setGithubConnectOpen(false);
+        }}
         onConnect={handleConnectGitHub}
         onDismissError={github.clearError}
       />
