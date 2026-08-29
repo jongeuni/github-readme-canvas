@@ -778,6 +778,10 @@ function hitTestRow(canvas: HTMLElement, x: number, y: number, excludeUid?: stri
 export function useCanvasEditor() {
   const canvasRef = useRef<HTMLDivElement | null>(null);
   const widgetsRef = useRef<Map<string, WidgetRecord>>(new Map());
+  // canvas.children.length as of the start of the keystroke currently being
+  // processed — see handleInput's stray-styled-empty-line cleanup below for
+  // why this needs to be "before this keystroke" rather than the live count.
+  const preKeydownChildCountRef = useRef(0);
   const [selectedUid, setSelectedUid] = useState<string | null>(null);
   const [selectedTextEl, setSelectedTextEl] = useState<HTMLElement | null>(null);
   // Position (relative to .canvas-col) of the floating Bold/Italic toolbar —
@@ -1794,8 +1798,14 @@ export function useCanvasEditor() {
     // widgets are draggable — an adjacent near-zero-height empty line makes
     // drag/drop's before-vs-after math flip on tiny mouse movement. Only for
     // an actual delete (never for a fresh "# " conversion, which also
-    // legitimately produces an empty heading awaiting more typing).
-    if (canvas && canvas.children.length <= 1 && (e.nativeEvent as InputEvent).inputType?.startsWith('delete')) {
+    // legitimately produces an empty heading awaiting more typing) — and
+    // only when this delete is what actually collapsed several lines down
+    // to one (`preKeydownChildCountRef` was > 1 the moment this keystroke
+    // started). Without that check this also fired for the far more common
+    // case of a heading that was already the document's only line, backspaced
+    // down to empty mid-edit — stripping the style the user was still typing
+    // into after deleting a single character, not a stray leftover at all.
+    if (canvas && preKeydownChildCountRef.current > 1 && canvas.children.length <= 1 && (e.nativeEvent as InputEvent).inputType?.startsWith('delete')) {
       const only = canvas.children[0] as HTMLElement | undefined;
       if (only && !only.dataset.uid && only.textContent === '' && only.className !== 'md-text') {
         only.className = 'md-text';
@@ -1980,6 +1990,7 @@ export function useCanvasEditor() {
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent<HTMLDivElement>) => {
+      if (canvasRef.current) preKeydownChildCountRef.current = canvasRef.current.children.length;
       // Typing inside a widget's own inline field (e.g. Backspace deleting a
       // character in a Table cell, Enter adding a newline in a Code Block)
       // must never fall through to the selection-based logic below — see
