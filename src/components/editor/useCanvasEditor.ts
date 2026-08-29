@@ -1101,8 +1101,20 @@ export function useCanvasEditor() {
     appendTextLine('md-text', 'Made with <a href="https://readme-canvas.com">Readme Canvas</a>', 'center');
 
     ensureTrailingTextLine();
-    const first = canvas.querySelector<HTMLElement>('[data-uid]');
+    // canvas's actual first child (the h1 heading) — not
+    // `canvas.querySelector('[data-uid]')`, which finds the first WIDGET
+    // regardless of position (only appendWidgetInstance's elements carry
+    // `data-uid`; appendTextLine's never do). With one widget (the divider
+    // above) sitting well after several text lines, that query selected
+    // it instead of the heading, landing the initial selection on
+    // something that reads as "the last component" rather than the top of
+    // the document.
+    const first = canvas.firstElementChild as HTMLElement | null;
     if (first?.dataset.uid) selectWidget(first.dataset.uid);
+    else if (first) {
+      selectTextBlock(first);
+      placeCaretAtStart(first);
+    }
     resetHistory(serializeCanvas()); // seed the undo stack with the starting doc
 
     // Safety net: any brand-new top-level line should default to plain
