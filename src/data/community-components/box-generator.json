@@ -1,0 +1,95 @@
+{
+  "type": "url-component",
+  "name": "Box Generator",
+  "description": "Create stylish social media boxes in a variety of formats. Supports popular styles from GitHub, Medium, and more.",
+  "category": "🌐 social",
+  "tags": [
+    "🌐 social"
+  ],
+  "defaultSettings": {
+    "title": "Default_Title",
+    "author": "Author",
+    "date": "2025-7-28",
+    "style": "MEDIUM",
+    "link": "https://markdown-box-generator.vercel.app/api/box?title=Default_Title&author=Author&date=2025-7-28&style=default"
+  },
+  "meta": {
+    "urlTemplate": "https://markdown-box-generator.vercel.app/api/box?title={title}&author={author}&date={date}&style={style}",
+    "linkable": true,
+    "fields": [
+      {
+        "key": "title",
+        "label": "Title",
+        "type": "text"
+      },
+      {
+        "key": "author",
+        "label": "Author",
+        "type": "text"
+      },
+      {
+        "key": "date",
+        "label": "Date",
+        "type": "text"
+      },
+      {
+        "key": "style",
+        "label": "Style",
+        "type": "select",
+        "options": [
+          {
+            "value": "MEDIUM",
+            "label": "MEDIUM",
+            "swatch": "#2563eb"
+          },
+          {
+            "value": "LINKED",
+            "label": "LINKED",
+            "swatch": "#2563eb"
+          },
+          {
+            "value": "INSTA",
+            "label": "INSTA",
+            "swatch": "#2563eb"
+          },
+          {
+            "value": "GITHUB",
+            "label": "GITHUB",
+            "swatch": "#2563eb"
+          },
+          {
+            "value": "GLOW",
+            "label": "GLOW",
+            "swatch": "#2563eb"
+          },
+          {
+            "value": "BRUNCH",
+            "label": "BRUNCH",
+            "swatch": "#2563eb"
+          },
+          {
+            "value": "TISTORY",
+            "label": "TISTORY",
+            "swatch": "#2563eb"
+          },
+          {
+            "value": "NAVER",
+            "label": "NAVER",
+            "swatch": "#2563eb"
+          },
+          {
+            "value": "VELOG",
+            "label": "VELOG",
+            "swatch": "#2563eb"
+          },
+          {
+            "value": "DEFAULT",
+            "label": "DEFAULT",
+            "swatch": "#2563eb"
+          }
+        ]
+      }
+    ]
+  },
+  "id": "box-generator"
+}
