@@ -6,6 +6,10 @@ export interface SerializedTextBlock {
   html: string;
   /** Only meaningful for h1–h6/plain-text lines — see buildFullMarkdown. */
   align?: 'left' | 'center' | 'right';
+  /** Only meaningful for the first `md-ol-item` of a run — the number the
+   *  user actually typed to start it (e.g. 3 for "3. "), instead of always
+   *  restarting the list at 1. See useCanvasEditor's `--md-ol-start`. */
+  olStart?: number;
 }
 
 /** One placed widget instance (badge / tech-icon / stats / social / divider). */

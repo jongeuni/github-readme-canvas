@@ -887,8 +887,15 @@ pre {
 .canvas-paper .md-ol-item {
   counter-increment: md-ol;
 }
+/* Defaults to starting the run at 1 (counter-reset 0, then the first
+   increment above lands on 1) — same as before. `--md-ol-start` is set as
+   an inline style by useCanvasEditor's live "N. " conversion (and restored
+   from a saved/loaded document) only on the first item of a run, when the
+   user actually typed a starting number other than the default; every
+   other line/path never sets it, so this silently falls back to the old
+   behavior everywhere it isn't used. */
 .canvas-paper .md-ol-item:not(.md-ol-item + .md-ol-item) {
-  counter-reset: md-ol;
+  counter-reset: md-ol calc(var(--md-ol-start, 1) - 1);
 }
 .md-ol-item::before {
   content: counter(md-ol) '.';

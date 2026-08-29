@@ -852,13 +852,17 @@ export function useCanvasEditor() {
 
   // ---------- appending blocks — shared by the initial seed content and by
   // loading a saved document (see loadFromBlocks below) ----------
-  const appendTextLine = useCallback((className: string, html: string, align?: 'left' | 'center' | 'right') => {
+  const appendTextLine = useCallback((className: string, html: string, align?: 'left' | 'center' | 'right', olStart?: number) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const div = document.createElement('div');
     div.className = className;
     div.innerHTML = html;
     if (align && align !== 'left') div.dataset.align = align;
+    if (className === 'md-ol-item' && olStart) {
+      div.dataset.olStart = String(olStart);
+      div.style.setProperty('--md-ol-start', String(olStart));
+    }
     // Exempt from the initial-mount safety-net observer's downgrade-to-
     // md-text (see that observer's own comment) — that guard exists for an
     // accidental native Enter-split carrying a heading class over, not for
@@ -952,7 +956,8 @@ export function useCanvasEditor() {
       // block, or a save/undo-snapshot taken mid-selection would bake
       // "text-selected" into className permanently on reload.
       const styleClass = (Object.values(STYLE_CLASS).find((c) => el.classList.contains(c)) ?? 'md-text') as SerializedTextBlock['className'];
-      blocks.push({ kind: 'text', className: styleClass, html: el.innerHTML, ...(align ? { align } : {}) });
+      const olStart = styleClass === 'md-ol-item' && el.dataset.olStart ? Number(el.dataset.olStart) : undefined;
+      blocks.push({ kind: 'text', className: styleClass, html: el.innerHTML, ...(align ? { align } : {}), ...(olStart ? { olStart } : {}) });
     });
     return blocks;
   }, []);
@@ -970,7 +975,7 @@ export function useCanvasEditor() {
       canvas.innerHTML = '';
       blocks.forEach((block) => {
         if (block.kind === 'text') {
-          appendTextLine(block.className, block.html, block.align);
+          appendTextLine(block.className, block.html, block.align, block.olStart);
         } else {
           appendWidgetInstance({
             uid: nextUid(),
@@ -1836,6 +1841,34 @@ export function useCanvasEditor() {
     const taskMatch = TASK_LINE_RE.exec(text);
     if (taskMatch) {
       applyTaskStyle(el, taskMatch[1].toLowerCase() === 'x', text.slice(taskMatch[0].length));
+      placeCaretAtEnd(el);
+      if (selectedTextEl === el) bump();
+      return;
+    }
+
+    // "N. " -> ordered list item. Handled here instead of by the generic
+    // loop below (which still keeps its own `\d+\.\s` entry for the
+    // paste-conversion path that shares LINE_PREFIX_PATTERNS) because this
+    // one needs to capture and remember the number actually typed, not
+    // just detect that some digits-plus-period prefix was present — see
+    // the `--md-ol-start` custom property on `.md-ol-item` in global.css.
+    // Without this, every ordered list unconditionally rendered
+    // "1. 2. 3. ..." regardless of what number was typed to start it. Only
+    // the first item of a run gets to set a custom start; typing e.g.
+    // "5. " to continue an already-started run is treated as a normal
+    // continuation, same as every other markdown editor.
+    const olMatch = /^(\d+)\.\s/.exec(text);
+    if (olMatch) {
+      el.className = 'md-ol-item';
+      el.textContent = text.slice(olMatch[0].length);
+      const isRunStart = !(el.previousElementSibling as HTMLElement | null)?.classList.contains('md-ol-item');
+      if (isRunStart) {
+        el.dataset.olStart = olMatch[1];
+        el.style.setProperty('--md-ol-start', olMatch[1]);
+      } else {
+        delete el.dataset.olStart;
+        el.style.removeProperty('--md-ol-start');
+      }
       placeCaretAtEnd(el);
       if (selectedTextEl === el) bump();
       return;
@@ -2863,8 +2896,14 @@ export function useCanvasEditor() {
         return;
       }
       const prefix = Object.keys(LINE_PREFIX).find((cls) => el.classList.contains(cls));
+      // The first item of an ordered-list run carries whatever start number
+      // the user actually typed (see the live "N. " conversion above) —
+      // CommonMark renumbers every following item from there regardless of
+      // what's written, so only this one line's prefix needs to differ from
+      // LINE_PREFIX's generic "1. ".
+      const olPrefix = prefix === 'md-ol-item' && el.dataset.olStart ? `${el.dataset.olStart}. ` : undefined;
       const body = prefix
-        ? LINE_PREFIX[prefix] + raw.replace(/\n+/g, ' ')
+        ? (olPrefix ?? LINE_PREFIX[prefix]) + raw.replace(/\n+/g, ' ')
         : // GFM hard line break: two trailing spaces keeps soft-broken lines
           // inside the SAME paragraph instead of splitting into a new one.
           raw
