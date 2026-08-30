@@ -1,5 +1,6 @@
 ![Welcome%20to%20Readme%20Canvas](https://capsule-render.vercel.app/api?type=waving&color=gradient&height=200&section=header&text=Welcome%20to%20Readme%20Canvas&fontSize=45)
 
+_Read this in [한국어](README.ko.md)._
 ## About
 
 This project started with a simple idea: **make it easier to create beautiful GitHub README.md files by bringing README components together in one place.**
