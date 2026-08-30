@@ -1,5 +1,7 @@
 ![Welcome%20to%20Readme%20Canvas](https://capsule-render.vercel.app/api?type=waving&color=gradient&height=200&section=header&text=Welcome%20to%20Readme%20Canvas&fontSize=45)
 
+_[English](README.md)로 보기._
+
 ## About
 
 해당 프로젝트는 깃허브의 README 컴포넌트를 모아 보다 쉽고 예쁘게 **README.md**를 만들고 싶다는 생각에서 출발하였습니다.
