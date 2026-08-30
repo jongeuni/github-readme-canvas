@@ -94,5 +94,18 @@
       }
     ]
   },
+  "presetsLabel": "styles",
+  "presets": [
+    { "id": "social-jongeuni-box-generator-default", "name": "DEFAULT", "settings": { "style": "DEFAULT" } },
+    { "id": "social-jongeuni-box-generator-glow", "name": "GLOW (neon)", "settings": { "style": "GLOW" } },
+    { "id": "social-jongeuni-box-generator-github", "name": "GITHUB", "settings": { "style": "GITHUB" } },
+    { "id": "social-jongeuni-box-generator-medium", "name": "MEDIUM", "settings": { "style": "MEDIUM" } },
+    { "id": "social-jongeuni-box-generator-liinked", "name": "LIINKED", "settings": { "style": "LIINKED" } },
+    { "id": "social-jongeuni-box-generator-insta", "name": "INSTA", "settings": { "style": "INSTA" } },
+    { "id": "social-jongeuni-box-generator-brunch", "name": "BRUNCH", "settings": { "style": "BRUNCH" } },
+    { "id": "social-jongeuni-box-generator-tistory", "name": "TISTORY", "settings": { "style": "TISTORY" } },
+    { "id": "social-jongeuni-box-generator-velog", "name": "VELOG", "settings": { "style": "VELOG" } },
+    { "id": "social-jongeuni-box-generator-naver", "name": "NAVER", "settings": { "style": "NAVER" } }
+  ],
   "id": "social-jongeuni-box-generator-2"
 }
