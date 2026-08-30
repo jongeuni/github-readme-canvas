@@ -68,13 +68,13 @@ reademe-canvas에서 만든 markdown 파일을 원하는 프로젝트에 바로 
 
 아래에 자세한 방법이 적힌 파일을 첨부하오니, 관심이 있다면 확인해주시면 감사하겠습니다.
 
-**Component Contribution Guide**: [₍⸝⸝•ᢦ- ₎⸝⸝ި ʕᦏ´-](https://github.com/jongeuni)
+**Component Contribution Guide**: [₍⸝⸝•ᢦ- ₎⸝⸝ި ʕᦏ´-](https://github.com/jongeuni/github-readme-canvas/blob/main/CONTRIBUTING.ko.md)
 
 ### Example .json file
 
-- **[Component Example](https://github.com/jongeuni/github-readme-canvas/blob/main/src/data/community-components/social-badge.json)**
+- **[Component Example](https://github.com/jongeuni/github-readme-canvas/blob/main/src/data/community-components/generic-badge.json)**
 
-- **[Preset Component Example](https://github.com/jongeuni/github-readme-canvas/blob/main/src/data/community-components/social-badge.json)**
+- **[Preset Component Example](https://github.com/jongeuni/github-readme-canvas/blob/main/src/data/community-components/status-antonkomarev-profile-views.json)**
 
 <div align="center">
 
@@ -88,6 +88,6 @@ reademe-canvas에서 만든 markdown 파일을 원하는 프로젝트에 바로 
 
 <div align="center">
 
-[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/jongeun)
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/sowant)
 
 </div>

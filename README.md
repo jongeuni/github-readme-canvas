@@ -89,15 +89,13 @@ Example: ***social-mastodon.json***
 
 We have attached a detailed guide explaining how to create and submit a component. If you're interested in contributing, we'd really appreciate it if you could take a look!
 
-[<img src="https://markdown-box-generator.vercel.app/api/box?title=How%20to%20Contribute&author=readme%20canvas&date=&style=GITHUB" width="60%" alt="How to Contribute">](https://github.com/jongeuni)
-
-**Component Contribution Guide**: [₍⸝⸝•ᢦ- ₎⸝⸝ި ʕᦏ´-](https://github.com/jongeuni)
+**Component Contribution Guide**: [₍⸝⸝•ᢦ- ₎⸝⸝ި ʕᦏ´-](https://github.com/jongeuni/github-readme-canvas/blob/main/CONTRIBUTING.md)
 
 ### Example .json file
 
-- **[Component Example](https://github.com/jongeuni/github-readme-canvas/blob/main/src/data/community-components/social-badge.json)**
+- **[Component Example](https://github.com/jongeuni/github-readme-canvas/blob/main/src/data/community-components/generic-badge.json)**
 
-- **[Preset Component Example](https://github.com/jongeuni/github-readme-canvas/blob/main/src/data/community-components/social-badge.json)**
+- **[Preset Component Example](https://github.com/jongeuni/github-readme-canvas/blob/main/src/data/community-components/status-antonkomarev-profile-views.json)**
 
 <img src="https://user-images.githubusercontent.com/74038190/212284115-f47cd8ff-2ffb-4b04-b5bf-4d1c14c0247f.gif" width="100%">
 
@@ -109,6 +107,6 @@ If you find readme-canvas useful, **a GitHub Star would mean a lot to us!**
 
 <div align="center">
 
-[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/jongeun)
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/sowant)
 
 </div>
