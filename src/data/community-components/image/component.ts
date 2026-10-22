@@ -3,7 +3,7 @@ import type { LibraryEntry } from '../../../types/library';
 import type { ImageSettings } from './types';
 import { Preview } from './Preview';
 import { SettingsForm } from './SettingsForm';
-import { linePresets } from './presets';
+import { animalGifPresets, linePresets } from './presets';
 
 const definition: ComponentTypeDefinition<ImageSettings> = {
   type: 'image',
@@ -47,6 +47,20 @@ const entries: LibraryEntry<ImageSettings>[] = [
     author: 'jongeuni',
     projectUrl: 'https://github.com/jongeuni/github-readme-canvas',
     defaultSettings: { url: '', width: '100%', alt: '', link: '' },
+  },
+  {
+    id: 'animal-gifs',
+    type: 'image',
+    name: 'Animal GIFs',
+    description: 'Cats, dogs, hamsters and more — pick a GIF below.',
+    category: '✨ decoration',
+    tags: ['✨ decoration', 'Image', 'GIF', 'Animal'],
+    status: 'active',
+    author: 'jongeuni',
+    projectUrl: 'https://github.com/jongeuni/github-readme-canvas',
+    defaultSettings: { ...animalGifPresets[0].settings, link: '' } as ImageSettings,
+    presetsLabel: 'animals',
+    presets: animalGifPresets,
   },
   {
     id: 'line',
