@@ -3,7 +3,7 @@ import { IconSprite, Icon } from './components/Icon';
 import { LibraryPanel } from './components/library/LibraryPanel';
 import { Canvas } from './components/editor/Canvas';
 import { SettingsPanel } from './components/settings/SettingsPanel';
-import { useCanvasEditor } from './components/editor/useCanvasEditor';
+import { useCanvasEditor, parseMarkdownToBlocks } from './components/editor/useCanvasEditor';
 import { useSavedDocuments } from './hooks/useSavedDocuments';
 import { SaveMenu } from './components/save/SaveMenu';
 import { SaveAsModal } from './components/save/SaveAsModal';
@@ -14,6 +14,7 @@ import { AddComponentModal } from './components/library/AddComponentModal';
 import { useGitHubAuth } from './hooks/useGitHubAuth';
 import { ConnectGitHubModal } from './components/github/ConnectGitHubModal';
 import { CommitToGithubModal } from './components/github/CommitToGithubModal';
+import { ImportFromGithubModal } from './components/github/ImportFromGithubModal';
 import { SubmitComponentPrModal } from './components/library/SubmitComponentPrModal';
 import type { LibraryEntry } from './types/library';
 import { getLibraryEntry } from './registry';
@@ -30,6 +31,7 @@ function App() {
   const [githubConnectOpen, setGithubConnectOpen] = useState(false);
   const [commitOpen, setCommitOpen] = useState(false);
   const [commitMarkdown, setCommitMarkdown] = useState('');
+  const [importOpen, setImportOpen] = useState(false);
   const [prEntry, setPrEntry] = useState<LibraryEntry | null>(null);
   // The entry a not-yet-connected user was about to submit a PR for, so
   // handleConnectGitHub can pick the flow back up once they log in instead
@@ -161,6 +163,19 @@ function App() {
     [customComponents, editor, github.user, showToast, handleRequestSubmitPr],
   );
 
+  // Replaces the whole canvas — same as loading a saved doc or template (the
+  // modal warns about this up front), so it likewise detaches from whichever
+  // saved doc was active and starts a fresh undo history.
+  const handleImportReadme = useCallback(
+    (md: string, source: string) => {
+      editor.loadFromBlocks(parseMarkdownToBlocks(md));
+      setActiveDoc(null);
+      setImportOpen(false);
+      showToast(`Loaded ${source}`);
+    },
+    [editor, showToast],
+  );
+
   const openCommitModal = useCallback(() => {
     setCommitMarkdown(editor.buildFullMarkdown());
     setCommitOpen(true);
@@ -235,6 +250,12 @@ function App() {
                 {github.user.login}
               </div>
             ) : null}
+            {github.user && (
+              <button type="button" className="btn btn-secondary btn-sm" onClick={() => setImportOpen(true)}>
+                <Icon name="github" />
+                Open README
+              </button>
+            )}
             {github.user && (
               <button type="button" className="btn btn-primary btn-sm" onClick={openCommitModal}>
                 <Icon name="github" />
@@ -314,6 +335,14 @@ function App() {
         }}
         onConnect={handleConnectGitHub}
         onDismissError={github.clearError}
+      />
+
+      <ImportFromGithubModal
+        open={importOpen}
+        token={github.token}
+        login={github.user?.login ?? null}
+        onCancel={() => setImportOpen(false)}
+        onImport={handleImportReadme}
       />
 
       <CommitToGithubModal open={commitOpen} token={github.token} markdown={commitMarkdown} onCancel={() => setCommitOpen(false)} />
